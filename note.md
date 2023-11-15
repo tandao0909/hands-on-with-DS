@@ -1,0 +1,28 @@
+- [ ] 1.1. Explore the data using info(), describe(), head(), and shape()
+- [ ] 1.2. Explore the data using visualizations
+- [ ] 1.3. Create a test set and set it aside
+    - [ ] 1.3.1 Consider stratified sampling based on known knowledge in step 1.2
+- [ ] 1.4. Visualize the train data to gain insights
+- [ ] 1.5. Clean the data for Machine Learning algorithms
+    - [ ] 1.5.1. Deal with missing values
+    - [ ] 1.5.2. Deal with categorical attributes
+    - [ ] 1.5.3. Deal with duplicated data
+    - [ ] 1.5.4. Feature scaling
+    - [ ] 1.5.5. Create pipelines for auto data transformation
+- [ ] 1.6. Select and train a model
+    - [ ] 1.6.1. Train and evaluate on the training set
+    - [ ] 1.6.2. Better evaluation using cross-validation
+- [ ] 1.7. Fine-tune the model
+    - [ ] 1.7.1. Grid search
+    - [ ] 1.7.2. Randomized search
+    - [ ] 1.7.3. Evaluate the best model on the test set  
+- [ ] 1.8. Present the solution
+    -[] 1.8.1. Document what you have done
+    -[] 1.8.2. Create a nice presentation
+- [ ] 1.9. Launch, monitor, and maintain the system  
+    - [ ] 1.9.1. Try it out on actual data
+    - [ ] 1.9.2. Try Ensemble methods
+    - [ ] 1.9.3. Try to reduce the dimensionality of the input
+    - [ ] 1.9.4. Try to automate as much as possible
+    - [ ] 1.9.5. Create an alerting system to monitor the system’s live performance at regular intervals and trigger alerts when it drops
+    - [ ] 1.9.6. Frequently take a snapshot of the model and compare it’s performance to the reference performance
