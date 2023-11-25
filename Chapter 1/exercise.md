@@ -13,6 +13,8 @@
     - Anomaly detection
 6. I would use reinforcement learning to allow a robot to walk in various unknown terrains.
 7. There are two possibilities:
-    - I would use clustering (unsupervised learning) to segment customer into multiple groups.
-    - 
-8. 
+    - If there is no label, I would use clustering (unsupervised learning) to segment customer into multiple groups.
+    - If there are labels, I would use supervised (classification learning) to classify customer into multiple groups. 
+8. I would frame the problem of spam detection as a supervised learning. Because we have two label, either spam or ham.
+9. An online learning system is a system where learning is happened incrementally. More specific, the model learns some more litte piece of data, without train over again from scratch.
+10. Out-of-core learning 
