@@ -16,5 +16,14 @@
     - If there is no label, I would use clustering (unsupervised learning) to segment customer into multiple groups.
     - If there are labels, I would use supervised (classification learning) to classify customer into multiple groups. 
 8. I would frame the problem of spam detection as a supervised learning. Because we have two label, either spam or ham.
-9. An online learning system is a system where learning is happened incrementally. More specific, the model learns some more litte piece of data, without train over again from scratch.
-10. Out-of-core learning 
+9. An online learning system is a system where learning is happened incrementally. More specific, the model learns some more little piece of data, without train over again from scratch.
+10. Out-of-core learning is train huge datasets which can't fit in one machine's main memory. We load parts of the data, train on that part, then repeat until we've trained all the data.
+11. The type of algorithms relies on a similarity measure to make predictions is instance-based learning. 
+12. The difference between model hyperparameter and model parameter is:
+    - Model hyperparameter: Parameter you defined **before** training. These parameters don't change throughout the training.
+    - Model parameter: Parameter you changed **while** training. These parameters is what the algorithms try to tweak to fit your desired outcome.
+For example, consider Linear Regression:
+    - Hyperparameter: learning rate, regularization parameter.
+    - Parameter: Weight and bias
+13. - Model-based algorithms search for a model which best describes the data, and try to use it to predict new data.
+    - 
