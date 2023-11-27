@@ -26,4 +26,23 @@ For example, consider Linear Regression:
     - Hyperparameter: learning rate, regularization parameter.
     - Parameter: Weight and bias
 13. - Model-based algorithms search for a model which best describes the data, and try to use it to predict new data.
-    - 
+    - The most common strategy they use to succeed is having a cost function that measures how bad the model is predicting on the training data, plus the penalty for the model for the complexity if regularized.
+    - They make predictions by feeding new instances into the model prediction's function, using the parameters found by the learning algorithms.
+14. Some of the main challenges in Machine Learning:
+    - Lack of data
+    - Non-representative data
+    - Poor quality data
+    - Irrelevant features
+    - Too simple model that underfit the data 
+    - Too complex model that overfit the data
+15. If my model performs great on the training data but generalizes poorly to new instances, it means the model is overfitting.<br>
+Three possible solutions:
+    - Add more training data.
+    - Regularization the model, if using model-based approach.
+    - Switch to simpler algorithms. 
+16. Test set is the set used to test the model. We use it to see its generalization ability before launching into production.
+17. Validation set is the set we hold-out during training to see the performance of current model
+18. - Train-dev set is the set that you hold-out from the training data and not train on it (different from validation set, which you can merge back to train set and shuffle).
+    - Train-dev is used when there is a risk of mismatch between the train set and the test set. For example, you train on image download from google but test on images taken by your apps.
+    - You use it by test the trained model on it. If it preforms poorly, then the reason is bad model; if it perform well on train-dev but badly on test set, then it's data's fault.
+19. Then model may overfit the test set, and then would preform poorly on new data in production.
