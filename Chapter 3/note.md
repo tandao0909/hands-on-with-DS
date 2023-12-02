@@ -49,3 +49,10 @@ Using Confusion Matrix Display, we can see what to improve, for example:
 - Engineer more features to help the model, for example: 8s has two loops, other number has only one or no loop.
 
 <br>
+Since we input the number of each pixel, if we adjust the image just a bit, like shift it by 1 pixel or rotate, the model would misclassify. We can help it by augment the data, see exercise 2 and chapter 14.
+<br>
+Multilabel classification is when an instance can belong to multiple classes at the same time. For example: <br>
+You try to predict who is in an image. There are 3 person you want to check, A, B and C. It's possible to have both A and B in a picture. If we try to predict, the output should be [True, True, False], illustrates that there are A and B in the picture, not C. 
+<br>
+Multioutput classification is when an instance can belong to multiple classes, in each classes, there are more than 2 possible values, as opposed to binary output in multilabel. For example: <br>
+Given an image, we want to clean it. The output is an instance which has multiple class (each class is a pixel), each class has multiple values (from 0 to 255 as opposed to only True or False in multilabel).<br>
