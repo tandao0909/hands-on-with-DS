@@ -70,4 +70,31 @@ $$((\theta^TX^T - y^T)X)^T = X^T(\theta^TX^T - y^T)^T=X^T(X\theta - y)$$
 - Opposite to SVD and Normal equation, Gradient descent scales well with the number of features, but scales badly with the number of instances. The reason it scales badly with number of instances is we feed it with the whole training set at once.
 - Because the vector is uphill, we multiplies it by a negative number to make it go downhill. This is where the learning rate hyperparameter come into play: we multiply the gradient vector by $\eta$ to determine the size of step.
 $$\theta^{(\text{next step})} = \theta - \eta \Delta_\theta MSE(\theta)$$
+- In the plot at the end of Batch Gradient Descent, we have some following comments:
+    - On the left, the learning rate is too low, so the algorithm will take a long time to reach the minium.
+    - In the middle, the learning rate is pretty good. The algorithm converge rapidly to the optimal solution.
+    - On the right, the learning rate is too high. The algorithm diverges, jump around over the place and actually getting further and further with each step.
+- You can help the algorithm by scale every feature to the same range beforehand. 
+- Depends on the plot, we should think about how to choose the learning rate. One strategy is define a tiny number $\epsilon$, called tolerance, so when the gradient vector is too small, or in other word, the norm of it is too small, we will stop.
+- However, this time, time to train the model will be $O(\frac{1}{\epsilon})$, so for example, you want the tolerance to be 10x smaller to have a more precise solution, then it will take 10x time to train.
+
+## Stochastic Gradient Descent
+
+- At the opposite extreme, stochastic gradient descent picks a random instance in training set, as opposed to the whole training set in batch gradient descent, and calculate gradient based only on that instance.
+- The advantage is it works on one instance at one time, so it fits nicely in the memory, and scales well with the number of instances. Because of these reasons, Stochastic Gradient Descent can be used as an out-of-core algorithm.
+- The disadvantage is its stochastic (random) nature. Instead of converging gently to the minimum, the cost function bounces up and down, but decreases on average. Over time, it will end up very close to minimum, but the point is once it gets there, it will continue to bounce around. It can reach a very good, but not a optimal solution.
+- But the random nature can be a good thing. Randomness help the algorithm jumps out of local minima, so stochastic gradient decent has better chance to find the global minima than batch gradient descent.
+- Randomness is good is because it helps escape the local minima, but bad because the model can never settle at the minimum. One solution is to gradually decrease the learning rate. This process is called *simulated annealing*.
+- The algorithm to determine learning rate is called learning schedule.
+- If the learning rate decreases too quickly, you may get stuck in a local minima, or worse is frozen halfway to the minimum.
+- If the learning rate decreases too slowly, you will bounce around the minimum and can end up with a suboptimal solution if you halt training too early.
+- When using SGD, you need to satisfy 2 requirements:
+    - Independent
+    - Identically distributed
+
+    which means you need to ensure every set of same size will have same probability of being chosen.
+- One way to achieve it is to shuffle the instances while training:
+    - Pick each instance randomly
+    - Shuffle the train set at the beginning of each epoch
+- If you don't shuffle the instances - for example, if the train set is sorted by label, then the model will start to optimize for the first label, then the second, until the very end, which has the risk of forgetting the first label when it reaches the end of training.
 - 
