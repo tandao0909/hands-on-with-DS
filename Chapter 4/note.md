@@ -97,4 +97,38 @@ $$\theta^{(\text{next step})} = \theta - \eta \Delta_\theta MSE(\theta)$$
     - Pick each instance randomly
     - Shuffle the train set at the beginning of each epoch
 - If you don't shuffle the instances - for example, if the train set is sorted by label, then the model will start to optimize for the first label, then the second, until the very end, which has the risk of forgetting the first label when it reaches the end of training.
-- 
+
+## Mini-batch Gradient Descent
+
+- Instead of staying in the extreme, we can live in the middle. Mini-batch Gradient Descent trains on small random sets of instances called mini-batches.
+- The main advantage of it over SGD is you can get a performance boost form hardware optimization of matrix operations, especially when using GPU.
+- The algorithm's progress in less erratic than SGD. As a result, mini-batch GD will end up closer to the minimum that SGD, but harder for it to escape the local minima.
+- In summary:
+    - Batch GD will end up at the minimum, while SGD and mini-batch GD will bounce round.
+    - However, SGD and mini-batch GD can reach the minimum if you have a good learning schedule.
+    - Batch is more prone to stuck at local minima, while SGD and mini-batch GD can escape the local.
+
+## The comparison table
+
+Remind that:
+- m is the number of instances
+- n is the number of features
+
+| Algorithm          | Large m | Out-of-core support | Large n | Hyperparameter | Scaling required | Scikit-learn       |
+|--------------------|---------|---------------------|---------|----------------|------------------|--------------------|
+| Normal equation    | Fast    | No                  | Slow    | 0              | No               | N/A                |
+| SVD                | Fast    | No                  | Slow    | 0              | No               | LinearRegression   |
+| Batch GD           | Slow    | No                  | Slow    | 2              | Yes              | N/A                |
+| Stochastic GD      | Fast    | Yes                 | Fast    | $\geq$2        | Yes              | SGDRegressor       |
+| Mini-batch GD      | Fast    | Yes                 | Fast    | $\geq$2        | Yes              | N/A                |
+
+## Polynomial Regression
+
+- What if the underlying model is more complex than a straight line? Surprisingly, you can use a linear model to fti nonlinear data.
+- A simple way to do it is to add the power of each features, consider them to be the new features, and apply linear model on this extended set of features.
+- This technique is called Polynomial Regression.
+- For example, if the degree is 3 and there are 2 features, then the equation is:
+$$\theta_0+\theta_1.a+\theta_2.b+\theta_3.a^2+\theta_4.ab+\theta_5.b^2+\theta_6.a^3+\theta_7.a^2.b+\theta_a.b^2+\theta_8b^3$$
+- Polynomial Regression with degree=d transform an array with n features into a new array with 
+$$\frac{(n+d)!}{n!d!}=C^k_{k+n}=C^n_{k+n}$$
+which means the number of features explodes very fast (hyper-polynomial complexity, or higher that polynomial complexity).
