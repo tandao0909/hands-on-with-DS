@@ -132,3 +132,51 @@ $$\theta_0+\theta_1.a+\theta_2.b+\theta_3.a^2+\theta_4.ab+\theta_5.b^2+\theta_6.
 - Polynomial Regression with degree=d transform an array with n features into a new array with 
 $$\frac{(n+d)!}{n!d!}=C^k_{k+n}=C^n_{k+n}$$
 which means the number of features explodes very fast (hyper-polynomial complexity, or higher that polynomial complexity).
+
+## Learning curves
+
+- If you decide to select a high degree, for example d=300, the model wll likely fit the training data much better than linear regression.
+- The first plot drawn in the learning notebook illustrates 3 distinct model, all try to estimate the given function:
+    - A linear model
+    - A quadratic model
+    - A 300-degrees polynomial model
+- Because the underlying function is indeed a quadratic function, the 300-degrees model is severely overfitting the training data, while the linear one is unbefitting it. 
+- The model is of course generalizes best with the quadratic model in this case, but in reality, when we don't know what is the underlying function, how can we know if a model is overfit or underfit?
+- We learned a way to deal with it: Cross-validation:
+    - If the model performs well on training data but badly on validation data, then it is overfitting
+    - If the model performs badly on both the training data and the validation data, then it is underfitting.
+- Another way is looking at *learning curves*, which are plots of the model performance on the training set and the validation set against the size of training set (or the training iteration).
+- Note that if the model can't be trained incrementally, then you need to retrain it several times, each time on gradually larger train set.
+- Conveniently, scikit-learn has learning_curve() function to help with this: It automatically trains and evaluates the model using cross-validation. 
+- It trains the model on growing subsets of the training set by default, but if the model support incrementally learning, then you can set exploit_incremental_learning=True when calling learning_curve() and it will train the model incrementally instead.
+- The function returns the training set size at which it evaluated the model, the training and validation score for each size and for each cross-validation fold.  
+
+### Comment on 2 plots in the learning notebook
+- In the first plot:
+    - The training error at first is zero, because there are only 1 or 2 instances, which can be fitted easily.
+    - Then, when the number of training instances increases, the model can no longer fit the data perfectly, both because the data itself is not linear and there are noises in the training data.
+    - After that, the error continues to go up until it reaches a plateau, at which point adding more instances don't necessary make it better or worse.
+    - Now consider the validation error, when there are few training instances, the model gereneralizes very badly.
+    - After adding more instances, the validation error slowly decreases.
+    - But again, a linear model can't fit this data well, so the validation error ends up in a plateau, near the other curve.
+- In the second plot:
+    - The error on the training set is much lower than before.
+    - There is a big gap between the curves. Which means the model is performs significantly better on the training set than the validation set, which is the hallmark of an overfitting model.
+    - Although there is a gap, the learning curves will continue to get closer if you have a much larger training set.
+
+In short:
+- An underfitting model has both curves reach a plateau, they are both close and very high. Let's explain why:
+    - Both curves reach a plateau, means the model don't increase its performance when adding more instances.
+    - However, the errors are high, which means it can't even fit the training well, let alone new, unseen data.
+    - You need to use a more complex model or come up with better features.
+- An overfitting model has a big gap between the curves and the learning curve is much lower than that of an underfitting model. Here's the explanation:
+    - The learning curve is much lower, means the model is actually performs very well on train data.
+    - However, there is a gap between the curves, which means the performances on the validation is low.
+    - A way to improve an overfitting model is to keep feeding it more and more data.
+
+### The bias/variance trade-off
+
+An important theoretical results of statistics and machine learning is the fact that a model's generalization error can be expressed as the sum of three very different errors:
+- Bias: This part of generalization error is due to wrong assumption, such as assuming that the data is linear instead of quadratic. A model with high bias is more likely to underfit the data. Note that this notion of bias is different from the bias of linear models.
+- Variance: This part is due to the model's excessiveness sensitivity to small variations in the training data. A model with many degrees of freedom (such as high degree polynomial model) is likely to have high variance and thus overfit the training data.
+- Irreducible error: This part is due to the noisiness of the data itself. The only way to reduce this part of the error is to lean up the data. For example, fix the data sources, such as broken sensors, or detect and remove outliers.
