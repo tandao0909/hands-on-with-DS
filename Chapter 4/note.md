@@ -55,7 +55,7 @@ $$\frac{\partial}{\partial \theta_j}MSE(\theta)=\frac{2}{m}\sum_{i=1}^m(\theta^T
 - In conclusion, the vector we want to move is the gradient vector of the cost function, or
 $$
 \begin{equation}
-\Delta_\theta MSE(\theta) = \begin{pmatrix}
+\nabla_\theta MSE(\theta) = \begin{pmatrix}
 \frac{\partial}{\partial \theta_0} MSE(\theta) \\
 \frac{\partial}{\partial \theta_1} MSE(\theta) \\
 \vdots \\
@@ -69,7 +69,7 @@ $((\theta^TX^T - y^T)X)^T$ but
 $$((\theta^TX^T - y^T)X)^T = X^T(\theta^TX^T - y^T)^T=X^T(X\theta - y)$$
 - Opposite to SVD and Normal equation, Gradient descent scales well with the number of features, but scales badly with the number of instances. The reason it scales badly with number of instances is we feed it with the whole training set at once.
 - Because the vector is uphill, we multiplies it by a negative number to make it go downhill. This is where the learning rate hyperparameter come into play: we multiply the gradient vector by $\eta$ to determine the size of step.
-$$\theta^{(\text{next step})} = \theta - \eta \Delta_\theta MSE(\theta)$$
+$$\theta^{(\text{next step})} = \theta - \eta \nabla_\theta MSE(\theta)$$
 - In the plot at the end of Batch Gradient Descent, we have some following comments:
     - On the left, the learning rate is too low, so the algorithm will take a long time to reach the minium.
     - In the middle, the learning rate is pretty good. The algorithm converge rapidly to the optimal solution.
@@ -180,3 +180,43 @@ An important theoretical results of statistics and machine learning is the fact 
 - Bias: This part of generalization error is due to wrong assumption, such as assuming that the data is linear instead of quadratic. A model with high bias is more likely to underfit the data. Note that this notion of bias is different from the bias of linear models.
 - Variance: This part is due to the model's excessiveness sensitivity to small variations in the training data. A model with many degrees of freedom (such as high degree polynomial model) is likely to have high variance and thus overfit the training data.
 - Irreducible error: This part is due to the noisiness of the data itself. The only way to reduce this part of the error is to lean up the data. For example, fix the data sources, such as broken sensors, or detect and remove outliers.
+
+## Regularized linear model
+
+- A good way to reduce overfitting is to regularize the model (i.e., constrain it): The fewer degree of freedom is has, the harder it is to overfit the data.
+- A simple way to regularize a polynomial model is to reduce the number of polynomial degrees.
+- For a linear model, regularization is typically achieved by constraining the weights of the model. 
+- There are 3 ways to constraining te weights of the linear model:
+    - Ridge regression
+    - Lasso regression
+    - Elastic net regression
+
+### Ridge regression (Tikhonov regularization)
+
+- Is a regularized version of linear regression: A regression term equal to 
+$$\frac{\alpha}{m}\sum_{i=1}^n\theta_i^2$$ 
+is added to the MSE.
+- This forces the model to not only fit the training data but also keep the weights as small as possible. 
+- Note that the regularized term should only be added during training. Once the model is trained, you want to use the unregularized MSE or RMSE to evaluate the model's performance.
+- The hyperparameter $\alpha$ let you control how much you regularize the model:
+    - If $\alpha=0$ then ridge regression is just linear regression.
+    - If $\alpha$ is very large, then the result is a flat line going through the data's mean.
+- This is the ridge's cost function. Note that $J(\theta)$ is commonly used for the cost functions that don't have a short name.
+    $$J(\theta) = MSE(\theta) + \frac{\alpha}{m}\sum_{i=1}^n\theta_i^2$$
+- Note that the bias term $\theta_0$ is not regularized.
+- If we define w is the vector of the features weights (from $\theta_1$ to $\theta_n$), then the above equation can be simplified as:
+    $$J(\theta) = MSE(\theta) + \frac{\alpha}{m}(\|w\|_2)^2$$
+which means we are considering the $\ell_2$, stands for 2D Euclidean Norm.
+- If you are using Batch GD, then just add 
+    $$2\frac{\alpha w}{m}$$
+to the gradient vector that corresponds to the features weight, while add nothing to the bias term.
+> It's important to scale the data before performing ridge regression, as it is sensitive to the scale of the input features. This is true for most regularized models.
+- Look at the plot in the learning notebook, we have some comments:
+    - Increase the $\alpha$ leads to flatter (i.e. less extreme, more reasonable) predictions.
+    - So increase $\alpha$ leads to increasing bias and decreasing variance.
+- As with linear regression, we can perform ridge regression using either a closed-form equation or by performing a gradient descent.
+- The pros and cons are the same.
+- The closed-form equation of ridge regression is:
+    $$\hat{\theta} = (X^TX+\alpha A)^{-1} X^Ty$$
+where A is the n-1 dimensions identity matrix, expect with a in the top-left cell, corresponding to the bias term.
+
