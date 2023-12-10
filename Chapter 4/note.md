@@ -1,4 +1,4 @@
-## Linear model
+# Linear model
 - Linear regression is the simplest form of regression.
 - Linear regression is a model-based approach, with the model is the equation: 
 $$\hat{y} = \theta_0 + \theta_1x_1+\theta_2x_2+\dots+\theta_nx_n$$
@@ -26,7 +26,7 @@ In this equation:
 - $\hat{\theta}$ is the value of $\theta$ that minimizes the cost function.
 - y is the target values, contains from $y^{(1)}$ to $y^{(m)}$
 
-## Computational complexity
+# Computational complexity
 - In regard of the number of features (we call it n), the computational complexity is 
     > from $O(n^{2.4})$ to $O(n^3)$
 
@@ -40,7 +40,7 @@ In this equation:
 
     which means the time to make a new prediction scales linearly with both the number of instances and the number of features.
 
-## Gradient descent
+# Gradient descent
 
 - The idea of gradient descent is we want to minimize the cost function iteratively. 
 - Imagine you stuck in a valley and the weather is extremely foggy. How can you go down to the very bottom of the valley? A good option is choose whichever direction is steepest and is down.
@@ -78,7 +78,7 @@ $$\theta^{(\text{next step})} = \theta - \eta \nabla_\theta MSE(\theta)$$
 - Depends on the plot, we should think about how to choose the learning rate. One strategy is define a tiny number $\epsilon$, called tolerance, so when the gradient vector is too small, or in other word, the norm of it is too small, we will stop.
 - However, this time, time to train the model will be $O(\frac{1}{\epsilon})$, so for example, you want the tolerance to be 10x smaller to have a more precise solution, then it will take 10x time to train.
 
-## Stochastic Gradient Descent
+# Stochastic Gradient Descent
 
 - At the opposite extreme, stochastic gradient descent picks a random instance in training set, as opposed to the whole training set in batch gradient descent, and calculate gradient based only on that instance.
 - The advantage is it works on one instance at one time, so it fits nicely in the memory, and scales well with the number of instances. Because of these reasons, Stochastic Gradient Descent can be used as an out-of-core algorithm.
@@ -98,7 +98,7 @@ $$\theta^{(\text{next step})} = \theta - \eta \nabla_\theta MSE(\theta)$$
     - Shuffle the train set at the beginning of each epoch
 - If you don't shuffle the instances - for example, if the train set is sorted by label, then the model will start to optimize for the first label, then the second, until the very end, which has the risk of forgetting the first label when it reaches the end of training.
 
-## Mini-batch Gradient Descent
+# Mini-batch Gradient Descent
 
 - Instead of staying in the extreme, we can live in the middle. Mini-batch Gradient Descent trains on small random sets of instances called mini-batches.
 - The main advantage of it over SGD is you can get a performance boost form hardware optimization of matrix operations, especially when using GPU.
@@ -108,7 +108,7 @@ $$\theta^{(\text{next step})} = \theta - \eta \nabla_\theta MSE(\theta)$$
     - However, SGD and mini-batch GD can reach the minimum if you have a good learning schedule.
     - Batch is more prone to stuck at local minima, while SGD and mini-batch GD can escape the local.
 
-## The comparison table
+# The comparison table
 
 Remind that:
 - m is the number of instances
@@ -122,7 +122,7 @@ Remind that:
 | Stochastic GD      | Fast    | Yes                 | Fast    | $\geq$2        | Yes              | SGDRegressor       |
 | Mini-batch GD      | Fast    | Yes                 | Fast    | $\geq$2        | Yes              | N/A                |
 
-## Polynomial Regression
+# Polynomial Regression
 
 - What if the underlying model is more complex than a straight line? Surprisingly, you can use a linear model to fti nonlinear data.
 - A simple way to do it is to add the power of each features, consider them to be the new features, and apply linear model on this extended set of features.
@@ -133,7 +133,7 @@ $$\theta_0+\theta_1.a+\theta_2.b+\theta_3.a^2+\theta_4.ab+\theta_5.b^2+\theta_6.
 $$\frac{(n+d)!}{n!d!}=C^k_{k+n}=C^n_{k+n}$$
 which means the number of features explodes very fast (hyper-polynomial complexity, or higher that polynomial complexity).
 
-## Learning curves
+# Learning curves
 
 - If you decide to select a high degree, for example d=300, the model wll likely fit the training data much better than linear regression.
 - The first plot drawn in the learning notebook illustrates 3 distinct model, all try to estimate the given function:
@@ -151,7 +151,7 @@ which means the number of features explodes very fast (hyper-polynomial complexi
 - It trains the model on growing subsets of the training set by default, but if the model support incrementally learning, then you can set exploit_incremental_learning=True when calling learning_curve() and it will train the model incrementally instead.
 - The function returns the training set size at which it evaluated the model, the training and validation score for each size and for each cross-validation fold.  
 
-### Comment on 2 plots in the learning notebook
+## Comment on 2 plots in the learning notebook
 - In the first plot:
     - The training error at first is zero, because there are only 1 or 2 instances, which can be fitted easily.
     - Then, when the number of training instances increases, the model can no longer fit the data perfectly, both because the data itself is not linear and there are noises in the training data.
@@ -174,14 +174,14 @@ In short:
     - However, there is a gap between the curves, which means the performances on the validation is low.
     - A way to improve an overfitting model is to keep feeding it more and more data.
 
-### The bias/variance trade-off
+## The bias/variance trade-off
 
 An important theoretical results of statistics and machine learning is the fact that a model's generalization error can be expressed as the sum of three very different errors:
 - Bias: This part of generalization error is due to wrong assumption, such as assuming that the data is linear instead of quadratic. A model with high bias is more likely to underfit the data. Note that this notion of bias is different from the bias of linear models.
 - Variance: This part is due to the model's excessiveness sensitivity to small variations in the training data. A model with many degrees of freedom (such as high degree polynomial model) is likely to have high variance and thus overfit the training data.
 - Irreducible error: This part is due to the noisiness of the data itself. The only way to reduce this part of the error is to lean up the data. For example, fix the data sources, such as broken sensors, or detect and remove outliers.
 
-## Regularized linear model
+# Regularized linear model
 
 - A good way to reduce overfitting is to regularize the model (i.e., constrain it): The fewer degree of freedom is has, the harder it is to overfit the data.
 - A simple way to regularize a polynomial model is to reduce the number of polynomial degrees.
@@ -191,7 +191,7 @@ An important theoretical results of statistics and machine learning is the fact 
     - Lasso regression
     - Elastic net regression
 
-### Ridge regression (Tikhonov regularization)
+## Ridge regression (Tikhonov regularization)
 
 - Is a regularized version of linear regression: A regression term equal to 
 $$\frac{\alpha}{m}\sum_{i=1}^n\theta_i^2$$ 
@@ -220,3 +220,43 @@ to the gradient vector that corresponds to the features weight, while add nothin
     $$\hat{\theta} = (X^TX+\alpha A)^{-1} X^Ty$$
 where A is the n-1 dimensions identity matrix, expect with a in the top-left cell, corresponding to the bias term.
 
+## Lasso regression
+
+- Least absolute shrinkage and selection operator regression, usually called lasso regression, is another regularized version of linear regression.
+- Instead of using $\ell_2$ norm, lasso uses $\ell_1$ norm. This is its equation:
+    $$J(\theta) = MSE(\theta) + 2\alpha \sum_{i=1}^n|\theta_i|$$
+- An important characteristic of lasso is it tends to eliminate the weights of the least important features.
+- In other words, lasso regression automatically performs feature selection and output a sparse model with few nonzero feature weights and output a sparse model (i.e. with few nonzero weights).
+- If we assume that the derivate of $|x|$ is $sign(x)$, then the formula of gradient vector in case of Lasso regression is:
+    $$\begin{equation}
+    g(\theta, J) = \nabla_{\theta}MSE(\theta) + \alpha
+        \begin{pmatrix}
+        0 \\
+        sign(\theta_0) \\
+        sign(\theta_1) \\
+        \vdots \\
+        sign(\theta_n)
+        \end{pmatrix} 
+        \text{where sign(x)} = 
+        \begin{cases}
+        -1 \text{  if } x < 0 \\
+        0 \text{  if } x = 0 \\
+        1 \text{  if } x > 0 \\
+        \end{cases}
+    \end{equation}$$
+
+## Comment on plots:
+Now, let's consider the 4 plot in the learning notebook, note that we initialize the model parameters to $\theta_1=2$ and $\theta_2=0.5$.
+- The two upper plot demonstrates Lasso's cost function:
+    - The top-left plot represents the $\ell_1$ norm. Running GD decrease both of them equally, so $\theta_2$ reaches 0 first, as it is smaller. After that, GD will push $\theta_1$ until $\theta_1=0$.
+    - The top-right plot, the contour represents the Lasso's cost function. The small white circles shows the path GD takes to reach the optimize the model parameters, which were initialized at $\theta_1=0.25$ and $\theta_2=-1$. Notice how the model reaches $\theta_2=0$ rapidly, then follow the gutter to ends up bouncing around the global optimum, i.e. the red square.
+    - The bouncing pattern occurs because the gradient vector of $\ell_1$ is not continuous, it discontinues as 0. 
+    - If we increase $\alpha$, the optimum will slide along the left of the dashed yellow line, while if we decreases $\alpha$, the optimum will go right.
+- The two lower plot illustrates Ridge's cost function:
+    - In the bottom-left plot, $\ell_2$ is proportional to the distance to the origin. So GD just takes a straight line towards that point.
+    - In the bottom-right plot, the contours represent the Ridge Regression's cost function.
+    - There are 2 main differences: The gradients get smaller, so GD naturally slows down, which help converges (there is no bouncing around) and the optimum value get closer to the origin as $\alpha$ get larger when you increases $\alpha$, but they never get eliminated entirely.
+
+## Elastic Net
+
+- 
