@@ -259,4 +259,38 @@ Now, let's consider the 4 plot in the learning notebook, note that we initialize
 
 ## Elastic Net
 
-- 
+- Elastic Net is a middle ground between Lasso Regression and Ridge Regression.
+- The regularization term is a mix of both Lasso and Ridge's regularization terms, and you can control the mix ratio r.
+- The formula is:
+    $$J(\theta) = MSE(\theta) + r2\alpha\sum_{i=1}^n|\theta_i|+(1-r)\frac{\alpha}{m}\sum_{i=1}^n\theta_i^2$$
+- When $r=0$, elastic net is equivalent to ridge regression, when $r=1$, it is equivalent to lasso regression.
+- So when you should use elastic net, ridge, lasso or plain old linear regression? Here are some good rule of thumb:
+    - It is almost preferable to have at least some little bit of regularization. So in general, you should avoid plain linear regression.
+    - Ridge is a good default, but if you suspect that just a few features is important, then you should prefer elastic net or lasso because they tend to reduce the useless features' weights down to zero.
+    - In general, elastic net is more prefer than lasso, because lasso may behave erratically when the number of features is more than the number of instances or when some features are strongly correlated.
+
+## Early Stopping
+
+- A very different approach to regularize iterative learning algorithm such as GD is to stop training as soon as the validation error reaches a minimum. This is called early stopping.
+- As you can see from the plot in the learn notebook, first the valid error go down and then start increasing. The valid error increases is an indicator that the model is overfitting the train data.
+- Using early stopping, you stop the training as soon as the validation reach the minimum.
+- Early stopping is such an easy and efficient regularization technique that Geoffrey Hinton called it a "beautiful free lunch".
+- However, there are some notes:
+    - Because the stochastic nature of SGD, it may be the case that the validation error can decrease later, i.e. the minimum discussed above could be local minimum.
+    - On the other hand, also because the stochastic nature of SGD, the valid error will fluctuate near around a value, not necessary reach a plateau, so it could be a waste of time to wait for SGD.
+    - To solve the first problem, we set a tolerance (tol) parameter that we set a new lower score as the new best valid score only if the that new lower score if smaller than the current best score - tolerance:
+    ```[python]
+    if valid_error < best_valid_error - tol:
+        best_valid_error = valid_error
+    ```
+    - To solve the second problem, if after n_iter_no_change iterations, we don't change the best valid score, then we quit training:
+    ```[python]
+    n_iter_ = 0
+    if n_iter_ < n_iter_no_change:
+        n_iter_ += 1
+    else:
+        # quit training
+    if valid_error < best_valid_error - tol:
+        best_valid_error = valid_error
+        n_iter_ = 0
+    ```
