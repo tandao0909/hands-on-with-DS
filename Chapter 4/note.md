@@ -294,3 +294,75 @@ Now, let's consider the 4 plot in the learning notebook, note that we initialize
         best_valid_error = valid_error
         n_iter_ = 0
     ```
+# Logistic Regression
+
+- As discussed in chapter 1, some regression algorithm can be used for classification tasks, and vice versa.
+- Logistic regression (also called logit regression) is commonly used to estimate the probability that an instance belong to a particular class.
+- If the estimated possibility is greater than a threshold, then the model predicts that the instance belongs to that class (called the *positive class*, label "1"), and otherwise it predicts that the instance does not (i.e. it belongs to the negative class, label "0").
+- So this is a binary classifier.
+
+## Estimating Probabilities 
+
+- The way logistic regression work is instead of output the the weighted sum of the input features (plus the bias term) like Linear Regression, it output the logistic of this result.
+- The estimated probability of logistic regression model is:
+    $$\hat{p} = h_{\theta}(x) = \sigma(\theta^Tx)$$
+- The logistic, noted $\theta$, is a *sigmoid function* that output number between 0 and 1:
+    $$\sigma(x)=\frac{1}{1+e^{-x}}=\frac{e^x}{1+e^x}$$
+- Anh here is how we predict:
+$$
+\hat{y} = \begin{cases} 
+           0 \text{ if } \hat{p} < 0.5 \\
+           1 \text{ if } \hat{p} \geq 0.5 \\
+          \end{cases}
+$$
+- So a logistic regression model using the default threshold of 50% probability will predict 1 if $\theta^Tx$ is positive and 0 if it is negative.
+- The score t is often called the logit. The name comes from the fact the logit function, defined as:
+    $$logit(p) = ln\left(\frac{p}{1-p}\right)$$
+    is the inverse function of the logistic function. Indeed, if you compute the logit of the estimated probability p, you will get the score t.
+- The logit also called the log-odds, because it is the log of the ratio between the estimated probability of the positive class and the estimated probability of the negative class.
+
+## Training and Cost Function
+
+- The goal of training is to set the parameter vector $\theta$ so that the model estimated high possibilities for positive instance (y=1) and low possibility for negative instance (y=0).
+- This idea is captured in the following cost function for a single training instance:
+    $$c(\theta) = \begin{cases}
+                  -ln(\hat{p}) \text{, if } y = 1 \\
+                  -ln(1 - \hat{p}) \text{, if } y = 0 \\  
+                  \end{cases}
+    $$
+- This cost function makes sense because $0 \leq \hat{p} \leq 1$ so when t approaches 0, $-ln(t)$ grows very large and when t approaches 1, $-ln(t)$ approaches 0.
+- If the model estimates a probability closed to 0, then the cost will be large for a positive instance and small for a negative instance.
+- On the other hand, if the model estimates a probability closed to 1, then the cost will be small for a positive instance and large for a negative instance.
+- The cost function over the whole training set is:
+    $$J(\theta) = -\frac{1}{m}\sum_{i=1}^m y^{(i)}ln(p^{(i)}) + (1-y^{(i)})ln(1 - p^{(i)})$$
+- Think about the cost function this way: We can rewrite the $c(\theta)$ as below:
+    $$c(\theta) = \begin{cases}
+                  -ln(\hat{p}) \text{, if } y = 1 \text{ and } 1 - y= 0 \\
+                  -ln(1 - \hat{p}) \text{, if } 1 - y = 1 \text{ and } y = 0\\  
+                  \end{cases}
+    $$
+    - So if y=1 then 1-y=0, then the term it the sum is indeed $c(\theta)$. Similar to y=0.
+    - A way to remember the cost function: In the rewrite $c(\theta)$, take the equation, multiply by the first condition, add them together.
+    - Another way is think about the cost function as we want to calculate the estimated value, which is the value in each case, multiply with the probability that case happen, just slightly different that we multiply with ln. So in each case, we have the value is $y^{(i)}$, the ln of probability is $ln(p^{(i)})$.
+    - In both way, because in logistic regression, there are only 2 classes, so we have $1-y$ and $1-\hat{p}$.
+    - In both way, don't forget the minus sign.
+- This log loss has its reasons. It can be shown mathematically (using Bayesian inference) that minimizing the cost will result in the *maximum likelihood* of the model to be predict optimally, assuming that the instances follow a Gaussian distribution around their means. When you use the log loss, that is the implicit assumption you are making. The more wrong this assumption is, the more biased the model will be.
+- Similarly, when you use MSE to train linear regression, you are making the implicit assumption that the data is purely linear, plus som Gaussian noise. So if the data is not linear (e.g. it is quadratic), or the noise is not Gaussian (e.g. if the outliers is not exponentially rare), the model will be biased.
+- The bad new is that there is no known closed-form equation to compute the $\theta$ that minimizes the cost function directly.
+- The good new is that the cost function is convex, so Gradient Descent (or any other optimization algorithms) is guaranteed to find the global minimum.
+- The partial derivate of the cost function with regard to each $\theta_j$ is:
+    $$\frac{\partial}{\partial\theta_j}J(\theta)=\frac{1}{m}\sum_{i=1}^m (\sigma(\theta^Tx^{(i)}) - y^{(i)})x_j^{(i)}$$
+- This equation is very similar to the partial derivate of the linear regression's cost function: We first compute the prediction error, then we multiply that different by the j-th feature value, finally it computes the average over the whole training instances. 
+- The rest is similar to linear regression: If you want to use batch gradient descent, you compute the gradient vector as above and then train it, same with SGD and mini-batch.
+
+## Decision boundaries
+
+- The petal width of the Iris virginica flowers (represented by green triangles) ranges from 1.4 cm to 2.5 cm, while the other iris flowers (represented by blue triangles) ranges from 0.1 cm to 1.8 cm. Clearly, there is a bit of overlap.
+- Above 2 cm, the model highly confident that the instance is *Iris virginica*, while below 1 cm, it highly confident that the instance is not *Iris virginica*. However, between there extremes, the model is not sure.
+- If you ask it to predict the class (using predict() instead of predict_proba()), it will return whichever class has higher probability.
+- Therefore, there exists a decision boundary at around 1.65 cm, where both probability is equal to 50%: If the petal width is higher than 1.65 cm, the classifier predict that the flower is *Iris virginica*, otherwise it predicts that the instance is not (albeit not very confident).
+- The second plot shows the same dataset, but this time displaying two features: petal width and length. The model uses these 2 features to estimate the probability a new flower is an *Iris virginica*.    
+- The dashed line is where the model estimates a 50% probability: This is the model's decision boundary. Note that this is a linear boundary.
+- Each color-coded parallel line illustrates the points where the model predicts a specific probability, ranges from 15% (bottom left) to 90% (top right). All the flowers above the most top-right has over 90% chance to be a *Iris virginica*, according to the model.
+- Just like Linear Regression, Logistic Regression can also be regularized using $\ell_1$ and $\ell_2$ penalities. Scikit-learn actually uses $\ell_2$ by default.
+- The hyperparameter controlling the regularization length of a Scikit-learn's Logistic Regression is not the alpha, but its inverse C. The higher the value of C, the less the model is regularized.
