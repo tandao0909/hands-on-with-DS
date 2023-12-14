@@ -366,3 +366,47 @@ $$
 - Each color-coded parallel line illustrates the points where the model predicts a specific probability, ranges from 15% (bottom left) to 90% (top right). All the flowers above the most top-right has over 90% chance to be a *Iris virginica*, according to the model.
 - Just like Linear Regression, Logistic Regression can also be regularized using $\ell_1$ and $\ell_2$ penalities. Scikit-learn actually uses $\ell_2$ by default.
 - The hyperparameter controlling the regularization length of a Scikit-learn's Logistic Regression is not the alpha, but its inverse C. The higher the value of C, the less the model is regularized.
+
+## Softmax Regression
+
+- The logistic regression model can be generalized to classify multiclass directly, without having to train and combine multiple binary classifiers, as discussed in chapter 3. That model is called Softmax Regression, or multinomial logistic regression.
+- The idea is simple: When given an instance x, the Softmax Regression model first a score $s_k(x)$ for each class k, the estimates the probability for each class by using the *softmax function* (also called the *normalized exponential*) to the scores.
+- The equation to compute $s_k(x)$ is actually the same as Linear Regression:
+    $$s_k(x) = (\theta^{(k)})^T.x$$
+- After computing the score of every class for the instance x, now you can estimate the probability
+    $$\hat{p_k}=\sigma(s(x))_k=\frac{exp(s_k(x))}{\sum_{j=1}^k exp(s_j(x))}$$
+- In this equation:
+    - k is the number of classes.
+    - s(x) is a vector containing the scores of each class for the instance x.
+    - $\sigma$ is the softmax function.
+    - $\sigma(s(x))_k$ is the estimated probability that the instance x belongs to class k, given the scores of each class for that instance.
+- Like the Logistic Regression classifier, Softmax Regression classifier predicts the class with the highest estimated possibility:
+    $$\hat{y} = \underset{k}{\mathrm{argmax}} \ \hat{p_k} = \underset{k}{\mathrm{argmax}} \ \sigma(s(x))_k = \underset{k}{\mathrm{argmax}} \  s_k(x)= \underset{k}{\mathrm{argmax}} \ \left( (\theta^{(k)})^T.x\right)$$
+- The softmax function predicts one class at a time, so it is multiclass, not multioutput. So it should be use to predict mutually exclusive classes, such as different species or plants. You cannot use it to predict people in a image, as many people can be in the same picture.
+- The objective is to have a model that estimates a high probability for the target class (and consequently low probability for other classes). 
+- Minimizing the cross entropy cost function should lead to this objective, because it penalizes the model if it estimates a low probability for the target class:
+    $$J(\theta) = -\frac{1}{m}\sum_{i=1}^m\sum_{k=1}^Ky_k^{(i)}ln(\hat{p_k}^{(i)})$$
+- In the equation:
+    - $y_k^{(i)}$ is the target probability that the instance belong to class k. In general, it is either 1 or 0, depending on the instance belong to the class or not.
+    - $\hat{p_k}^{(i)}$ is the estimated probability that the instance belong to class k.
+    - K is the number of classes.
+- The trick to remember this cost function is the same as the Logistic Regression's cost function. In fact, the Logistic Regression's cost function is just a special case of the cross entropy cost function (K = 2).
+- The gradient vector of this cost function with regard to $\theta^{(k)}$ is given by:
+    $$\nabla_{\theta^{(k)}}J(\Theta) = \frac{1}{m}\sum_{i=1}^m\left(\hat{p_k}^{(i)}-y_k^{(i)}\right)x^{(i)}$$
+- Now you can apply gradient descent (or any other optimization algorithms) to find the parameter matrix $\Theta$ that minimizes the cost function.
+
+### Comment on the plot:
+
+- Notice that the decision boundaries between any two classes is a straight line.
+- The figure also shows the estimated probability for the *Iris versicolor* class, represented by the curve lines.
+- Note that the model can predict a class that has an estimated probability below 50%. For example, at the point where all three decision boundaries meet, the estimated probability for all classes is all equal to roughly 33% (i.e. 1/3).
+
+### Extra topic: Dive into Cross entropy
+
+- Cross entropy originated from Claude Shannon's information theory.
+- Suppose you want to transmit information about the weather everyday. If there are eight options (sunny, rainy, etc), you could encode each options using 3 bits, because $2^3 = 8$. However, if you think it will be sunny almost everyday, you can take advantage of it and encode 0 to be 'sunny', using just 1 bit, and the other 7 options using 4 bits (starting with a 1). This is much more efficient, given your assumption is correct.
+- Cross entropy measures the average of bits you actually send per option. Academically, cross-entropy is the average number of bits needed to encode data from a source of distribution p when we use model q.
+- If your assumption about the weather is perfect, then cross entropy will be the same as the entropy of the weather (i.e. its intrinsic unpredictability). But if you assumption is wrong (i.e. if it rains often), cross entropy will be higher by an amount called the *Kullback-Leiber (KL) divergence*.
+- The cross entropy between two probability distributions p and q is defined as:
+    $$H_p(p, q) = E_p(-ln(q(x))) = -\sum_{x \in \Omega} p(x)ln(q(x))$$
+- For more detail, check out [this video](https://www.youtube.com/watch?v=ErfnhcEV1O8).
