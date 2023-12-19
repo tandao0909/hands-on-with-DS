@@ -1,0 +1,83 @@
+# From biological to Artificial
+
+## Logical Computations with Neurons
+
+- Artificial neurons can be seen as a node, symbolize for a function which has many inputs and one output.
+- Each input is binary (on/off) and output is also binary
+- Here is [Tensorflow's playground](https://playground.tensorflow.org/) to play with.
+- Conclusion after playing (Maybe wrong):
+    - The activation affect a lot on the shape of the decision boundaries, in case of ReLU, the decision boundaries are straight lines.
+    - The more hidden layers, the more complex structure that the neural network can learn.
+    - On the other hands, the smaller the neural network, the incapable it is to capture the complex structure of training data set.
+
+## The perceptron:
+
+- The perceptron is one of the simplest ANN architectures.
+- It is based on a slightly different artificial neuron named *threshold logic unit* (TLU) or *linear threshold unit* (LTU).
+- The inputs and outputs are numbers (instead of on/of binary values):
+    - Each input connection is associated with a weight.
+    - Each output number is associated with a bias.
+- The TLU first calculate the dot product between the inputs and the weights, then add the bias:
+    $$z = w_1x_1 + w_2x_2 + \dots + w_nx_n + b = w^Tx+b$$
+- Then we apply a step function (A step function is a function changes its value at certain points and remains constant between these points) to the result.
+- This is nearly the same as logistic regression (chapter 4), we just apply the step function in stead of sigmoid.
+- Like the logistic regression, the hyperparameters are the weights term w and the bias term b.
+- The most common step function is *Heaviside step function*:
+    $$heaviside (z) = \begin{cases} 
+    0 \text{ if } z < 0 \\
+    1 \text{ if } z \geq 0 \\
+    \end{cases}$$
+- Sometimes the sign function can be used:
+    $$sign (z) = \begin{cases} 
+        -1 \text{ if } z < 0 \\
+        0 \text{ if } z = 0 \\
+        1 \text{ if } z > 0 \\
+        \end{cases}$$
+- A single TLU can be used to train simple linear binary classification. It computes a linear function of its inputs. Then if the result exceeds a certain threshold, it predicts the positive class; otherwise it predicts the negative class.
+- This is ver similar to logistic regression (Chapter 4) and linear support vector machine classification (Chapter 5).
+- A perceptron is a layer of one or more TLU composed together, where every TLU is connected to every input.
+- Such layer is called a fully connected layer, or a dense layer.
+- This layer of TLUs produces the final outputs, which is called the output layer.
+- Because we can create multiple TLUs at the same neural network, which means we can create a multiclass classifier.
+- Using linear algebra, we can calculate the result of multiple TLUs at the same time:
+    $$h_{W, b} (X) = \phi(XW+b)$$
+- In this equation:
+    - $\phi$ is the activation function.
+    - X is the input matrix, with each row is an instance and each column is an feature.
+    - W is the weight matrix, with each row is an input neuron and each column is an output neuron.
+    - b is the bias row vector, with each element is associated with an output neuron.
+- Note: In math, add a matrix and a vector makes no sense. However, in CS, we allow something called "broadcast", which means after calculating the matrix, we add each row of the matrix with the vector. After that, we apply $\phi$ element-wise to every element in the result matrix.
+- The way we train the neuron network based on an observation on biological neuron: "Cells that fire together, wire together". 
+- So we encourage neuron connection that reduces the error.
+- The *weight update* equation is:
+    $$w_{i, j} ^{\text{next step}} = w_{i, j} - \eta(\hat{y_j}-y_j)x_i$$
+- In this equation:
+    - $w_{i, j}$ is the weight between the connection of the i-th input neuron and j-th output neuron.
+    - $x_i$ is the i-th feature of the current training instance.
+    - $\hat{y_j}$ is the output of the j-th neuron of the current training instance.
+    - $y_j$ is the j-th target output for the current training instance.
+    - $\eta$ is the learning rate (Similar to Logistic regression in chapter 4).
+- The decision boundaries of each output neuron is linear, so Perceptrons are incapable of learning complex structure (similar to Logistic Regression).
+- However, if the training dataset is linearly separable, then Rosenblatt, the author of Perceptron, [proofs](https://en.wikipedia.org/wiki/Perceptron#Convergence_of_one_perceptron_on_a_linearly_separable_dataset) that this algorithm would converge to a solution. Note that this solution is not unique, as there are an infinity amount of hyperplane that can separate a linearly separable dataset.
+- The Perceptron's implementation is very similar to SGD. In fact, in scikit-learn, we can implement Perceptron using SGDClassifier, as shown in the learn notebook.
+- However, perceptron has some serious weaknesses, like incapable of solving some trivial problems (e.g. the *exclusive OR* (XOR) classification problem). Of course other linear classification model also suffer from the same problems.
+- But, we can overcome some limitations of Perceptrons by stacking several layers of them on each other. 
+
+## The Multilayer Perceptron and Backpropagation
+
+- An MLP(Multi Layer of Perceptrons) is composed of :
+    - An input layer
+    - An output layer
+    - One or many layer between input and output
+- The layers close to the input layer are usually called *lower layers*, while the layers close to the output layer are usually called *upper layers*.
+- Notice that the calculation is flown only in one direction, hence this architecture is an example of *feed forward network*(FNN).
+- When an ANN contains a deep stack of hidden layers, it is called a *deep neural network*(DNN). The number of hidden layers for a neural network to be considered deep is somewhat unclear, but the number is usually more than 2.
+- Many generations of researchers have studied how to train a neural network and we, stand on the shoulder on many giants, have some best practices passed down to us by them:
+    - Reverse-mode automatic differentiation (or reversed-mode auto diff for short): Using two passes through the network (one forward, then one backward), we can calculate the gradients of the neural network's errors with regard to every weights and biases. In other words, we can find out how to tweak each weights and biases to reduce the error the most efficiently. 
+    - We combine this with gradient descent and have *the most popular AI algorithms* nowadays, named **Backpropagation**.
+- Backpropagation can be applied to all sorts of computational graph, not only neural networks.
+- Let's walk through the process of backpropagation step by step:
+    - It handles one mini-batch at a time (for example, containing 32 instances each), and it goes through the full training multiple times. Each pass is called an *epoch*.
+    - Each mini-batch enters the network through the input layer. At each layer, we computes the output using the input from the previous layer, then pass to the next layer. This is the *forward pass*: This is exactly the same as making predictions, expect we save all the intermediate result for the backward pass.
+    - Next, the algorithm computes the error. That is, we use the cost function to compare the predict output and the desired output and return some measure of error.
+    - Then we computes how much each weight and bias influences the error (i.e. what is the partial derivate of the error function with regard to the weight and bias). Note that this is a **number**, not a function with many variable, because we have plugged the number into the function. 
