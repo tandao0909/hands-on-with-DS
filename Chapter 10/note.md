@@ -80,4 +80,26 @@
     - It handles one mini-batch at a time (for example, containing 32 instances each), and it goes through the full training multiple times. Each pass is called an *epoch*.
     - Each mini-batch enters the network through the input layer. At each layer, we computes the output using the input from the previous layer, then pass to the next layer. This is the *forward pass*: This is exactly the same as making predictions, expect we save all the intermediate result for the backward pass.
     - Next, the algorithm computes the error. That is, we use the cost function to compare the predict output and the desired output and return some measure of error.
-    - Then we computes how much each weight and bias influences the error (i.e. what is the partial derivate of the error function with regard to the weight and bias). Note that this is a **number**, not a function with many variable, because we have plugged the number into the function. 
+    - Then we computes how much each weight and bias of the output layer influences the error (i.e. what is the partial derivate of the error function with regard to the weight and bias). Note that this is a **number**, not a function with many variable, because we have plugged the number into the function. We done this analytically by applying *the chain rule*.
+    - After that, the algorithm continues to measures how much the weights and biases of the below layers contributes to the error, again using the chain rule, working backward until we reach the input layer. This reverse pass effectively computes the error gradient across all the connection weights and biases in the network by propagating (a synonym of spread) the error gradient backward through the neural network (hence the name of the algorithm).
+    - Finally, the algorithm performs a gradient descent step to tweak all the weights and biases using the gradient we just computed.
+- Note that it is crucial to initialize the weights and biases randomly. For example, if you initialize all the weight and bias to the same number, then all neurons in a given layer will be perfectly identical. So the propagation step will treat all of them equally, so after the gradient descent step, all weights and biases in the same layer will remain the same. So at the end, your layer will perform just like it has only one neuron, leads to the fact that it would not be smart. if you initialize the parameters randomly instead, you break the symmetry of the network and allow different patterns can emerge form the neurons.
+- In short, backpropagation predicts a mini-batch (forward-pass), computes the error, and then traverse the layers back and calculate the gradient error for each parameter (backward-pass), after that, it performs a gradient descent step on every parameter.
+- So if you backpropagation to work, you need a cost function that is differentiable and the its differentiation is not 0. because gradient descent cannot move on a flat surface.
+- That is the reason why we don't use step functions as an activation function nowadays, because step functions consist of many flat segments, which means gradient descent will perform poorly on it.
+- Three popular choice nowadays is:
+    - Sigmoid function:
+    $$\sigma(z) = \frac{1}{1 + e^{-z}} = \frac{e^z}{1 + e^z}$$
+    This function outputs a number ranges from 0 to 1 in a smooth shape. It is also continuous and differentiable.
+    - Tanh function:
+    $$tanh(z) = \frac{e^x-e^{-x}}{e^x-e^{-x}} = 2\sigma(2z)- 1$$
+    This function is somewhat similar to sigmoid function. It outputs a number ranges from -1 to 1 and has S-shape, continuous and differentiable. This range helps the each layer's output closer to 0 at the beginning of training, which helps speed up converge.
+    - The rectified linear unit function (ReLU):
+    $$ReLU(z) = max(0, z)$$
+    The ReLU is continuous but not differentiable at 0 and its derivate when $z<0$ is 0. So around 0, the slope change suddenly, so the gradient descent would bounce the model around. In practice, however, ReLU works very well and has the advantage of being fast to compute, so it has become the default (this is a case where the biology model can be misleading, because while it seems like biological neuron follow a roughly S-shape activation function, but ReLU is better in practice).
+- But why we need activation functions in the first place? 
+    > Imagine we don't have activation functions in the first place. Then we would chain multiple linear transforms and apply them sequentially. But, if you apply linear transform on a line, you obtain a line. So in the end, you just have a line. In conclusion, if you don't have some form of nonlinearity, then even with a deep stack of neuron layers, you can't solve a complex problem with it. In contrast, a large enough with nonlinear activation functions can [approximate any function](https://www.youtube.com/watch?v=TkwXa7Cvfr8&t=230s) to any degree of precisions.
+
+## Regression MLPs
+
+- 
