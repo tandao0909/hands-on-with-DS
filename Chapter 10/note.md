@@ -102,4 +102,36 @@
 
 ## Regression MLPs
 
-- 
+- MLPs can be used to train a regression model. Then the number of neurons in the input layer is the number of features and the number of neurons in the output layer is the number of output dimensions.
+- You can use MLPRegressor in scikit-learn to implement MLPs. The implementation detail is in the learn notebook.
+- There should be no activation function in the output layer, so the neural network is free to output any values it wants.
+- But if you want to add some restrictions on top of the output, then you can apply an activation function to the output player. Here are some usually encountered situations and their solutions:
+    - You want the output to be non-negative. Then you can apply a ReLU to the output layer. Alternatively, you can try *softplus* function, which is a smooth variant of ReLU:
+        $$\text{softplus}(z) = \ln(1 + e^z)$$
+    - You want the output to fall within a given range, then you can use sigmoid or tanh, and scale it to your desired range after that: 0 to 1 for the logistic function, -1 to 1 for the hyperbolic tangent function.
+- However, there are some limitations of MLPs in scikit-learn:
+    - Unbounded, so it can be output a very large number, which can lead to numerical overflow.
+    - Dying ReLU problem: If the parameters are happened to output negative weighted sum with all the training instances, then apply ReLU will just output 0. Then the backpropagation algorithm will not affect the neuron at all. In CS's words, the neuron is "sleeping", which means it is not learning anymore temporally. There are some variants of ReLU to counter back this disadvantage, such as Leaky ReLU.
+- The default loss function is MSE, but if you expect the dataset to have a lot of outliers, then you can use Huber loss function, which is a combination of MSE and MAE (mean absolute error):
+    $$\text{Huber}(z) = \begin{cases}
+        \frac{1}{2} z^2 \text{ if } z < \delta \\
+        \delta \left(|z| - \frac{1}{2} \delta\right) \text{otherwise} \\
+    \end{cases}$$
+    where $\delta$ is the function's hyperparameter to control how it behaves:
+    - If $z < \delta$, then the model will converges fast.
+    - If $z \geq \delta$, then the model will not be so sensitive to outliers.
+
+| Hyperparameter              | Typical value                |
+|-----------------------------|------------------------------|
+| # input neuron              | One per input feature (e.g. 28 x 28 = 784 for MNIST) |
+| # hidden layers             | Depend on the problem, but typically 1 to 5 |
+| # neurons per hidden layer  | Depend on the problem, but typically 10 to 100 |
+| # output neurons            | 1 per output dimension |
+| Hidden activation           | ReLU (or SELU, in chapter 11) |
+| Output activation           | None, or ReLU/Softplus (if positive outputs), or sigmoid/tanh (if bounded outputs) |
+| Loss function               | MSE/Huber |
+
+## Classification MLPs
+
+- MLPs can be used for classification tasks.
+- For a 
