@@ -61,3 +61,8 @@ This topic is best learned using images:
 - Adding more polynomial work great with all models (not only SVMs).
 - However, there are a downside: If the degree is too low, then the model can't work with very complex dataset, if the degree is too high, then the number of features will be exponentially large, lead to very slow training.
 - Fortunately, in SMVs context specifically, we have a nearly miraculous technique from the mathematical world, name **"the kernel trick"**. We explain it later.
+- The kernel trick let us calculate the result as if we had added the features, without actually having to add them. 
+- Of course, when the model is overfitting, you should decrease the degree of the model. Conversely, if the model is underfitting, you should increase it.
+- The hyperparameter coef0 controls how much the model is influenced by high-degree polynomial versus low-degree polynomial. The higher it is, the more influenced the high-degree polynomial.
+
+## Similarity Features
