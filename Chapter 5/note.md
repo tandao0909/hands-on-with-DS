@@ -48,4 +48,16 @@ This topic is best learned using images:
 - Unlike LogisticRegression, LinearSVC doesn't have a predict_proba() method to estimated the classes probabilities. 
 - Which means if you uses SVC class instead of LinearSVC and set the *probability* hyperparameter to True, then the model will fit an extra model at the end to estimates probabilities.
 - Under the hood, the model using 5-fold cross-validation to generate an out-of-sample prediction for every instance in the training set, then trains a *LogisticRegression* model, so it will slow down the training process considerably. After that, the predict_proba() and predict_log_proba() will be available.
+
 # Nonlinear SVM Classification
+
+- Even though linear SVMs work efficient and well in many cases, many datasets don't even close to being linearly separable.
+- A good approach is too add more features, specially polynomial features (discussed in chapter 3).
+- Consider 2 plots in the learning notebook. The data is completely unable to be linearly separable. However, when we add a new feature $x_2 = x_1^2$, then data now can be separate by a line, as you can see in the second plot.
+- You can use this idea by adding a PolynomialFeatures transformer (discussed in chapter 3) in Scikit-learn.
+
+## Polynomial Kernel
+
+- Adding more polynomial work great with all models (not only SVMs).
+- However, there are a downside: If the degree is too low, then the model can't work with very complex dataset, if the degree is too high, then the number of features will be exponentially large, lead to very slow training.
+- Fortunately, in SMVs context specifically, we have a nearly miraculous technique from the mathematical world, name **"the kernel trick"**. We explain it later.
