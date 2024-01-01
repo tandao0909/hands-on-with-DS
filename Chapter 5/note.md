@@ -66,3 +66,29 @@ This topic is best learned using images:
 - The hyperparameter coef0 controls how much the model is influenced by high-degree polynomial versus low-degree polynomial. The higher it is, the more influenced the high-degree polynomial.
 
 ## Similarity Features
+
+- Another approach is to add features computed using a *similarity function*, which measures how much each instance closes (based a certain metric) to a particular *landmark*.
+- Here, we use Gaussian RBF (Radial Basis Function) as the similarity function:
+    $$\phi_\gamma=\exp(-\gamma\|x-\ell\|^2)$$ 
+    Radial basis means a function only depend on the distance from that point to the origin.
+- This function is a bell-shaped function, with the parameters:
+    - The expected value (or mean): $\ell$
+    - The derivation: $\frac{2}{\sqrt{\gamma}}$. This is the reason why $\gamma$ must be strictly positive.
+- Look at the two plots in the learning notebook:
+    - On the left plot, you can see the instance $x_1=-1$ locates a distance of 1 from the first landmark and 2 from the second landmark. Therefore, its new features are $x_2=\exp(-0.3 \times 1^2) \approx 0.74$ and $x_3=\exp(-0.3 \times 2^2) \approx 0.3$.
+    - The right plot shows the features (dropping the original one). Now the dataset is linearly separable.
+- Now, how can you choose the landmarks? The simplest way is to create a landmark at the location at the every single data point. Doing this creates lots of additional dimensions, thus increases the chance we could separate the newly generated dataset by a line. 
+- However, doing so create many more features. For example, if you have m instances and n features, then doing this way will create a new dataset consists of m instances and m features (assuming you drop the original features). If the number of instances is very large, then the number of features in the new dataset will also be very large, leads to very slow training time.
+
+## Gaussian RBF Kernel
+
+- Similar to the polynomial features method, we can apply similarity features to any ML algorithms.
+- However, as discussed above, this can leads to the explosion of the number of features, especially on large training set.
+- But here again, in SMVs context specifically, we can apply the kernel trick to have the results without actually have to adding many more similarity features.
+- Look at the plots in the learning notebook:
+    - Increasing gamma ($\gamma$) leads to smaller invariance, so the bell-shaped curve is narrower. As a result, the influence range of each instances ends up smaller, leads to more irregular decision boundary: It wiggle around each data point. In contrast, a small gamma will make the bell shape curve wider, leads to a smoother curve around the dataset. 
+    - In short, $\gamma$ is similar to a regularization hyperparameter. The higher it is, the more prone the model is to overfitting (similar to C).
+
+## Other kernels
+
+-
