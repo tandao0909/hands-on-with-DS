@@ -91,4 +91,25 @@ This topic is best learned using images:
 
 ## Other kernels
 
--
+- There are other kernels, but they are used much more rarely.
+- Some kernels are specialized for some data structures.
+- String kernels are sometimes used when classifying text documents or DNA sequences. For example:
+    - String subsequence kernel: Measures the similarity of 2 strings based on the presences of common subsequence.
+    - The Levenshtein distance: Also known as the edit distance, is a metric measures the minimum amount of edit operations (insert, delete, replace).
+ ## How to choose the kernel
+
+ - You should try the linear kernel first, especially when the training dataset is very large or has a huge amount of features. Note that LinearSVC is faster than SVC(kernel='linear).
+ - If you have plenty of time left, yo can try the Gaussian RBF kernel, as it works well in most cases.
+ - If you still have spare time computing power, you can use a grid search to try a few more kernels.
+ - Remember to consider a kernel specialized for your training set's data structure.
+
+ ## Computational Complexity
+
+ - The LinearSVC class is based on liblinear library, which implements an optimized algorithm for calculating linear SMVs. It does not support the kernel trick, however it scales very well with the number of instance, nearly in linear time complexity. The training complexity is roughly $O(m \times n)$. 
+ - This algorithm takes more time as you require more precision. This precision is controlled by the tolerance hyperparameter $\epsilon$. However, the default value works well in most case.
+ - The SVC class is based on the libsvm library, which implements an algorithm that support the kernel trick. The training time complexity is usually between $O(m^2 \times n)$ and $O(m^3 \times n)$. 
+ - This means the algorithm is very slow when the number of instances is very large, so this algorithm is better suited for small or medium-sized training set. It scales well with the number of features, especially with sparse features (i.e. when each instance has few nonzero features). In this case, the algorithm scale roughly with the number of the average of nonzero features per instance. 
+ - The SGDClassifier class also performs large margin classification by default, and its hyperparameters, especially the regularization hyperparameters (alpha and penalty) and the learning_rate, can be adjusted to achieve the similar results as the Linear SVMs. 
+ - For training it uses stochastic gradient descent (discussed in chapter 4), which allow incremental learning and requires little memory, so we can use it on a large model that does not fit in RAM (i.e. out-of-core learning). Moreover, it scales very well, as its training time complexity is $O(m \times n)$. 
+
+# SVM Regression
