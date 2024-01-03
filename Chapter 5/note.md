@@ -112,4 +112,23 @@ This topic is best learned using images:
  - The SGDClassifier class also performs large margin classification by default, and its hyperparameters, especially the regularization hyperparameters (alpha and penalty) and the learning_rate, can be adjusted to achieve the similar results as the Linear SVMs. 
  - For training it uses stochastic gradient descent (discussed in chapter 4), which allow incremental learning and requires little memory, so we can use it on a large model that does not fit in RAM (i.e. out-of-core learning). Moreover, it scales very well, as its training time complexity is $O(m \times n)$. 
 
+| Class          | Time Complexity                  | Out-of-core learning | Scaling Required | Kernel trick |
+|----------------|----------------------------------|---------------------|------------------|--------------|
+| LinearSVC      | $O(m \times n)$                  | No                  | Yes              | No           |
+| SVC            | $O(m^2 \times n)$ to $O(m^3 \times n)$ | No            | Yes              | No           |
+| SGDClassifier  | $O(m \times n)$                  | Yes                 | Yes              | No           |
+
+
 # SVM Regression
+
+- We can uses SVMs for regression tasks. 
+- All we need to do is flip the objective around: Instead of trying to fit the largest possible street between two classes and trying to limit margin violations, we try to fit as many instances as possible while trying to limit margin violations (i.e. instances *off* the street). The width of the street is controlled by the hyperparameter $\epsilon$.
+- Look at the 2 plots in the learning notebook to keep up with the following statements:
+    - Reducing $\epsilon$ increases the number of support vectors, which regularizes the model. If you don't understand, tweak the epsilon to 5, you will end up with a terribly overfitting model.
+    - Moreover, if you add more training instances within the margin, it will not affect the model's prediction. That's the reason why the model is said to be *$\epsilon$-insensitive*.
+- Similar to classification tasks, you can apply the kernelized model to solve nonlinear regression tasks.
+- And as before, the higher the C value, the more regularized the model.
+- The SVR class is the regression equivalent of SVC class, and the LinearSVR is the regression equivalent of LinearSVC class. 
+- The LinearSVR scales linearly with the number of training set (just like the LinearSVC class) , while the SVR class will be much more slower when the number of training instances gets large (just like the SVC class).
+- SVMs can also be used for novelty detection (will be discussed in chapter 9).
+
