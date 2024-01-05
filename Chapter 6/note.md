@@ -25,3 +25,19 @@
     - However, the right area is impure, so the depth-1 right node splits it at petal width = 1.75 cm (represented by the horizontal dashed line)
     - Because we set `max_depth=2`, the algorithm stops right there. If you set `max_depth=3` instead, then the model will add another decision boundaries (represented by two vertical dotted lines).
 - The tree structure, including all the information shown in the .dot file, can be accessed via the classifier's `tree_` attribute. See the notebook for more detail.
+
+## Model Interpretation: White Box Versus Black Box
+
+- Decision trees are intuitive, and their result are easy to interpret. We can follow along its algorithm and understand how each feature impacts each other and how they influence the final result. 
+- Such models are called *white box m\mathbf{a}^T\mathbf{x} \leq bodels*.
+- In contrast, random forests and neural networks are generally considered *black box models*. They make great decisions, and you can verify each calculation that they perform to come to the result. Nevertheless, it is usually hard to understand why that calculation were made. 
+- For example, you train a neural network to recognize people in images. Say it recognizes a particular person in an image, how does it know that blob of color, which is to computer is just a blob of number, is that person? Did it recognize the eyes? The nose? The mouth? Or perhaps even the couch they are sitting on?
+- Conversely, decision trees have nice, simple classification rules that can be used to learn about the data (e.g. for flower classification).
+- The field of *interpretable ML* aims at creating ML systems that can be explained in a way that human can understand. This is important in many domains, for example, to ensure the system makes fair decisions.
+
+# Estimating Class Probabilities
+
+- A decision tree can also estimates the probability that an instance belongs to a particular class k.
+- First, it traverses the tree to find the node the instance belongs to, then it returns the ratio of class k in that node.
+- For example, your instance is a flower whose petals 5 cm long and 1.5 cm wide. Its node is the left node, depth 2, so the Decision Tree will output the following probabilities: 0% for Iris Setosa (0/54), 90.7% for Iris Versicolor (49/54) and 9.3% for Iris Virginica (5/54). 
+- If you ask the model to predict the class, it will output class 1 (Iris Versicolor) because it has the highest possibility.
