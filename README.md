@@ -4,6 +4,7 @@ This repo is divided into chapter, each of them includes:
 - An original notebook from [the author's repository](https://github.com/ageron/handson-ml3).
 - My own notebook to recreate the author's notebook. Every code cell of mine is nearly the same as that of the author, alongside some markdown cell to note something technically.
 - A note.md, which is a notebook to note my understanding about the current topic.
+- Optionally a math.md, which is a notebook explain the math behind the algorithm.
 - An exercise subfolder, which may contains at least:
     - One exercise.md to answer all the exercises that do not require code.
     - Some jupyter notebook to answer every exercise that do require code.
