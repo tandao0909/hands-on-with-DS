@@ -9,3 +9,7 @@ This repo is divided into chapter, each of them includes:
     - One exercise.md to answer all the exercises that do not require code.
     - Some jupyter notebook to answer every exercise that do require code.
 - Note that some special exercises are not done, simply because you do not have to answer anything. For example, the first exercise in 10th chapter ask you to visit Tensorflow's playground to play with neural network.
+- There are some additional resources I use throughout this project, including:
+    - Machine Learning cơ bản, by Vũ Hữu Tiệp, download from [his blog post](https://machinelearningcoban.com/)
+    - The Hundred-Page Machine Learning, by Andriy Burkov.
+    
