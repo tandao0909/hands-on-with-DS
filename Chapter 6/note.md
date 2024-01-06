@@ -10,7 +10,7 @@
 - One of the advantages of decision trees is they require very little data preparation. In fact, they don't need to center or scale the features at all.
 - A node's samples attribute counts how many training instances it applies to. For example, there are 100 training instances have petal width > 2.45 cm (depth 1, right), anh of these 100, there are 46 training instances have petal width > 1.75 cm (depth 2, right).
 - A node's value attribute tell us how many training instances in each class it applies to. For example, the bottom-left node (depth 2 , left) applies to 0 Iris Setosa, 49 Iris Versicolor, 5 Iris Virginica.
-- A node's gini attribute measure its *Gini impurity*: A node is *pure* (gini=0) if and only if all training instances it applies to is belong to the same class. For example, the first left node (depth 1, left) applies only to Iris Setosa class, make its gini=0. 
+- A node's gini attribute measure its *Gini impurity*: A node is *pure* (gini=0) if and only if all training instances it applies to is belong to the same class. It talks about the probability you classify a point incorrectly. For example, the first left node (depth 1, left) applies only to Iris Setosa class, make its gini=0. 
 - The formula for computing the Gini impurity $G_i$ of i-th node  is:
     $$G_i = 1 - \sum_{k=1}^n \rho_{i,k}^2$$
     where:
@@ -41,3 +41,19 @@
 - First, it traverses the tree to find the node the instance belongs to, then it returns the ratio of class k in that node.
 - For example, your instance is a flower whose petals 5 cm long and 1.5 cm wide. Its node is the left node, depth 2, so the Decision Tree will output the following probabilities: 0% for Iris Setosa (0/54), 90.7% for Iris Versicolor (49/54) and 9.3% for Iris Virginica (5/54). 
 - If you ask the model to predict the class, it will output class 1 (Iris Versicolor) because it has the highest possibility.
+
+# The CART Training Algorithm
+
+- Scikit-learn uses the *Classification and Regression Tree* (CART) to train Decision Trees (also called "growing" tree).
+- The algorithm first splits the training set into two subsets using a single feature k and a threshold $t_k$ (e.g. "petal length $\leq$ 2.45 cm"). How does it choose k and $t_k$? It searches for the pair (k, $t_k$) that produces the purest subsets.
+- This is the cost function the model try to minimize:
+    $$J(k, t_k) = \frac{m_{\text{left}}}{m}G_{\text{left}}+\frac{m_{\text{right}}}{m}G_{\text{right}}$$
+    where $G_{\text{left/right}}$ measures the impurity of the left/right subset and $m_{\text{left/right}}$ is the number of instances in the left/right subset.
+- After the CART algorithm splits the training set into 2 subsets, it further splits the training subsets using the sam logic, and the sub-subsets, and so on recursively. It stops recursing once it reaches the maximum depth (define by the `max_depth` hyperparameter), or it cannot find a split that reduces the impurity. 
+- There are a few hyperparameters you can use to control additional stopping conditions: `min_sample_split`, `min_sample_leaf`, `min_weight__fraction_leaf`, `max_leaf_nodes`.
+- The CART is a greedy algorithm: It greedily searches for the most effective split and the top, and continues the process for all the children nodes. It does not check whether or not the spilt will lead to the lowest impurity several levels down. A greedy algorithm will find the suboptimal solution, not necessary the optimal one. However, sometimes suboptimal is reasonably good.
+- Unfortunately, finding the optimal decision tree is known to be an NP-complete problem: It requires $O(\exp(m))$ time, making the problem intractable, even for small training sets. That is why we must settle for just a "good enough" solution.
+
+# Computational Complexity
+
+- 
