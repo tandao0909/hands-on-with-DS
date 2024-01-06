@@ -29,7 +29,7 @@
 ## Model Interpretation: White Box Versus Black Box
 
 - Decision trees are intuitive, and their result are easy to interpret. We can follow along its algorithm and understand how each feature impacts each other and how they influence the final result. 
-- Such models are called *white box m\mathbf{a}^T\mathbf{x} \leq bodels*.
+- Such models are called *white box models*.
 - In contrast, random forests and neural networks are generally considered *black box models*. They make great decisions, and you can verify each calculation that they perform to come to the result. Nevertheless, it is usually hard to understand why that calculation were made. 
 - For example, you train a neural network to recognize people in images. Say it recognizes a particular person in an image, how does it know that blob of color, which is to computer is just a blob of number, is that person? Did it recognize the eyes? The nose? The mouth? Or perhaps even the couch they are sitting on?
 - Conversely, decision trees have nice, simple classification rules that can be used to learn about the data (e.g. for flower classification).
@@ -41,6 +41,7 @@
 - First, it traverses the tree to find the node the instance belongs to, then it returns the ratio of class k in that node.
 - For example, your instance is a flower whose petals 5 cm long and 1.5 cm wide. Its node is the left node, depth 2, so the Decision Tree will output the following probabilities: 0% for Iris Setosa (0/54), 90.7% for Iris Versicolor (49/54) and 9.3% for Iris Virginica (5/54). 
 - If you ask the model to predict the class, it will output class 1 (Iris Versicolor) because it has the highest possibility.
+- Notice that the estimated probabilities will be identical everywhere in the sample region. For example, If you ask the model to predict a new flower whose petals 6 cm long and 1.5 cm wide, then the estimated probabilities and therefore, the predicted class will be the same as our previous instance (even though it more likely to be an *Iris virginia*) in this case.
 
 # The CART Training Algorithm
 
@@ -64,3 +65,18 @@
 - Space complexity is O(nodes), because we need to store the whole tree in the memory.
 - For small training set, you can speed up the process by presorting the data, but doing that slow down training considerably for large training sets.
 
+# Gini impurity or Entropy?
+
+- By default, Scikit-learn use the Gini impurity measure, but you can change to entropy by setting the `criterion` hyperparameter to "entropy". 
+- The concept of entropy comes from thermodynamic, as a measure of disorder: entropy approaches zero if the element are grouped together and stay still.
+- Other domains uses this term too, for example in Shannon's information theory, where it measures the average information content in a message, as we discussed in chapter 4. Entropy is zero when all the messages are identical.
+- In machine learning, entropy is frequently used as an impurity measure: a set's entropy is zero if all element in that set is in the same class.
+- The formula of entropy is:
+    $$H_i = - \sum_{k=1, \rho_{i, k}\neq 0}^n \rho_{i, k} \log_2(\rho_{i, k})$$
+- For example, in left node, depth 2, the entropy is $-49/54\log_2(49/54) - 5/54\log_2(5/54) \approx 0.445$.
+- So in the end, what should you choose? The truth is, they lead to similar trees. Gini impurity tends to compute faster, so it is the default.
+- However if they differ, Gini impurity tends to isolate the most frequent class in its own branch, while entropy tends to produce slightly more balanced tree.
+
+# Regularization Hyperparameters
+
+- 
