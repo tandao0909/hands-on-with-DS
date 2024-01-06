@@ -56,4 +56,11 @@
 
 # Computational Complexity
 
-- 
+- Making predictions requires traversing the Decision Tree from the root to a leaf. Decision Trees are generally approximated balanced, so traversing it requires going through roughly the depth of Decision Tree. Because each node only check for a feature of the instance, going through each level effectively divide the training set by 2. So in general, the prediction complexity is $O(\log_2(m))=O(\ln(m))$, independent of the number of features. That is the reason why predictions are very fast, even with large training sets.
+- The training algorithm compares all features (or less if `max_features` is set) on all the training instances at each nodes. This results in a training complexity time of $O(n \times m \log_2(m))$. Here is a breakdown why:
+    - We will sort the training data, which takes $O(n \log_n(n))$ time (Tim sort don't work here because data can be floating point number).
+    - After sorting, we need to traverse the sorted data to find the right threshold. This takes $O(n)$ time.
+    - We repeat the above process for all n dimensions. So in total, the time complexity is $O(n \times (m\log_2(m) + m)) = O(n \times m\log_2(m))$
+- Space complexity is O(nodes), because we need to store the whole tree in the memory.
+- For small training set, you can speed up the process by presorting the data, but doing that slow down training considerably for large training sets.
+
