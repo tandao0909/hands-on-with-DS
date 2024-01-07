@@ -90,7 +90,7 @@
     - `max_leaf_nodes`: Maximum number of leaf nodes.
     - `min_samples_split`: Minimum number of samples a node must have before it can be split
     - `min_sample_leaf`: Minimum number of samples a leaf must have to be created.
-    - `min_weight_fraction_leaf`: Same as `min_sample_leaf` but expressed as fraction of the total number of weighted instance.
+    - `min_weight_fraction_leaf`: Same as `min_sample_leaf` but expressed as fraction of the total number of weighted instance. Weighted instances are instances that has a weight assign to it to make it more important. For example, if your dataset has a minority class, you can assign higher weights to make the model pay more attention to it. In our context, this means that for a leaf node to be created, the sum of the weights of its samples must be at least 20% of the total sum of all sample weights in the entire dataset.
     - `min_impurity_decrease`: Minimum amount of decreasing impurity guaranteed if splitting a node.
 - Increasing `min_*` or decreasing `max_*` hyperparameters will regularize the model. 
 - Other algorithms work by allowing the decision tree as it want, then *pruning* (deleting) unnecessary nodes.
