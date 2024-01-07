@@ -79,4 +79,20 @@
 
 # Regularization Hyperparameters
 
+- Decision Trees make very few assumptions about the data (as opposed to linear model, which assume that the data is linear, for example). 
+- If left unconstrained, the tree structure will adapt itself to the training data, fitting it very closely. So close, to the point that it usually overfit the training data.
+- Such a model is often called a *nonparametric model*, not because it does not have any parameters (it usually has a lot) but because the number of parameters is not determined prior to training (i.e. we can have as many more parameters as we want). Some examples are Decision Tree, K-nearest Neighbors, Kernel Density Estimation.
+- In contrast, a *parametric model*, for example a linear model, has predetermined number of parameters, so its degree of freedom is limited, reducing the risk of overfitting (but increasing the risk of underfitting).
+- To avoid overfitting the data, you need to restrict the decision tree's freedom during training. In other word, regularizing it. 
+- The regularization hyperparameters depend on the used algorithms, but in general, you can restrict the maximum depth of the decision tree. In Scikit-learn, you control it via the `max_depth` hyperparameter. The default is None, which means unlimited. Reducing `max_depth` will regularize the model, thus reduce the risk of overfitting.
+- The `DecisionTreeClassifier` has a few more hyperparameters to restrict the shape of the decision tree:
+    - `max_features`: Maximum number of features to evaluate when splitting at each node.
+    - `max_leaf_nodes`: Maximum number of leaf nodes.
+    - `min_samples_split`: Minimum number of samples a node must have before it can be split
+    - `min_sample_leaf`: Minimum number of samples a leaf must have to be created.
+    - `min_weight_fraction_leaf`: Same as `min_sample_leaf` but expressed as fraction of the total number of weighted instance.
+    - `min_impurity_decrease`: Minimum amount of decreasing impurity guaranteed if splitting a node.
+- Increasing `min_*` or decreasing `max_*` hyperparameters will regularize the model. 
+- Other algorithms work by allowing the decision tree as it want, then *pruning* (deleting) unnecessary nodes.
+- A node whose children are all leaf nodes is considered unnecessary if the purity improvement it provides is not statically significant. Standard statistical tests, such the $\chi^2$ test (chi-squared tests), are used to estimate the probability that the improvement is just by chance (which is call *the null hypothesis*). If this probability, called the *p-value*, is not higher than a given threshold (typically 5%, controlled by a hyperparameter), then the node is considered unnecessary and all of its children are deleted. The pruning process continues until all the unnecessary nodes have been pruned.
 - 
