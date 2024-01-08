@@ -95,4 +95,26 @@
 - Increasing `min_*` or decreasing `max_*` hyperparameters will regularize the model. 
 - Other algorithms work by allowing the decision tree as it want, then *pruning* (deleting) unnecessary nodes.
 - A node whose children are all leaf nodes is considered unnecessary if the purity improvement it provides is not statically significant. Standard statistical tests, such the $\chi^2$ test (chi-squared tests), are used to estimate the probability that the improvement is just by chance (which is call *the null hypothesis*). If this probability, called the *p-value*, is not higher than a given threshold (typically 5%, controlled by a hyperparameter), then the node is considered unnecessary and all of its children are deleted. The pruning process continues until all the unnecessary nodes have been pruned.
-- 
+
+# Regression
+
+- Decision tree can also perform regression tasks. 
+- The only different between it and its classification version is instead of predict a class, it predicts a value.
+- Look at the tree in the training notebook. It looks very similar to the classification tree you saw earlier.
+- Suppose you want to make prediction about a new instance with $x_1=0.2$:
+    - You start at the root node and ask whether $x_1<=-0.303$. It's not, so you go to its right child node.
+    - You continue with the node, and continue to ask whether $x_1<=0.272$. It is, so you go its left child node.
+    - This is the leaf node, so you stop and the model predicts the value is 0.028.
+    - This prediction value is the average target value of the 110 training instances associated with this leaf node, and it results in a mean squared error of 0.028 over these 110 training instances.
+- Look at the first image in the learning notebook (I don't count on the image of tree). Notice how the predicted value for each region is always the average value of all the instances in that region. The algorithm tries to split each region in a way that make most training instances as close as possible to that predicted value.
+- The CART algorithm works the same as earlier, expect that instead of minimizing the Gini impurity, it now try to minimize the MSE:
+    $$J(k, t_k) = \frac{m_{\text{left}}}{m}\text{MSE}_{\text{left}} + \frac{m_{\text{right}}}{m}\text{MSE}_{\text{right}}$$
+    where:
+    - k is the index of the feature
+    - $t_k$ is the threshold associated with the feature k.
+    - $\text{MSE}_{\text{node}} = \sum\limits_{i \in \text{node}}\left(\hat{y}_{\text{node}}-y^{(i)}\right)^2$
+    - $\hat{y}_{\text{node}}=\frac{\sum\limits_{i \in \text{node}}y^{(i)}}{m_\text{node}}$
+- Similar to classification, decision trees are also prone to overfitting in regression tasks, too.
+- Look at the second image in the learning notebook:
+    - In the left plot is when we train a decision tree without any restrictions. Its prediction is badly overfitting the training dataset.
+    - The right plot represents a decision tree when we add just a regularization `min_samples_leaf=10`. Clearly, now the model can generalize better.
