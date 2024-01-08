@@ -128,3 +128,10 @@
     - In the left plot, the decision tree separates the training set with ease.
     - However, when we rotate the dataset by $45^\circ$, now the decision tree can still separate the training set, but it looks unnecessary convoluted (unnecessary complicated).
 - A way to help model tackling this limit is to scale the data, then applying a principal component analysis transformation. We will talk about PCA later in chapter 8, for now, you just need to know that it rotates the dataset in a way that reduces the corelation between features, which often (not always) make training easier for decision trees.
+
+# Decision Trees Have a High Variance
+
+- More generally, the problem with decision trees is they have a quite high variance: Small changes to the hyperparameters may leads to very different models.
+- In fact, since the training algorithm used by Scikit-learn is stochastic-it randomly selects a feature to evaluate at eac node-even if you retrain in the same model, you can end up with very different model(expect you set the `random_state` hyperparameter).
+- Look at the image in the learning notebook, it looks very different from the decision tree we trained in the *Making Predictions* chapter.
+- Luckily, you can improve the performance of decision trees significantly by training multiple of them and averaging out the predictions over all of them. This method is an *ensemble* of decision trees, which named a *random forest*, one of the most powerful types of models available today, which we will talk about in the next chapter.
