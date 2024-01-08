@@ -118,3 +118,13 @@
 - Look at the second image in the learning notebook:
     - In the left plot is when we train a decision tree without any restrictions. Its prediction is badly overfitting the training dataset.
     - The right plot represents a decision tree when we add just a regularization `min_samples_leaf=10`. Clearly, now the model can generalize better.
+
+# Sensitivity to Axis Orientation
+
+- Decision trees have many upsides: They ar easy to use, to understand and to interpret, also powerful and versatile.
+- However, decision trees have many downside need to be consider when training it, as well.
+- You may have noticed that decision trees love orthogonal decision boundaries (i.e. all splits are perpendicular to an axis), which makes them sensitive to dataset's orientation.
+- Look at the first image in the learning notebook. We work on a simple linearly separable dataset:
+    - In the left plot, the decision tree separates the training set with ease.
+    - However, when we rotate the dataset by $45^\circ$, now the decision tree can still separate the training set, but it looks unnecessary convoluted (unnecessary complicated).
+- A way to help model tackling this limit is to scale the data, then applying a principal component analysis transformation. We will talk about PCA later in chapter 8, for now, you just need to know that it rotates the dataset in a way that reduces the corelation between features, which often (not always) make training easier for decision trees.
