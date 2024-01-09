@@ -253,3 +253,10 @@ This topic is best learned using images:
             &= \frac{1}{n_s}\sum_{i=1, C>a^{(i)}>0}^m \left(t^{(i)}-\left(\sum_{i=1, \hat{\alpha}^{(i)}>0}^m\hat{a}^{(i)}t^{(i)}\varphi(\hat{\textbf{x}}^{(i)})\right)^T\varphi(x^{(i)})\right) \\
             &= \frac{1}{n_s}\sum_{i=1, C>a^{(i)}>0}^m \left(t^{(i)}-\sum_{i=1, \hat{\alpha}^{(i)}>0}^m\hat{a}^{(i)}t^{(i)}K(\textbf{x}^{(i)}, \textbf{x}^{(n)})\right) \\
     \end{align*}$$
+
+## Online SVMs
+
+- It is possible to train online kernelized SVMs, capable of incremental learning, as described in papers [“Incremental and Decremental Support Vector Machine Learning” ](https://proceedings.neurips.cc/paper_files/paper/2000/file/155fa09596c7e18e50b58eb7e0c6ccb4-Paper.pdf)and [“Fast Kernel
+Classifiers with Online and Active Learning”](https://jmlr.org/papers/v6/bordes05a.html).
+- These kernelized is implemented in Matlab and C++.
+- However, if you deal with large-scale nonlinear problems, you should use random forests (in chapter 7) or neural network (in chapter 10).
