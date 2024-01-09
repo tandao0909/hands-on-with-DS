@@ -12,7 +12,7 @@
 
 ## The perceptron:
 
-- The perceptron is one of the simplest ANN architectures.
+- The perceptron is one of the simplest ANN architectures. It is a node in the neural network which receives input from every node in the previous layer and apply a weighted sum to there inputs to output a single number.
 - It is based on a slightly different artificial neuron named *threshold logic unit* (TLU) or *linear threshold unit* (LTU).
 - The inputs and outputs are numbers (instead of on/of binary values):
     - Each input connection is associated with a weight.
@@ -65,7 +65,7 @@
 
 ## The Multilayer Perceptron and Backpropagation
 
-- An MLP(Multi Layer of Perceptrons) is composed of :
+- An MLP (Multi Layer of Perceptrons) is composed of :
     - An input layer
     - An output layer
     - One or many layer between input and output
@@ -99,6 +99,7 @@
     The ReLU is continuous but not differentiable at 0 and its derivate when $z<0$ is 0. So around 0, the slope change suddenly, so the gradient descent would bounce the model around. In practice, however, ReLU works very well and has the advantage of being fast to compute, so it has become the default (this is a case where the biology model can be misleading, because while it seems like biological neuron follow a roughly S-shape activation function, but ReLU is better in practice).
 - But why we need activation functions in the first place? 
     > Imagine we don't have activation functions in the first place. Then we would chain multiple linear transforms and apply them sequentially. But, if you apply linear transform on a line, you obtain a line. So in the end, you just have a line. In conclusion, if you don't have some form of nonlinearity, then even with a deep stack of neuron layers, you can't solve a complex problem with it. In contrast, a large enough with nonlinear activation functions can [approximate any function](https://www.youtube.com/watch?v=TkwXa7Cvfr8&t=230s) to any degree of precisions.
+- In this chapter, we will implement a Dense layer, which is just a layer consists of many Perceptron
 
 ## Regression MLPs
 
@@ -129,7 +130,7 @@
 | # output neurons            | 1 per output dimension |
 | Hidden activation           | ReLU (or SELU, in chapter 11) |
 | Output activation           | None, or ReLU/Softplus (if positive outputs), or sigmoid/tanh (if bounded outputs) |
-| Loss function               | MSE/Huber |
+| Loss function               | MSE or Huber if outliers |
 
 ## Classification MLPs
 

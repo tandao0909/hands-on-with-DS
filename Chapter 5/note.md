@@ -25,7 +25,7 @@ This topic is best learned using images:
 
 - If we apply the rule that every instance must be off the street and on the right side, then it's called *hard margin classification*.
 - The problem with hard margin classification is it only works with linearly separable data and extremely sensitive to outliers.
-
+- In contrast with hard margin classification, support vectors in soft margin classification consist of instances lie inside the margin, on the edge of margin and on the wrong side of the model.
 
 ## Comment on plots
 - Look at the first two plots in the learning notebook:
@@ -132,3 +132,124 @@ This topic is best learned using images:
 - The LinearSVR scales linearly with the number of training set (just like the LinearSVC class) , while the SVR class will be much more slower when the number of training instances gets large (just like the SVC class).
 - SVMs can also be used for novelty detection (will be discussed in chapter 9).
 
+# Under the Hood of Linear SVM Classifiers
+
+- Up until now, we have used the convention of putting all the hyperparameters in a vector $\theta$, which includes the bias term $\theta_0$ and the weight terms from $\theta_1$ to $\theta_n$, and adding a bias input $x_0=1$ to all instances. From this chapter onward, we will use a more common convention: We separate the bias term *b* (equals to $\theta_0$) and the weights vector $\textbf{w}$ (containing $\theta_1$ to $\theta_n$). Then no bias feature is needed in the input features vector and the linear SVM's decision function is become to $\textbf{w}^Tx+b=w_1x_1+\dots+w_nx_n+b$.
+
+## Decision Function and Predictions
+
+- A linear SVM classifier predict a class for a new instance x by first computing the decision function 
+    $$\textbf{w}^Tx+b=w_1x_1+\dots+w_nx_n+b$$
+    If the result is nonnegative, then the model predicts the new instance is belong to the positive class (1), otherwise, it is predicted to be belong to the negative class (0).
+- Making predictions is straightforward, but how about training? We need to find the weights vector $\textbf{w}$ and bias term b so that the street is the widest possible while limiting margin violations. 
+- Let us start with the width of the street: To make it larger, you need to make w smaller.
+- Let's define the borders of the street is the points where the decision function is equals to 1 or -1:
+    - In the left plot, the weight $w_1$ is 1, so the points at which $w_1x_1=1$ or $+1$ are $x_1 = 1$ and $x_1 = -1$. Therefore, the margin's size is 2.
+    - In the right plot, the weight is 0.5, so the points at which $w_1x_1=1$ or $+1$ are $x_1 = 2$ and $x_1 = -2$. Therefore, the margin's size is 4.
+- So the size of margin is inversely proportional to the weights. So our goal becomes making the weights as small as possible. Note that the bias term has no influence on the size of the margin, as tweaking the bias only shift the margin around without affecting its size.
+- Our second goal is limiting the margin violations. So we need to make the decision function to be greater than 1 for all the positive training instances and be lower than -1 for all the negative training instances.
+- If we define $t^{(i)}=1$ for positive instances ($y^{(i)}=1$) and $t^{(i)}=-1$ for positive instances ($y^{(i)}=0$), then this constraint can be written as:
+    $$t^{(i)}(\textbf{w}x^{(i)}+b) \geq 1$$
+    for all training instances.
+- Therefore, we can express the hard margin linear SVM classifier as an constrained optimization problem:
+    $$\underset{w, b}{\text{minimize}}\frac{1}{2}\textbf{w}^T\textbf{w}$$
+    subject to $t^{(i)}(\textbf{w}x^{(i)}+b) \geq 1$ for $i = 1, 2, \dots, m$.
+- The reason why we minimize $\frac{1}{2}\textbf{w}^T\textbf{w}$, which is equal to $\frac{1}{2}\|\textbf{w}\|^2$, instead of $\|\textbf{w}\|$ is because $\frac{1}{2}\|\textbf{w}\|$ has a nice derivate, which is $\|\textbf{w}\|$, while $\|\textbf{w}\|$ is not differentiable at 0. Optimization problems are easier to work with differentiable functions.
+- To deal with soft margin objective, we need to introduce a *slack variable* $\zeta^{(i)} \geq 0$ for each instance: $\zeta^{(i)}$ measures how much the i-th instance is allowed to violate the margin:
+    $$\zeta^{(i)} = \begin{cases} 
+    0 \text{, if is classified correctly} \\
+    \|\textbf{w}^Tx_i+b-y_i\| \text{, if it is classified incorrectly}
+    \end{cases}$$
+- A more detail explanation about soft margin classification can be found in [this blog](https://machinelearningcoban.com/2017/04/13/softmarginsmv/).
+- Now we have two conflicting objective: Make the slack variables as small as possible to reduce the margin violations and make $\frac{1}{2}\textbf{w}^T\textbf{w}$ as small as possible to have a wider margin. This is where the C hyperparameter come from: It let us have a trade-off between these two objectives. 
+- Now we have the constrained optimization problem for the soft margin classification:
+    $$\underset{w, b, \zeta}{\text{minimize}}\frac{1}{2}\textbf{w}^T\textbf{w} + C \sum_{i=1}^m \zeta^{(i)}$$
+    subject to $t^{(i)}(\textbf{w}x^(i)+b) \geq 1 - \zeta^{(i)}$ and $\zeta^{(i)} \geq 0$ for $i = 1, 2, \dots, m$.
+- The hard margin and soft margin problems are both convex quadratic optimization problem with linear constraints. Hence they belong to *quadratic programming* (QG) problem class. 
+- There are many solver to solve quadratic programming problems, any further information can be found in 
+- Using a QP solver is a way to solve the problem (using closed-form equation, as discussed in chapter 4), but you can use gradient descent to minimize the *hinge loss* or the *squared hinge loss*.
+- Look at the 2 plots in the learning notebook to see the graphs of these 2 loss functions.
+- Given an instance belong to the positive class, so t = 1, then the loss function is 0 if and only if $s = \textbf{w}^Tx + b \geq 1$, or in other words, the instance is off the street and on the positive side.
+- Given an instance belong to the negative class, so t = -1, then the loss function is 0 if and only if $s = \textbf{w}^Tx + b \leq -1$, or in other words, the instance is off the street and on the negative side.
+- The further away an instance is from its correct side of the margin, the more higher the loss: The loss grows linearly for the hinge loss, and quadratically for the squared hinge loss.
+- It makes the squared hinge loss more sensitive to outliers but squared hinge loss tends to converge faster when the dataset is clean.
+- By default, `Linear SVC` use squared hinge loss and `SGDClassifier` use hinge loss. You can change the loss function by setting the `loss` hyperparameter to either squared_hinge or hinge.
+- `SVC` class's algorithm optimization function find a similar to minimizing the hinge loss function.
+
+## The Dual Problem
+
+- Given a constrained optimization problem, known as the *primal problem*, it is possible to view that same problem in other perspective, the problem expressed in that other perspective named *dual problem*.
+- The solution to the dual problem typically lower than the solution to the dual problem, but under some constrains, The solution to the dual problem can be equal to the solution to the dual problem. One of them is the objective function is convex and the inequality constrains are continuously differentiable and convex functions. 
+- Luckily, the SVM problem meets that constrain, so you can solve either the primal problem or the dual problem.
+- The dual form of the linear soft margin SVM classifier is:
+    $$\underset{\alpha}{minimize}\frac{1}{2}\sum_{i=1}^m\sum_{j=1}^m\alpha^{(i)}\alpha^{(j)}t^{(i)}t^{(i)}x^{(i)^T}x^{(j)} - \sum_{i=1}^m \alpha^{(i)}$$
+    subject to $C \geq \alpha^{(i)} \geq 0$ for all $i = 1, 2, \dots, m$ and $\sum_{n=1}^m\alpha^{(i)}t^{(i)} = 0$
+- Once you find the vector $\hat{\alpha}$ that minimizes the equation (using a QP solver), then you can find hyperparameters of the primal problem:
+    $$\hat{\textbf{w}} = \sum_{i=1, \hat{\alpha}^{(i)} > 0}^m \hat{\alpha}^{(i)}t^{(i)}x^{(i)}$$
+    $$\hat{b}=\frac{1}{n_s}\sum_{i=1, C>a^{(i)}>0}^m \left(t^{(i)}-\hat{\textbf{w}}^Tx^{(i)}\right) $$
+    where $n_s$ is the number of instances that lie exactly on the border of the margin.
+- The dual problem is easier to solve than the primal one when the number of features is larger than the number of training instances. More importantly, the dual problem makes the kernel trick possible, while the primal doesn't.
+
+## Kernelized SVMs
+
+- Suppose you wan to apply a second-degree polynomial transformation to a two-dimensional training set (such as the moons training we have created in the learning notebook), then train a linear SVM on that transformed training set.
+- This is the second-degree mapping function that you wan to apply:
+    $$\varphi(\textbf{x}) = \varphi\left( \begin{pmatrix} 
+            x_1 \\
+            x_2 \\
+            \end{pmatrix}\right)
+            = \begin{pmatrix} 
+            x_1^2 \\
+            \sqrt{2}x_1x_2 \\
+            x_2^2 \\
+            \end{pmatrix}$$
+- Notice that the transformed vector is 3D instead of 2D. Now let's see how it unfolds if we apply this second-degree mapping to two 2D vectors $\textbf{a}$ and $\textbf{b}$ and calculate the dot product of the transformed vectors.
+    $$\varphi(\textbf{a})^T \varphi(\textbf{b})= \begin{pmatrix} 
+            a_1^2 \\
+            \sqrt{2}a_1a_2 \\
+            a_2^2 \\
+            \end{pmatrix} \begin{pmatrix} 
+            b_1^2 \\
+            \sqrt{2}b_1b_2 \\
+            b_2^2 \\
+            \end{pmatrix} = a_1^2b_1^2+2a_1a_2b_1b_2+b_1^2b_2^2\\=(a_1b_1+a_2b_2)^2=\left(\begin{pmatrix} 
+            a_1 \\
+            a_2 \\
+            \end{pmatrix}\begin{pmatrix} 
+            b_1 \\
+            b_2 \\
+            \end{pmatrix}\right)^2=(a^Tb)^2$$
+- So in the end, the dot product the transformed is equals to the square of the dot product of the original vectors.
+- But for what? If you look back at the dual problem, you need to know all the parameters beforehand to apply the QP solver, however, how haven't yet had the dot product of all the vectors after we transform the dataset. 
+-But if we do transomed the dataset, then it will need a lot of resources to calculate and store each transformed vector, but we can directly compute the dot product without transforming the dataset, which speed up training significantly.
+- The function $K(\textbf{a}, \textbf{b})=(a^Tb)^2$ is a second-degree polynomial function. In ML, a *kernel* is a function capable of computing the dot product $\varphi(\textbf{a})^T \varphi(\textbf{b})$ based only on the original vectors $\textbf{a}$ and $\textbf{b}$, without having to perform (or even know about) the transformation $\varphi$. 
+- Here are some examples of commonly used kernels:
+    - Linear: $K(\textbf{a}, \textbf{b})=a^Tb$
+    - Polynomial: $K(\textbf{a}, \textbf{b})=(\gamma a^Tb + r)^d$
+    - Gaussian RBF: $K(\textbf{a}, \textbf{b})=\exp(-\gamma\|\textbf{a}-\textbf{b}\|^2)$
+    - Sigmoid: $K(\textbf{a}, \textbf{b}) = \tanh(\gamma\textbf{a}^T\textbf{b}+r)$
+
+### Mercer's theorem
+
+- According to *Mercer's theorem*, a function $K(\textbf{a}, \textbf{b})$ if follow a few conditions called the *Mercer's conditions* (e.g. K must be continuos and symmetric in its arguments so that $K(\textbf{a}, \textbf{b})=K(\textbf{b}, \textbf{a})$, etc.), then there exists a function $\varphi$ that maps $\textbf{a}$ and $\textbf{b}$ into another spaces (possibly with much higher dimensions) such that $K(\textbf{a}, \textbf{b})=\varphi(\textbf{a})^T\varphi(\textbf{b})$.
+- You can then use K as a kernel, because you know $\varphi$ exists, even if you don't know what $\varphi$ is. In the case of Gaussian RBF kernel, it can be shown that $\varphi$ maps each training instances into an infinite-dimensional space, so it's great knowing you don't have to perform the mapping.
+- Note that some frequently used kernels (such as the sigmoid kernel), don't respect all the Mercer's conditions, but they work generally well in practice.
+
+### Back to Kernelized SVMs
+
+- However, now there is a problem. Now, you know to go from the dual problem to the primal one, but you need to have the value of each $\varphi(x^{(i)})$ in order to calculate $\textbf{w}$. In fact, $\textbf{w}$ has the same number of dimension as $\varphi({x^{(i)}})$, so its dimension can be very large or even infinite, so you can't compute it.
+- But the point of calculate $\textbf{w}$ is just to compute the predictions, so you can once again, not having to directly compute $\textbf{w}$, but plug the formula of $\textbf{w}$ into the decision function for a new instance $\textbf{x}^{(n)}$, and you get an equation with only dot product between transformed vectors, which we now know how to deal with using the kernel trick:
+    $$\begin{align*}
+        h_{\hat{\textbf{w}}, \hat{b}}(\varphi(\hat{\textbf{x}}^{(n)})) 
+        &= \hat{\textbf{w}}^T\varphi(\hat{\textbf{x}}^{(n)})+\hat{b} \\
+        &=\left(\sum_{i=1, \hat{\alpha}^{(i)}>0}^m\hat{a}^{(i)}t^{(i)}\varphi(\hat{\textbf{x}}^{(i)})\right)^T\varphi(\hat{\textbf{x}}^{(n)}) + b \\
+        &=\sum_{i=1, \hat{\alpha}^{(i)}>0}^m\hat{a}^{(i)}t^{(i)}\left(\varphi(\hat{\textbf{x}}^{(i)})^T\varphi(\hat{\textbf{x}}^{(n)})\right) + b \\
+        &= \sum_{i=1, \hat{\alpha}^{(i)}>0}^m\hat{a}^{(i)}t^{(i)}K(\textbf{x}^{(i)}, \textbf{x}^{(n)}) + b \\
+    \end{align*}$$
+- Note that $ \hat{\alpha}^{(i)} > 0$ only for support vectors (i.e. instances that lie on the border of margin, in the margin or the wrong side of the margin), making predictions with new instance only involve computing the dot product of the new input vector $\textbf{x}^{(i)}$ with support vectors, not the whole training set. 
+- Of course, you can use the same technique to compute the bias term $\hat{b}$:
+    $$\begin{align*}
+    \hat{b} &= \frac{1}{n_s}\sum_{i=1, C>a^{(i)}>0}^m \left(t^{(i)}-\hat{\textbf{w}}^T\varphi(x^{(i)})\right) \\
+            &= \frac{1}{n_s}\sum_{i=1, C>a^{(i)}>0}^m \left(t^{(i)}-\left(\sum_{i=1, \hat{\alpha}^{(i)}>0}^m\hat{a}^{(i)}t^{(i)}\varphi(\hat{\textbf{x}}^{(i)})\right)^T\varphi(x^{(i)})\right) \\
+            &= \frac{1}{n_s}\sum_{i=1, C>a^{(i)}>0}^m \left(t^{(i)}-\sum_{i=1, \hat{\alpha}^{(i)}>0}^m\hat{a}^{(i)}t^{(i)}K(\textbf{x}^{(i)}, \textbf{x}^{(n)})\right) \\
+    \end{align*}$$
