@@ -41,3 +41,48 @@
 - In the end, the result is an ensemble that has similar bias but lower variance than a single predictor train on the whole training set.
 - After the bootstrapping step, we can train predictors in parallel, via different CPU cores, GPUs or even different servers. Similarly, predictions can be performed parallel. That's one of the reasons bagging and pasting are popular: They scale very well.
 
+# Out-of-Bag Evaluation
+
+- With bagging, some training instances may be sampled several times for any given predictor, while other training instances may not be sampled at all.
+- By default, `BaggingClassifier` samples m training instances with replacement (`bootstrap=True`), where m is the size of the training set.
+- We can show mathematically that as m increases, only about 63% of the training are sampled on average for each predictor:
+    > Every instance has the same chance of being sampled. So each instance has a chance of $1/m$ of being chosen. So each instance has a chance of $1 - 1/m$ of not being chosen. We sample m training instances, or we choose from the training set m times, so the chance of an instance did not be sampled is $\left(1-\frac{1}{m}\right)^m$. As m approach infinity, the chance of an instance did not be sampled approaches $1/e$. So in average, when m increases, there is about $1-1/e \approx 63.2\%$ of the training set being sampled in total.
+- The remaining 37% of training instances that are not sampled are called *out-of-bag* (OOB) instances. 
+- Note that this 37% is not the same across all predictors.
+- A bagging ensemble can be evaluated using OOB instances, without needing a separate validation set.
+- In fact, if there are enough predictors, then each instances is likely to be an OOB instance of several predictors, so we can use these predictors to make an ensemble prediction for this instance.
+
+## Random Patches and Random Subspaces
+
+- The `BaggingClassifier` also support sample the features as well. 
+- Features sampling is controlled by two hyperparameters: `max_features` and `bootstrap_features`. They work the same way as `max_samples` and `bootstrap`, just sampling features instead of sampling instances.
+- Then, each predictor will be trained on a random subset of the input features.
+- This technique is very useful when you have to deal with high-dimensional data, such as images, as it an speed up training considerably. 
+- There are two ways Scikit-learn allow you to sample features:
+    - Sampling both features and instances, called ***random patches* method**.
+    - Sampling features but keeping all the instances, called ***random subspaces* method**: Setting `bootstrap=False` and `max_samples=1.0` but sampling features by setting `bootstrap_features=True` and/or `max_features` to a value smaller than 1.
+- Sampling features results in a more predictor diversity, by trading a bit more bias for a lower variance.
+- The reason is the data is slightly skewed, so we end up a bit more bias, but the training is more differ across the predictors, so we have a lower variance. Now the estimators are more diverse, so it will generalize better.
+
+## Random Forests
+
+- As we have discussed, random forests is just an ensemble of decision trees, generally trained via the bagging method (or sometimes pasting), usually with `max_samples=1.0`, which means training with the size of training set.
+- Instead of using `Bagging Classifier` with `DecisionTreeClassifier` as the base estimator, you can use `RandomForestClassifier`, which is more convenient and optimized for decision trees (there also is `RandomForestRegressor` for regression tasks.)
+- The random forest algorithm introduces more randomness to the decision trees: Instead of searching for the very best feature when splitting a node (see chapter 6), we select the best feature from a random subset of features. By default, it samples $\sqrt{n}$ features, where n is the number of features. 
+- This algorithm results in an even more tree diversity, which (again) trading a bit more bias for a lower variance.
+
+## Extra-Trees
+
+- When you grow a random forest, at each node only a random subset of features is considered when splitting a node. 
+- You can make it even more random, by instead of trying to find the optimal threshold when splitting, you select a random threshold for each feature. This is called ***extremely randomized trees***, or extra-trees for short.
+- Once again, this technique further trade more bias for lower variance.
+- This also makes extra-tree classifiers much faster to train than random forest, because selecting the best threshold is usually one of the bottlenecks when training.
+- Extra-trees is not guaranteed to perform better than random forest. The only way to know is to try both and compare them using cross-validation.
+
+## Feature Importance
+
+- Another upside of random forest is that we can measure the relative importance of each features.
+- Scikit-learn do this by looking at how much the tree nodes which use that features reduce Gini impurity on average.
+- Furthermore, this is a weighted average, where each node's weight is the number of training instances associated to it (see chapter 6).
+- This is done automatically by Scikit-learn for each features after training, then it scales the features importance such that the sum of them is 1.
+- You can access them by using the `feature_importances_` attribute.  
