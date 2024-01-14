@@ -18,7 +18,7 @@
     - n is the number of classes.
     - $\rho_{i, k}$ is the ratio of instances belongs to class k, among all the training instances in the i-th node.
 - For example, in bottom-right node, there are 0 Iris Setosa, 1 Iris Versicolor, 45 Iris Virginica and 46 training instances in total. So its Gini impurity is:
-    $$1 - \frac{0}{46} - \frac{1}{46} - frac{45}{46} \approx 0.043$$
+    $$1 - \frac{0}{46} - \frac{1}{46} - \frac{45}{46} \approx 0.043$$
 - Scikit-learn uses the CART algorithm, which only produces binary tree. It means the split nodes always have exactly 2 children nodes. However, there are other algorithms, such as ID3, can produce decision trees with nodes that have more than 2 children.
 - The plots in the learning notebook show the decision tree's decision boundaries:
     - The thick vertical line represents the decision boundary of the root node (depth-0): petal length = 2.45 cm. Since the left are is pure, it can't be split further. 
