@@ -1,11 +1,12 @@
 - Decision tree are versatile algorithm that can work on both classification and regression tasks, even with multioutput tasks.
+- Note from chapter 7: If a decision tree has a depth of 1, that is a tree composed of a single decision node and two leaf nodes. It also is called a *decision stump*.
 - They are powerful algorithms, capable of fitting very complex dataset. For example, in chapter 2, we trained a Decision Tree model to fit the California housing dataset and fit it perfectly (actually, overfit it).
 - Decision Trees are also the fundamental components of Random Forests (will discuss in Chapter 7), which are among the most powerful machine learning algorithms available today.
 
 # Making Predictions
 
 - The way make predictions is similar to walk through several if statement. Suppose you find an iris flower and want to classify it:
-    - You start at the root node: This node ask whether the petal length is smaller or equal to 2.45 cm. If yes, you move to the root's left node (depth 1, left). In this case, this is a leaf node (i.e. it has no child nodes), so it does not ask any question: Just look at the predicted class of that node and the decision tree predicts that your flower is an *Iris Setosa* (class=setosa).
+    - You start at the root node: This node ask whether the petal length is smaller or equal to 2.45 cm. If yes, you move to the root's leaf node (depth 1, left). In this case, this is a leaf node (i.e. it has no child nodes), so it does not ask any question: Just look at the predicted class of that node and the decision tree predicts that your flower is an *Iris Setosa* (class=setosa).
     - If no, then you move down the right node (depth 1, right). This is not a leaf node, but a spilt node, so it asks another question: Is the petal width smaller or equal to 1.75 cm? If yes, then the model thinks the flower most likely is an *Iris Versicolor*. If not, then the model thinks the flower is most likely to be an *Iris Virginica*.
 - One of the advantages of decision trees is they require very little data preparation. In fact, they don't need to center or scale the features at all.
 - A node's samples attribute counts how many training instances it applies to. For example, there are 100 training instances have petal width > 2.45 cm (depth 1, right), anh of these 100, there are 46 training instances have petal width > 1.75 cm (depth 2, right).
