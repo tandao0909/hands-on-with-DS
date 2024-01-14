@@ -85,4 +85,6 @@
 - Scikit-learn do this by looking at how much the tree nodes which use that features reduce Gini impurity on average.
 - Furthermore, this is a weighted average, where each node's weight is the number of training instances associated to it (see chapter 6).
 - This is done automatically by Scikit-learn for each features after training, then it scales the features importance such that the sum of them is 1.
-- You can access them by using the `feature_importances_` attribute.  
+- You can access them by using the `feature_importances_` attribute. 
+- Random forest is good if you want to gain a quick understanding of how every features actually matters, especially if you want to perform feature selection.
+
