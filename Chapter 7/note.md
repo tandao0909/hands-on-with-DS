@@ -171,3 +171,17 @@
 You can use a `OrdinalEncoder` for that.
 - There are several other optimized implementation of gradient boosting. For example, XGBoost, CatBoost and LightBGM. They are very specialized for gradient boosting, their APIs is very similar to Scikit-learn and they provide many additional features, including GPU acceleration.
 - Moreover, the Tensorflow Random Forests library provides optimized implementations of various random forests algorithms, including plain random forests, extra-trees, GBRT and some more.
+
+# Stacking
+
+- The last ensemble we will talk about is *stacking* (short for *stacked generalization*).
+- It is based on a simple idea: Instead of using trivial strategy (such as hard voting) to aggregate the predictions of all predictors in ensemble, why don't we train a model to predict it?
+- Each of the base predictor will make a prediction and based on these predictions, the final predictor (called a *blender*, or a *meta learner*) will make the final prediction.
+- To train the blender, you need to build a training set. You can use `cross_val_predict()` on every predictor in the ensemble to get out-of-samples predictions for each instance in the original training set and use the as the input features to train the blender; and the target and simply be copied from the original training set.
+- Regardless of the number of features in the training set, the blending predictor will have one feature per predictor. 
+- Once the blender is trained, all the base predictors will be trained again on the whole training set.
+- It is actually possible to train several different blenders this way (e.g., one using linear regression, one using random forests regression) to have a whole layer of blenders, then add a new blender on top of that layer to predict the final prediction.
+- You may be able to squeeze out some drops of performance using this technique, but it will cost you in both training time and system complexity.
+- Scikit-learn provides two classes for stacking ensembles: `StackingClassifier` and `StackingRegressor`.
+- To sum up, ensemble methods are versatile, powerful and fairly simple to use. Random forests, AdaBoost and GBRT are among the most first model you should test for most machine learning tasks,a nd they are particularly shine with heterogeneous tabular data. Moreover, as they require very little preprocessing, they're great for having a prototype up and running quickly.
+- Lastly, ensemble methods like voting classifiers and stacking classifiers can help increase the performance of your system.
