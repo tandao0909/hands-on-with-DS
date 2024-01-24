@@ -22,3 +22,18 @@
     - This also means a new instance will likely be far away from any training instances, thus making predictions less reliable on lower dimensions, as they will be based on much larger extrapolations.
     - In short,the more dimensions the data is, the higher the risk of overfitting.
 - In theory, we could tackle the curse of dimensionality by adding more training data instances to reach a sufficient density of training instances. Unfortunately, the number of training instances required increase exponentially with the number of dimensions. With just 100 features - far lower than the MNIST problem - all ranging from 0 to 1, you need more training instances ($10^100$) than the number of atoms in observable universe ($10^78$ to $10^82$) to ensure that there's always an instance within 0.1 from any instance, assuming they are uniformly distributed across all dimensions.
+
+# Main approaches for Dimensionality Reduction
+
+- There are teo main approaches to reducing dimensionality: Projection and manifold learning.
+
+## Projection
+
+- In most real-world problems, training instances does not spread ou uniformly across all dimensions. Many features are almost constant, while many others are highly correlated (as discussed earlier in MNIST). 
+- As a result, most instances lie within a much lower-dimensional subspace of the original high-dimensional space.
+- You can look at the first plot in the learning notebook to get a grasp of this idea:
+    - Training instances are small spheres.
+    - You can notice that all of them lie near a plane: This is a lower-dimensional (2D) subspace of a higher-dimensional (3D) space. If you project every instance perpendicularly onto this subspace, which are represented as red dashed lines connect the instances to the plane, we get a new training dataset, plotted in the next plot.
+- Congrats, we have just reduce the dataset's dimensionality from 3D to 2D.
+-Note how the axes now turn into $z_1$ and $z_2$: they are the coordinates of the projections on the plane.
+    
