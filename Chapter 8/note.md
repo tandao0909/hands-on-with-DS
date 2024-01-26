@@ -25,7 +25,7 @@
 
 # Main approaches for Dimensionality Reduction
 
-- There are teo main approaches to reducing dimensionality: Projection and manifold learning.
+- There are two main approaches to reducing dimensionality: Projection and manifold learning.
 
 ## Projection
 
@@ -35,5 +35,21 @@
     - Training instances are small spheres.
     - You can notice that all of them lie near a plane: This is a lower-dimensional (2D) subspace of a higher-dimensional (3D) space. If you project every instance perpendicularly onto this subspace, which are represented as red dashed lines connect the instances to the plane, we get a new training dataset, plotted in the next plot.
 - Congrats, we have just reduce the dataset's dimensionality from 3D to 2D.
--Note how the axes now turn into $z_1$ and $z_2$: they are the coordinates of the projections on the plane.
-    
+- Note how the axes now turn into $z_1$ and $z_2$: they are the coordinates of the projections on the plane.
+
+## Manifold learning
+
+- However, projections is not an one-size-fit-all solution to all dimensional reduction problems. In many cases. the subspace may twist and turn, such the famous Swiss roll toy dataset, represented in the first image.
+- Simply projecting the whole dataset onto a plane (e.g. by dropping $x_3$) would squash different layers of the Swiss roll together, result in a really hard to make sense of graph in the left plot. What we want is to unroll it instead and obtain the 2D dataset in the right plot.
+- The Swiss roll is an example of a manifold. Put simply, a 2D manifold is a 2D shape that can be bent and twisted in a higher-dimensional space.
+- More generally, a d-dimensional manifold is a part of an n-dimensional space (where d < n) and resembles a a-dimensional space locally. In the case of Swiss roll, d = 2 and n = 3: it resembles a 2D space, but rolled in a 3D space.
+- Many manifold reduction algorithms work by modeling the manifold which training instances lies on, this is called *manifold learning*. It is backed by the *manifold assumption*, which is also called the *manifold hypothesis*, which holds that most real-world high-dimensional dataset lie close to a much smaller-dimensional manifold. This assumption is very often empirically (saw a lot in practice) observed.
+- Once again, take MNIST as an example. There are lots of similarities between all handwritten digit images: They are connected by a couple of lines, the borders are white and the images are more or less centered. If you create images by randomly pick the intensities of each pixel, there is a ridiculously low chance you will obtain a recognizable handwritten digit.
+- In other words, the degree of freedom you have when creating a digit image is dramatically lower than the degrees of freedom available to you when you create any image you like.
+- These constraint tend to squeeze the training dataset into a much smaller-dimensional manifold.
+- The manifold assumption is often accompanied by another implicit assumption: The task at hand (e.g. classification or regression) will be simpler if expressed in a lower-dimensional manifold.
+- For example, look at the next plot in the learning notebook. The Swiss roll is now split into 2 classes, but if you consider the 3D plot, then the decision boundary is fairly complex, but in the 2D unrolled manifold space, the decision boundary is straight forward (it's just a straight line).
+- However, this implicit assumption does not always hold. For example, consider the next image:
+    - The decision boundary is located at $x_1=5$. This decision boundary is very simple in 3D space, which is just a plane.
+    - But if you unrolled the dataset, then you the decision boundary is much more complex in the manifold. In fact, you need 4 consecutive lines to correctly divided the dataset into 2 classes.
+- In short, reducing the dimensionality of your dataset before training will usually speed up training, but it does not necessarily lead to a better or simpler solution; it all depends on the dataset.
