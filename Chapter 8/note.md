@@ -53,3 +53,36 @@
     - The decision boundary is located at $x_1=5$. This decision boundary is very simple in 3D space, which is just a plane.
     - But if you unrolled the dataset, then you the decision boundary is much more complex in the manifold. In fact, you need 4 consecutive lines to correctly divided the dataset into 2 classes.
 - In short, reducing the dimensionality of your dataset before training will usually speed up training, but it does not necessarily lead to a better or simpler solution; it all depends on the dataset.
+
+# PCA
+
+- *Principal component analysis* (PCA) is by far the most popular dimensionality reduction algorithm. First, it defines the hyperplane that lies closest to the data, then it projects the data onto that hyperplane, as we did earlier.
+
+## Preserving the Variance
+
+- Before you project the training set into a hyperplane, you need to have the right hyperplane first.
+- Look at the image in the learning notebook:
+    - On the left is the dataset and 3 different axes.
+    - On the right is the projection of the dataset on each axes.
+    - As you can see, the projection onto the solid line preserves the highest variance.
+    - The projection onto the dotted preserves the lowest variance.
+    - And the projection onto the dashed line preserves an intermedia amount of variance.
+- It is reasonable to choose the axes that preserves the maximum amount of variance, as it most likely will lose the least amount of information.
+- Another way to think about it is we want to find the axis that minimizes the mean squared distance between the original data and its projection onto that axis.
+- That is the idea behind PCA: We want to reduce the dimensionality of the dataset, while retaining as much variation from the original dataset as possible.
+
+# Principal Components
+
+- PCA finds the axis that has largest amount of variance in the training set. In the image in the previous part, it is the solid line.
+- Next, PCA finds a second axis, orthogonal to the first axis, and accounts for the most amount of remaining variance. In our example, we have no other choice: It's the dotted line.
+- However, if it is a higher-dimensional dataset, then PCA will continue to find a third axis, orthogonal to both previous axis and accounts for the most amount of remaining variance, then a fourth, a fifth, and so on - as many axes as the number of dimensions in the dataset.
+- The $i^{th}$ axis is called the *$i^{th}$ principal component* (PC) of the dataset.
+- In the **Preserving the Variance** part, the first PC is the axis on which **$c_1$** lies, and the second PC is the axis on which **$c_2$** lies.
+- In the **Projection** part, the first two PCs are on the projection plane, while the third PC is the axis orthogonal to the plane. After the projection, the first PC corresponds to the $z_1$ axis and the second PC corresponds to the $z_2$ axis.
+- For each principal component, PCA finds a zero-centered unit vector pointing in the direction of the PC. 
+- Since two opposing unit vectors lie on the same axis, the direction of the unit vector is not stable: If you change the data ever so slightly and run PCA again, the unit vector may point in the opposite direction compared to the original vector. However, they will generally end up in the same axis.
+- In some cases, a pair of unit vectors may even rotate or swap (if the variance along these two axes are very close), but in general the plane they define will remain the same.
+- How do we find the principal component of a dataset? Fortunately, our old friend *singular value decomposition* (SVD), which is a standard matrix factorization technique, can help us decompose the training set matrix X into the matrix multiplication of three matrices $\textbf{U}, \Sigma, \textbf{V}^T$, where **$V$** is the vector contains the unit vectors that define all the principal components that we want to find:
+    $$\textbf{V} = (c_1^T, c_2^T, \dots, c_n^T)$$
+- PCA assumes that the dataset in centered around the origin. Scikit-learn's PCA automatically takes care of this for us, but if you implement PCA yourself, or use other libraries, don't forget to center the data first.
+Theoretically, the SVD factorization algorithm returns three matrices, $, \textbf{U}, \mathbf{\Sigma}, \textbf{V}$ such that $\textbf{X} = \textbf{U}\mathbf{\Sigma}\textbf{V}^T$, where $\textbf{U}$ is an $m\times m$ matrix, $\mathbf{\Sigma}$ is an $m\times n$ matrix and $\textbf{V}$ is and $n \times n$ matrix. But the `svd()` function returns $\textbf{U}, \textbf{s}, \textbf{V}^T$ instead. $\textbf{s}$ is the vector which contains all the value in the main diagonal of the top $n$ rows of the $\mathbf{\Sigma}$ matrix. Since $\mathbf{\Sigma}$ is full of zeros elsewhere, we can easily reconstruct it from $\textbf{s}$, as following.
