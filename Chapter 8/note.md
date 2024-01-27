@@ -85,4 +85,20 @@
 - How do we find the principal component of a dataset? Fortunately, our old friend *singular value decomposition* (SVD), which is a standard matrix factorization technique, can help us decompose the training set matrix X into the matrix multiplication of three matrices $\textbf{U}, \Sigma, \textbf{V}^T$, where **$V$** is the vector contains the unit vectors that define all the principal components that we want to find:
     $$\textbf{V} = (c_1^T, c_2^T, \dots, c_n^T)$$
 - PCA assumes that the dataset in centered around the origin. Scikit-learn's PCA automatically takes care of this for us, but if you implement PCA yourself, or use other libraries, don't forget to center the data first.
-Theoretically, the SVD factorization algorithm returns three matrices, $, \textbf{U}, \mathbf{\Sigma}, \textbf{V}$ such that $\textbf{X} = \textbf{U}\mathbf{\Sigma}\textbf{V}^T$, where $\textbf{U}$ is an $m\times m$ matrix, $\mathbf{\Sigma}$ is an $m\times n$ matrix and $\textbf{V}$ is and $n \times n$ matrix. But the `svd()` function returns $\textbf{U}, \textbf{s}, \textbf{V}^T$ instead. $\textbf{s}$ is the vector which contains all the value in the main diagonal of the top $n$ rows of the $\mathbf{\Sigma}$ matrix. Since $\mathbf{\Sigma}$ is full of zeros elsewhere, we can easily reconstruct it from $\textbf{s}$, as following.
+
+## Projecting Down to d Dimensions
+
+- Once you have defined all the principal components, you can reduce the dimensionality of the dataset down to d dimensions by projecting the dataset onto the hyperplane defined by the first d principal components.
+- Selecting this hyperplane ensures that the projection preserves the maximum amount of variance.
+- In the **Projection** part, the 3D dataset is projected down onto the 2D plane defined by the first two principal components, preserving a lot of the dataset's variance. As a result, the 2D projection looks very similar to the original 3D dataset.
+- To project the training set onto the hyperplane and obtain a reduced dataset $\textbf{X}_{d-\text{proj}}$ of dimensionality $d$, simply apply the matrix multiplication of the training set matrix $\textbf{X}$ by the matrix $\textbf{W}_d$, defined as the matrix containing the first $d$ columns of $\textbf{V}$:
+    $$\textbf{X}_{d-\text{proj}} = \textbf{X}\textbf{W}_d$$
+
+## Using Scikit-learn
+
+- Scikit-learn's `PCA` class uses SVD to implement PCA, juts like we did earlier.
+- After fitting the `PCA` transformer to the dataset, its `component_` attribute holds the transpose of $\textbf{W}_d$: It contains one row for each of the first d principal components.
+
+## Explained Variance Ratio
+
+- 
