@@ -116,3 +116,12 @@
 - Lastly, if you use PCA as a preprocessing step for a supervised-learning task (e.g. classification or regression), then you can tune the number of dimensions as you would to any other hyperparameters.
 - Look at the code in the learning notebook. Look how low the optimal number of dimensions is: We reduced a 784-dimensional dataset to just 23 dimensions!
 - This is partially because we use a random forest, which is a pretty powerful model. If we use a linear model instead, such as `SGDClassifier`, then the search would find that we need to preserve more dimensions (about 70).
+
+## PCA for compression
+
+- After dimensionality reduction, the training set takes much less space. For example, when applying PCA to the MNIST dataset, while preserving 95% of its variance, we are left with 154 features, instead of the original 784 features. So the dataset is now less than 20% of its original size, but we only lost 5% of its variance!
+- This is a good compression ratio, and we can speed up training tremendously using this size reduction.
+- It is also possible to decompress the reduced dataset back to 784 dimensions by applying the inverse information of the PCA projection. This won't give you back the original dataset, since the projection lost a bit of information (within the 5% variance that was dropped), but it will likely be closed to the original dataset.
+- The mean squared distance between the original data and the reconstructed data (compressed and then decompressed) is called the *reconstruction error*.
+- The equation for inverse transform is:
+    $$\textbf{X}_{\text{recovered}} = \textbf{X}_{d-\text{proj}} \textbf{W}_{d}^T$$
