@@ -101,4 +101,18 @@
 
 ## Explained Variance Ratio
 
-- 
+- Another useful information is the *explained variance ratio* of each principal component, available via the `explained_variance_ratio_` attribute.
+- The ratio illustrates the proportion of the dataset's variance that lies along each principal component.
+
+## Choosing the Right Number of Dimensions
+
+- Instead of explicitly choosing the number of the dimensions to reduce down to, it is simpler to choose the number of dimensions that adds up to a sufficiently large portion of the variance, say 95%. An exception to this rule is, of course, when you want to visualize the data, then you want to reduce the dimensionality to 2 or 3.
+- The code in the learning notebook loads the MNIST and performs PCA without reducing dimensionality, then computes the minimum number of dimensions needed to preserve 95% of the training set's variance.
+- You can then set `n_components` to that value and run PCA again, but there's a better way. You can set `n_components` to a float between 0 and 1 to indicate the ratio of variance you want to preserve.
+- The actual number of components can be accessed after training using the `n_components_` attribute.
+- Another option is to plot the explained variance as a function tof the number of dimensions (by simply plot `cumsum`). 
+- There will always be an elbow in the curve, where the explained variance stop growing fast (speaking mathematically, when the second derivate of the explained variance is equal to 0).
+- In that case, you can see that reducing the dimensionality to about 100 dimensions wouldn't lose too much information.
+- Lastly, if you use PCA as a preprocessing step for a supervised-learning task (e.g. classification or regression), then you can tune the number of dimensions as you would to any other hyperparameters.
+- Look at the code in the learning notebook. Look how low the optimal number of dimensions is: We reduced a 784-dimensional dataset to just 23 dimensions!
+- This is partially because we use a random forest, which is a pretty powerful model. If we use a linear model instead, such as `SGDClassifier`, then the search would find that we need to preserve more dimensions (about 70).
