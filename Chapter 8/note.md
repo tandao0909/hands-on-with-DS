@@ -125,3 +125,9 @@
 - The mean squared distance between the original data and the reconstructed data (compressed and then decompressed) is called the *reconstruction error*.
 - The equation for inverse transform is:
     $$\textbf{X}_{\text{recovered}} = \textbf{X}_{d-\text{proj}} \textbf{W}_{d}^T$$
+
+## Randomized PCA
+
+- If you set the `svd_solver` hyperparameter to `"randomized"`, Scikit-learn uses a stochastic algorithm named *randomized PCA*, which quickly finds an approximation of the first *d* principal components. Its computational complexity is $O(m \times d^2) + O(d^3)$ instead of $O(m \times dn^2) + O(n^3)$ for the full SVD, so it is dramatically faster than full SVD when *d* is much smaller than *n*.
+- By default, `svd_solver` is actually set to `"auto"`: Scikit-learn automatically uses the randomized PCA algorithm if max($m, n$) > 500 and `n_components` is an integer smaller than 80% of min($m, n$), or else it will use full SVD approach.
+The preceding code will continue to use randomized PCA even if you remove the `svd_solver="randomized"` argument, because 154 < 0.8 * 784. If you want to force Scikit-learn to use full SVD for a slightly more accurate result, you can set `svd_solver` hyperparameter to `"full"`.
