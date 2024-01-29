@@ -130,4 +130,11 @@
 
 - If you set the `svd_solver` hyperparameter to `"randomized"`, Scikit-learn uses a stochastic algorithm named *randomized PCA*, which quickly finds an approximation of the first *d* principal components. Its computational complexity is $O(m \times d^2) + O(d^3)$ instead of $O(m \times dn^2) + O(n^3)$ for the full SVD, so it is dramatically faster than full SVD when *d* is much smaller than *n*.
 - By default, `svd_solver` is actually set to `"auto"`: Scikit-learn automatically uses the randomized PCA algorithm if max($m, n$) > 500 and `n_components` is an integer smaller than 80% of min($m, n$), or else it will use full SVD approach.
-The preceding code will continue to use randomized PCA even if you remove the `svd_solver="randomized"` argument, because 154 < 0.8 * 784. If you want to force Scikit-learn to use full SVD for a slightly more accurate result, you can set `svd_solver` hyperparameter to `"full"`.
+
+## Incremental PCA
+
+- One problem with the previous implementation of PCA is that they require the whole training set to fit in memory in order for the algorithm to work.
+- Lucky for us, *incremental PCA* (IPCA) have been developed which allows us to split the training set into small mini-batches and feed these these in one mini-batch at a time.
+- This is helpful for big dataset and for applying PCA online (i.e. on the fly, as new instances arrive).
+- For a very high-dimensional dataset, PCA can be very slow to train. As you saw earlier, the time complexity, even if you use randomized PCA, is still $O(m \times d^2)+O(d^3)$, so the target number of  dimensions must not be too large. If you are dealing with a dataset with tens of thousands of features (e.g. images or videos), then training may be too slow.
+- There is an alternative if you want to speed up the process, which is random projection.
