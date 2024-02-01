@@ -25,7 +25,7 @@
 - Extra-trees are also faster to train than random forests, because finding the optimal threshold is also one of the bottleneck of the training process.
 - However, extra-trees are neither faster or slower than random forests in making predictions.
 6. If your AdaBoost underfit the model, then you can tweak some hyperparameters as followed:
-    - The learning rate: Change it to be smaller.
+    - The learning rate: Change it to be bigger, as increasing the learning rate means each estimator get more weight, hence the model is less likely to underfit. 
     - The number of base predictors: Change it to be bigger.
     - The regularization of base predictors: Change it to be less regularized.
-7. If your gradient boosting is overfitting the training dataset, then you should increase the learning rate. You could also use early stopping to reduce the number of base predictors (you probably have too many).
+7. If your gradient boosting is overfitting the training dataset, then you should decrease the learning rate. You could also use early stopping to reduce the number of base predictors (you probably have too many).
