@@ -34,3 +34,12 @@
 
 - Look at the image in the learning notebook. You can easily see there are five blobs of instances.
 - We must specify the number of cluster *k* in order to run the algorithm. In this example, we know that *k=5*, but in general it won't be that easy. We will talk about it later
+- Each instance then be assigned to one of the five clusters. 
+- In the context of clustering, an instance's label is the index of the cluster to which the algorithms assign this instance. You shouldn't be confused with the class labels in the classification tasks, which are used as targets (remember that clustering is an unsupervised task). You can see the code in the learning notebook.
+- Most instances are assigned to the correct cluster and only a few instances are missed, especially those along the edge of the decision boundaries between two top-left cluster and the middle cluster. 
+- In fact, *k-means* does not perform very well when the blobs have different diameters. 
+- This is because *k-means* only cares about the distance from an instance to the centroid when trying to assign an instance to that cluster.
+- Instead of assigning each instance to a single cluster, which is called *hard clustering* , we can give each instance a score per cluster, which is called *soft clustering*.
+- This score can be the distance between the instance and the centroid or a similarity score (or affinity), such as the Gaussian radial basis function we used previously in chapter 2.
+- For example, if you apply a k-means algorithm to a dataset, then we obtain a new dataset with k features: This can be a very efficient nonlinear dimensionality reduction technique.
+- Similarly, you cna also use these features as extra features, as we did in chapter 2.
