@@ -42,4 +42,28 @@
 - Instead of assigning each instance to a single cluster, which is called *hard clustering* , we can give each instance a score per cluster, which is called *soft clustering*.
 - This score can be the distance between the instance and the centroid or a similarity score (or affinity), such as the Gaussian radial basis function we used previously in chapter 2.
 - For example, if you apply a k-means algorithm to a dataset, then we obtain a new dataset with k features: This can be a very efficient nonlinear dimensionality reduction technique.
-- Similarly, you cna also use these features as extra features, as we did in chapter 2.
+- Similarly, you can also use these features as extra features, as we did in chapter 2.
+
+### The K-means algorithm
+
+- At the end, how does the algorithm work?
+- Suppose, you have been given the centroids. Then you can easily label to each instance by assigning it to the cluster which is the closest.
+- Conversely, if you were give n all the instances labels, you can find the centroid of each cluster by computing the mean of all instances in that cluster.
+- But you don't have neither labels or centroids, how do you start with?
+- Here is the break down of the k-means algorithm:
+    - First, you initialize the centroids randomly. This means we pick k instances randomly from the dataset and using their location as centroids.
+    - Next, now you have the centroids, you can label each instances.
+    - Now you have a new label for each instance, you can average all the instance with the same label and obtain a new centroid.
+    - We continue to update the centroids, update the labels, until the centroids stop moving.
+    - This algorithm is guaranteed to converge in a finite number of steps (usually quite small). This is because the sum of all squared distance between the instances and their closest centroids is strictly decrease, and since it is non negative, the algorithm must converge.
+- You can see each step of the algorithm in the image in the learning notebook:
+    - The centroids are initialized randomly (top left).
+    - Then the instances are labeled (top right).
+    - Then the centroids are updated (center left).
+    - The instances are relabeled (center right).
+    - So on.
+- As you can see, after only 3 iterations, the algorithm has reached a state seems very close to the optimal value.
+- The computational complexity is generally linear to the number of instances *m*, the number of cluster *k*, and the number of features *n*. However, this is only true if the dataset has a clustering structure. If this assumption doesn't hold, then the computational complexity increases exponentially with the number of instances. In practice, this is rarely the case, thus k-means is generally one of the fastest clustering algorithms.
+- Although the algorithm is guaranteed to converge, it may not converge to the right solution (i.e. it may converge the local optimum): whether it does or not depends on the centroids initialization.
+- The next image in the learning notebook show two suboptimal solutions that the algorithm can converge to if you are not lucky with the random initialization step.
+- There are a few way to mitigate this risk by improving the centroid initialization step.
