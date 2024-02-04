@@ -138,3 +138,28 @@
 - This is helpful for big dataset and for applying PCA online (i.e. on the fly, as new instances arrive).
 - For a very high-dimensional dataset, PCA can be very slow to train. As you saw earlier, the time complexity, even if you use randomized PCA, is still $O(m \times d^2)+O(d^3)$, so the target number of  dimensions must not be too large. If you are dealing with a dataset with tens of thousands of features (e.g. images or videos), then training may be too slow.
 - There is an alternative if you want to speed up the process, which is random projection.
+
+# Random Projection
+
+- As the name suggests, the random projection algorithm projects the data to a lower-dimensional space using a random linear projection.
+- Well, although sound unintuitive, it was demonstrated mathematically that such a random projection preserves the distance fairly well.
+- So two similar instances will remain similar after the projection, and two very different instances will remain very different.
+- Obviously, the more dimensions you drop, the more information you lost, and the more data get distorted. So how do you choose the right number of dimensions?
+- Well, the authors of random projection has solved this problem for us already: They came up with an equation that determines what is the minimum of dimensions to preserve in order to ensure - with high probability - that distances won't change by more than a given tolerance.
+- For example, if you have dataset containing *m* = 5,000 instances with *n* = 20,000 features each, and you don't want the squared distance between any two instances to change by more than *$\varepsilon$* = $\frac{1}{10^6}$, then you should project the data down to *d* dimensions, with $d \geq 4 \frac{\log(m)}{1/2\varepsilon^2 - 1/3 \varepsilon^3}$, which is 7,300 dimensions. That is such a dimensionality reduction!
+- Notice that the formula doesn't use *n*, it only relies on *m* and $\varepsilon$.
+- Beside one transformer following the original algorithm (implemented and explained in the learning notebook), Scikit-learn also provides a second random projection transformer, named `SparseRandomProjection`.
+- This transformer determines the target dimensionality in the same way, generates a random matrix of the same shape, adn the performs the same projection. The main difference is that the random matrix is sparse, which means it uses much less memory: about 25 MB instead of almost 1.2GB (you can see that in the learning notebook).
+- It also much faster, both to generate the random matrix and to reduce dataset's dimensionality: about 50% faster in this case.
+- Moreover, if the input is sparse, the transformation keeps it sparse (unless you set `dense_output=True`).
+- Lastly, it has the same distance-preserving property as the main approach, and the quality of the dimensionality is comparable.
+- In short, it's usually preferable to use this transformer instead of the first one, especially for large or sparse datasets.
+- The ratio *r* of nonzero items in a sparse random matrix is called its *density*. By default, it equals to 1/$\sqrt{n}$. With 20,000 features, this means that only 1 in ~141 cells in the random matrix is nonzero: that's quite sparse!
+- You can set the `density` hyperparameter to another value if you prefer. Each cell in the sparse random matrix has a probability *r* of being zero, and each nonzero is either *-v* or *v* (both equally likely), where $v=1/\sqrt{dr}$.
+- If you want to perform the inverse transform, you first need to compute the pseudo-inverse of the components matrix using SciPy's (or NumPy's) `pinv()` function, then multiply the reduced data by the transpose of the pseudo-inverse matrix.
+- Computing the pseudo-inverse matrix may take a long time if the components matrix is large, as the computational complexity is $O(n^2d)$ if $n > d$ or $O(nd^2)$ otherwise.
+- In summary, random projection is a simple, fast, memory-efficient and surprisingly powerful dimensionality reduction algorithm that you should keep in mind, especially when you deal with high-dimensional datasets.
+- Random projection is not only for dimensionality of large datasets.
+- For example, a [paper](https://www.biorxiv.org/content/10.1101/180471v1) in 2017 by Sanjoy Dasgupta
+et al. showed that the brain of a fruit fly implements an analog of random projection to map low-dimensional olfactory inputs to sparse high-dimensional binary outputs: For each odor, only a small amount of neurons get activated, but similar odors activate many of the same neurons.
+- This is similar to a well-known algorithm called *locality sensitive hashing* (LSH), which is typically used in search engines to group similar documents.
