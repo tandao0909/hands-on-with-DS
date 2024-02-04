@@ -163,3 +163,32 @@
 - For example, a [paper](https://www.biorxiv.org/content/10.1101/180471v1) in 2017 by Sanjoy Dasgupta
 et al. showed that the brain of a fruit fly implements an analog of random projection to map low-dimensional olfactory inputs to sparse high-dimensional binary outputs: For each odor, only a small amount of neurons get activated, but similar odors activate many of the same neurons.
 - This is similar to a well-known algorithm called *locality sensitive hashing* (LSH), which is typically used in search engines to group similar documents.
+
+# LLE
+
+- *Locally linear embedding* (LLE) is *nonlinear dimensionality reduction* (NLDR) technique.
+- It is a manifold learning technique that doesn't rely on projections, unlike PCA and random projection.
+- In a nutshell, LLE works by first measuring hwo each training instance linearly relates to its nearest neighbors, and then looking for a low-dimensional representation of the training set where these local relationships are best preserved (will be explained more detail later).
+- This approach makes it particularly good at unrolling twisted manifolds, especially when there is not too much noise.
+- You can see the resulting 2D dataset in the image in the learning notebook. As you can see, the Swiss roll is completely unrolled, and the distances between instances are well preserved.
+- However, distances are not preserved on a larger scale: The unrolled Swiss roll should be a rectangle, not this kind of stretched and twisted band. 
+- Nevertheless, LLE did a relatively good job of modeling the manifold.
+- Here is how LLE works:
+    - For each training instance $\textbf{x}^{(i)}$, the algorithm identifies its k-nearest neighbors (k=10 by default), then tries to reconstruct $\textbf{x}^{(i)}$ as a linear function of these neighbors.
+    - More specifically, it tries to find the weights $w_{i, j}$ such that the squared distance between $\textbf{x}^{(i)}$ and $\sum\limits_{j=1}^m w_{i, j}\textbf{x}^{(i)}$ is as small as possible, assuming $w_{i, j} = 0$ if $\textbf{x}^{(j)}$ is not one of the k-nearest neighbors of $\textbf{x}^{(i)}$.
+    - That's why the first step of LLE is solving this constrained optimization problem:
+    $$\hat{\textbf{W}} = \underset{\textbf{w}}{\text{argmin}}\sum_{i=1}^m \left(\textbf{x}^{(i)} - \sum_{j=1}^m\textbf{w}_{i, j}\textbf{x}^{(j)}\right)^2$$
+    subject to $\textbf{w}_{i,j}$ if $\textbf{x}^{(j)}$ is not one of the k-nearest neighbors of $\textbf{x}^{(i)}$ and $\sum\limits_{j=1}^m\textbf{w}_{i, j}=1$ for $i=\overline{1, m}$.
+    - The second constraint simply normalizes the weights for each training instances $\textbf{x}^{(i)}$.
+- After this step, the matrix $\hat{\textbf{W}}$ (containing the weight $\textbf{w}_{i, j}$) encodes the local linear relationships between the training instances.
+- The next step is to map the training instances into a d-dimensional (where $d < n$) while preserving these local relationship as much as possible. 
+- If $\textbf{z}^{(i)}$ is the mapping of $\textbf{x}^{(i)}$ in this d-dimensional space, then we want the squared distance between $\textbf{z}^{(i)}$ and $\sum\limits_{j=1}^m w_{i, j}\textbf{z}^{(i)}$ to be as small as possible.
+- This idea leads to the constrained optimization problem:
+$$\hat{\textbf{Z}} = \underset{\textbf{Z}}{\text{argmin}}\sum_{i=1}^m \left(\textbf{z}^{(i)} - \sum_{j=1}^m\textbf{w}_{i, j}\textbf{z}^{(j)}\right)^2$$
+- The difference between this equation and the previous one is that while the previous one keeps the instates fixed and optimizes the weights, this equation keeps the weights and optimizes the positions of the instances' images in the low-dimensional space. We just reverse the constraint and the optimized one. Note that $\hat{\textbf{Z}}$ is the matrix containing all $\textbf{z}^{(i)}$.
+- Scikit-learn's LLE implementation has the following computational complexity:
+    - $O(m\log(m)n\log(k))$ for finding k-nearest neighbors: This is the time complexity for finding the k-nearest neighbors in a dataset of size n. The $m\log(m)$ term comes from sorting the distances to find the nearest neighbors. Here, m is the number of dimensions and n is the number of data points. The $\log(k)$ term comes from the fact that we're interested in the k-nearest neighbors. This is a simplification and the actual time complexity can depend on the specific algorithm used for finding the k-nearest neighbors.
+    - $O(mnk^3)$ for optimizing the weights: This is the time complexity for the optimization step in LLE, where the weights are optimized to best preserve the local geometric structure of the data. Here, m is the number of dimensions, n is the number of data points, and k is the number of nearest neighbors. The $k^3$ term comes from the fact that the optimization involves solving a linear system for each data point using its k nearest neighbors, which can be represented as a k x k matrix.
+    - $O(dm^2)$ for constructing the low-dimensional representations: This is the time complexity for constructing the low-dimensional representations of the data points. Here, d is the number of dimensions in the low-dimensional space (usually 2 or 3 for visualization purposes), and m is the number of data points. The $m^2$ term comes from the fact that a sparse linear system of size m x m is solved.
+- Unfortunately, the $m^2$ in the last term makes this algorithm scale ver poorly with the number of training instances.
+- As you can see, LLE is quite different from the projection techniques, and it's significantly more complex, but it can construct much better low-dimensional representations, especially if the data is nonlinear.
