@@ -204,3 +204,12 @@ $$\hat{\textbf{Z}} = \underset{\textbf{Z}}{\text{argmin}}\sum_{i=1}^m \left(\tex
     - MDS manages to flatten the Swiss roll without losing its global curvature.
     - Isomap, on the other hand, drops this curvature property entirely. Depend on the task at hand, preserve the large-scale structure may be good or bad downstream.
     - t-SNE does a reasonable of flattening the Swiss roll, preserving a bit of curvature, and it also amplifies clusters, tearing the roll apart. Again, depending on the downstream task, this may be good or bad.
+
+# Extra Material: Kernel PCA
+
+**Warning:** This section is not in the book, yet it's included in the author's notebook, so I decide to research myself.
+- The original PCA is only capable of capturing linear relationships. What happened if our datasets is not linear at all?
+- We encountered this problem once in SVM, and the way we solve it is to map the dataset into a higher-dimensional space using a kernel function, where it is possible to extract linear components analysis.
+- This approach allows kernel PCA to capture complex, non-linear patterns that normal PCA may miss.
+- Kernel PCA is capable of performing dimensionality reduction, feature extraction and data visualization tasks. It's superior to normal PCA when the data is non-linear.
+- As you can see in the learning notebook, our kernel PCA model works ver well with the Swiss roll dataset: It manages to flatten the dataset out without affect its global curvature.
