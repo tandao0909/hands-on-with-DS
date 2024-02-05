@@ -192,3 +192,15 @@ $$\hat{\textbf{Z}} = \underset{\textbf{Z}}{\text{argmin}}\sum_{i=1}^m \left(\tex
     - $O(dm^2)$ for constructing the low-dimensional representations: This is the time complexity for constructing the low-dimensional representations of the data points. Here, d is the number of dimensions in the low-dimensional space (usually 2 or 3 for visualization purposes), and m is the number of data points. The $m^2$ term comes from the fact that a sparse linear system of size m x m is solved.
 - Unfortunately, the $m^2$ in the last term makes this algorithm scale ver poorly with the number of training instances.
 - As you can see, LLE is quite different from the projection techniques, and it's significantly more complex, but it can construct much better low-dimensional representations, especially if the data is nonlinear.
+
+# Other Dimensionality Reduction Techniques
+
+- There are some other popular dimensionality reduction techniques available in Scikit-learn:
+    - *Multidimensional scaling* (MDS) reduces dimensionality while trying to preserve the distances between the instances. Random projection does that for high-dimensional data, but it doesn't work well on low-dimensional data.
+    - *Isomap* creates a graph by connecting each instance to its nearest neighbors, then reduces dimensionality while trying to preserve the *geodesic distance* between the instances. The geodesic distance between two nodes in a graph is the number of nodes on the shortest path between these nodes.
+    - *t-distributed stochastic neighbor embedding* (t-SNE) reduces dimensionality while trying to keep similar instances close and dissimilar instances apart. It is mostly used in data visualization, in particular to visualize clusters of instances in high-dimensional space.
+    - *Linear discriminant analysis* (LDA) is a linear classification algorithm that, during training, learns the most discriminative axes between the classes. These axes can then be used to define a hyperplane onto which to project the data. The benefit of this approach is the projection will keep the classes as far as possible, so LDA is a good technique to reduce dimensionality before running another classification algorithm (unless LDA alone is sufficient).
+- The image in the learning notebook plots the result of MDS, Isomap and t-SNE on the Swiss roll dataset:
+    - MDS manages to flatten the Swiss roll without losing its global curvature.
+    - Isomap, on the other hand, drops this curvature property entirely. Depend on the task at hand, preserve the large-scale structure may be good or bad downstream.
+    - t-SNE does a reasonable of flattening the Swiss roll, preserving a bit of curvature, and it also amplifies clusters, tearing the roll apart. Again, depending on the downstream task, this may be good or bad.
