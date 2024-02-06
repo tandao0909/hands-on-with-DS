@@ -67,3 +67,22 @@
 - Although the algorithm is guaranteed to converge, it may not converge to the right solution (i.e. it may converge the local optimum): whether it does or not depends on the centroids initialization.
 - The next image in the learning notebook show two suboptimal solutions that the algorithm can converge to if you are not lucky with the random initialization step.
 - There are a few way to mitigate this risk by improving the centroid initialization step.
+
+### Centroid initialization methods
+
+- If you happen to know approximately where the the centroids should be (i.e. you ran another clustering algorithm earlier), then you can set the `init` hyperparameter to a NumPy array containing the list of centroids, and set n_init to 1.
+- Another solution is to run the algorithm several times with different random initializations and keep the best solution.
+- The number of random initializations is controlled by the `n_init` hyperparameter: By default, it is 10, which means the whole algorithm described previously run 10 times when you call `fit()`, and Scikit-learn keeps the best result.
+- But how does we know what is the best model? We use a performance metric!
+- That metric is called the mode's *inertia*, which is the sum of squared distances between the instances and their closest centroids.
+- The `KMeans` in Scikit-learn run the model `n_init` times and choose the model with the lowest inertia.
+- Instead of initialize the centroids randomly, it's preferable to initialize them using the following algorithm, proposed in [a 2006 paper](https://courses.cs.duke.edu/spring07/cps296.2/papers/kMeansPlusPlus.pdf) by David Arthur and Sergei Vassilvitskii:
+    - Take one centroid $\textbf{c}^{(1)}$, chosen uniformly at random form the dataset.
+    - Take a new centroid $\textbf{c}^{(i)}$, choosing an instance $\textbf{x}^{(i)}$ with probability
+    $$\frac{D(\textbf{x}^{(i)})^2}{\sum\limits_{j=1}^mD(\textbf{x}^{(j)})^2}$$ 
+    <br>
+    where $D(\textbf{x}^{(i)})^2$ is the distance between the instance $\textbf{x}^{(i)}$ and the closest centroid that was already chosen. This probability distribution ensures that instances farther away from already chosen centroids are much more likely to be selected as centroids.
+
+    - Repeat the previous step until all *k* centroids have been chosen.
+- The rest of K-Means++ is the same as regular K-Means.
+- With this initialization, the K-Means++ algorithm is much less likely to converge to a suboptimal solution, so it is possible to reduce `n_init` considerably. Most of the time, this largely compensates for the additional complexity of the initialization process.
