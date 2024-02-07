@@ -136,3 +136,15 @@
     - When $k=4$, the cluster at index 1 is rather big.
     - When $k=5$, all clusters have similar sizes.
     - So even though $k=4$ yields a better overall silhouette scores, it seems like a better idea to use $k=5$, as we can have clusters of similar sizes. 
+
+## Limits of K-Means
+
+- Despite many of its merits, most notably being fast and scalable, k-means is definitely not perfect.
+- As we saw, you may need to rerun the model several times to avoid the suboptimal solutions, plus you need to specify the number fo clusters, which can be a very difficult task.
+- Moreover, k-means doesn't behave well when the clusters have varying sizes, different densities, or nonspherical shape.
+- There is some examples of how k-means clusters a dataset including three ellipsoidal clusters of different dimensions, densities and orientations in the learning notebook.
+- As you can see, neither of our solutions is good:
+    - The solution on the left is better, but it still chops off about 25% instances of the middle cluster and assign them to the cluster on the right.
+    - The solution on the right is just terrible, even when its inertia is lower.
+- So depending on the dataset, different clustering algorithm may perform better. On these types of elliptical clusters, Gaussian mixture models work great.
+- It is important to scale the input features before you run k-means, or the clusters may be very stretched and k-means will perform poorly. Scaling the features doesn't guarantee that all the clusters will be nice and spherical, but it generally helps k-means.
