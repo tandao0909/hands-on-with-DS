@@ -100,3 +100,39 @@
 - You can see in the learning notebook:
     - The plot on the left compares the difference between the inertias of mini-batch k-means and regular k-means models trained on the previous five-blobs dataset using various number of cluster k. The difference between two models is small, but visible.
     - In the plot on the right, you can see that overall mini-batch k-means is a bit slower than regular k-means.
+
+### Finding the optimal number of clusters
+
+- So far, we set the number of clusters k to 5 because we know from the start there are 5 clusters and we see that there are 5 cluster when plotting the dataset.
+- However, in practice, it wont't be easy to find the right number of cluster k, and the result may be quite bad if we set it wrong.
+- As you can see in the learning notebook, if we set the number of cluster to either 3 or 8, the result is fairly bad.
+- You may be thinking you just pick the model with the lowest inertia. Unlucky for us, it's not that simple. 
+- The inertia for $k=3$ is about 653.2, which is much higher than $k=5$ (211.6). But for $k=8$, the inertia is just 119.2.
+- The inertia is not a good performance metric when trying to choose k, because it will keep getting smaller as we increase k. In fact, the more clusters there are, the closest each instances will be to its closest centroids, hence the lower the inertia will be.
+- In the learning notebook,we plot the inertia as a function of k. When we do this, the curve usually contains an inflexion point called the *elbow*.
+- As you can see, the inertia drops very quickly when we increase k up to 4, but then it decreases much more slowly as we keep increasing k. This curve has roughly the shape of an arm, and there's an elbow at $k=4$. 
+- So if we don't know any better, we might think 4 is a good choice: Any lower value would be dramatic, while any higher value would not help much, and we might just be splitting a perfectly good cluster in half for no good reason.
+- This technique for choosing the right number of clusters is rather coarse. A more precise (but also more computational expensive) approach is to use the *silhouette score*, which is the mean *silhouette coefficient* over all the instances.
+- The silhouette coefficient is equal to $(b-a)/\max(a,b)$, where a is the mean distance to all other instances in the same cluster (i.e., the mean intra-cluster distance) and b is the mean nearest-cluster distance (i.e. the mean distance to the instances of the next closest cluster, defines as the one minimizes *b*, excluding the instance's own cluster). 
+- The silhouette coefficient can range from -1 to 1:
+    - A coefficient closes to 1 means that the instance is well inside its own cluster and far away from other cluster.
+    - A coefficient closes to 0 means that the instance is close to a cluster boundary.
+    - A coefficient closes to -1 means that the instance is probably assigned to the wrong cluster.
+- You can see an image compares the silhouette score of different number of clusters in the learning notebook:
+    - This visualization is much richer than the previous one.
+    - We can confirm that $k=4$ is a very good choice. 
+    - However, $k=5$ is also a pretty good choice, and much better than $k=6$ or 7.
+    - We can have this precise comment if we just rely on the inertias.
+- An even more informative way is plotting every instance's silhouette, sorted by the clusters they are assigned to and by the value of the coefficient. This is called a *silhouette diagram*.
+- Each silhouette contains:
+    - One knife shape per cluster.
+    - The shape's height indicated the number of instances in the associated cluster.
+    - The shape's represents the sorted silhouette coefficients of the instance in the cluster (wider is better).
+    - The vertical dashed lines represent the mean silhouette score for each number of clusters.
+- When most of the instances in a cluster have a lower silhouette coefficient than the vertical line (i.e. if many of the instances stop short of the dashed line, ending to the left of it), then the cluster is rather bad, since this means are mostly too close to other cluster.
+- In the learning notebook, we plot the silhouette diagram for $k = 3, 4, 5, 6$:
+    - If $k = 3$ or 6, we get bad clusters.
+    - But when $k=4$ or 5, the clusters actually look promising: Most instances extend beyond the dashed line, to the right and closer to 1.0.
+    - When $k=4$, the cluster at index 1 is rather big.
+    - When $k=5$, all clusters have similar sizes.
+    - So even though $k=4$ yields a better overall silhouette scores, it seems like a better idea to use $k=5$, as we can have clusters of similar sizes. 
