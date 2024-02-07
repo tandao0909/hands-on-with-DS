@@ -148,3 +148,21 @@
     - The solution on the right is just terrible, even when its inertia is lower.
 - So depending on the dataset, different clustering algorithm may perform better. On these types of elliptical clusters, Gaussian mixture models work great.
 - It is important to scale the input features before you run k-means, or the clusters may be very stretched and k-means will perform poorly. Scaling the features doesn't guarantee that all the clusters will be nice and spherical, but it generally helps k-means.
+
+## Using Clustering for Image Segmentation
+
+- *Image segmentation* is the task of partitioning an image into multiple segments (i.e. pixels that have some relationships together). There are several variants:
+    - *Color segmentation*: Pixels with a similar color get assigned to the same segment. This is sufficient in many applications. For example, if you want to analyze satellite images to measure how much total forest area there is in a region, color segmentation may be just fine.
+    - *Semantic segmentation*: All pixels that are part of the same object type get assigned to the same segment. For example, in a self-driving car's vision system, all pixels that are part of a pedestrians' images might be assigned to the "pedestrians" segment (there would be one segment containing all the pedestrians).
+    - *Instance segmentation*: All pixels that are part of the same individual object are assigned to the same segment. In this case, there would a segment for each pedestrian.
+- The state of the art in sematic or instance segmentation today is achieved using complex architecture based on convolutional neural networks (will be discussed in chapter 14).
+- In this chapter, we will approach the (much simpler) color segmentation problem using k-means.
+- We will load an image about a ladybug.
+- This image is represented as a 3D array:
+    - The first dimension is the height.
+    - The second dimension is the width.
+    - The third dimension is the number of color channels, in this case red, green and blue (RGB).
+- In other words, for each pixel, there is a 3D vector containing the intensities of red, green, blue as unsigned 8-bit integers range from 0 to 255.
+- Some images may have fewer channels (e.g. greyscale images, which only have one), and some images may have more channels (e.g. images with an additional *alpha channel* for transparency, or satellite images, which often contains channels for additional light frequencies, like infrared).
+- You can experiment with various number of clusters in this small problem, as we did in the learning notebook.
+- When you use fewer than eight clusters, notice that the ladybug's flashy red color fails to get a cluster of its own: It gets merged with colors from the environment. This is because k-means prefers clusters of similar sizes. The ladybug is small - much smaller compared to the rest of the image - so even though its color is flashy, k-means fails to dedicate a cluster to it.
