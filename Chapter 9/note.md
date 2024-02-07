@@ -86,3 +86,17 @@
     - Repeat the previous step until all *k* centroids have been chosen.
 - The rest of K-Means++ is the same as regular K-Means.
 - With this initialization, the K-Means++ algorithm is much less likely to converge to a suboptimal solution, so it is possible to reduce `n_init` considerably. Most of the time, this largely compensates for the additional complexity of the initialization process.
+
+### Accelerated k-means and mini-batch k-means
+
+- There is another improvement to the k-means algorithm was proposed in [a 2003 paper](https://cdn.aaai.org/ICML/2003/ICML03-022.pdf) by Charles Elkan, named accelerated k-means.
+- On large datasets with many clusters, the algorithm can be accelerated by avoiding many unnecessary distance calculations.
+- This can be achieved by exploiting the triangle inequality (i.e. the straight line is the shortest distance between two points) and by keeping track of lower and upper bounds for distance between instances and centroids.
+- However, Elkan's algorithm doesn't always speed up training, and sometimes it can slow down training considerably; it depends on the dataset.
+- Another important variant of K-means was proposed in [a 2010 paper](https://dl.acm.org/doi/abs/10.1145/1772690.1772862) by David Sculley, named mini-batch k-means.
+- Instead of using the full dataset at each iteration, the algorithm is capable of using mini-batches, moving the centroids just slightly at each iterations.
+- This speeds up the algorithm (typically three to four times) and made it possible to cluster huge datasets that does not fit in the memory.
+- Although the mini-batch k-means algorithm is much faster than the original k-means algorithm, its inertia is generally a bit worse.
+- You can see in the learning notebook:
+    - The plot on the left compares the difference between the inertias of mini-batch k-means and regular k-means models trained on the previous five-blobs dataset using various number of cluster k. The difference between two models is small, but visible.
+    - In the plot on the right, you can see that overall mini-batch k-means is a bit slower than regular k-means.
