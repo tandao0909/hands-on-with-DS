@@ -166,3 +166,23 @@
 - Some images may have fewer channels (e.g. greyscale images, which only have one), and some images may have more channels (e.g. images with an additional *alpha channel* for transparency, or satellite images, which often contains channels for additional light frequencies, like infrared).
 - You can experiment with various number of clusters in this small problem, as we did in the learning notebook.
 - When you use fewer than eight clusters, notice that the ladybug's flashy red color fails to get a cluster of its own: It gets merged with colors from the environment. This is because k-means prefers clusters of similar sizes. The ladybug is small - much smaller compared to the rest of the image - so even though its color is flashy, k-means fails to dedicate a cluster to it.
+
+## Using Clustering for Semi-Supervised Learning
+
+- Another way to use clustering is in semi-supervised learning, when we have plenty of unlabeled instances and very few labeled instances.
+- This part focuses a lot in the learning notebook. We did the following:
+    - Import a digits dataset. Pretend only the first 50 instances and the test set are labeled.
+    - Train only on these 50 instances.
+    - Train a k-means to clustering 50 clusters, with each cluster we find the digit closest to its centroid.
+    - Then we propagate to the whole training set.
+    - We trip off outliers.
+- More detail in the learning notebook.
+- Scikit-learn also offers two classes that can propagate labels automatically: `LabelSpreading` and `LabelPropagation` in the `sklearn.semi_supervised` package. Both classes construct a similarity matrix between all the instances, and iteratively propagate labels from labeled instances to similar unlabeled instances.
+- There's also a very different class named `SelfTrainingClassifier` in the same package: You give it a base classifier (such as a `RandomForestClassifier`) and it trains on the labeled instances, then uses it to predict label for unlabeled samples. It then updates  the training set with the labels it is most confident about, and repeats this process of training and labeling until it cannot add labels anymore.
+- These techniques is not silver bullet, but it can occasionally give your model a little boost.
+- To further improve your model and your training set, the next step could be to do a few rounds of *active learning*, which is when a human expert interacts with the learning algorithm, providing labels for specific instances when the algorithm asks for them.
+- There are many different strategies for active learning, but one of the most common ones is called *uncertainty sampling*. Here is the breakdown of it:
+    - The model is trained on the labeled instances gathered so far, and this model is used to make predictions on all the unlabeled instances.
+    - The instances for which the model is the most uncertain (i.e., where its estimated probability is lowest) are given to the expert for labeling.
+    - You iterate this process until the performance improvements stops being worth the labeling effort.
+- Other active learning strategies include labeling the instances that would result in the largest model change or the largest drop in the model's validation error, or the instances that different models disagree on (e.g., an SVM and a random forest).
