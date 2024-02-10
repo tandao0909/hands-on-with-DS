@@ -186,3 +186,17 @@
     - The instances for which the model is the most uncertain (i.e., where its estimated probability is lowest) are given to the expert for labeling.
     - You iterate this process until the performance improvements stops being worth the labeling effort.
 - Other active learning strategies include labeling the instances that would result in the largest model change or the largest drop in the model's validation error, or the instances that different models disagree on (e.g., an SVM and a random forest).
+
+# DBSCAN
+
+- The *density-based spatial clustering application with noise* (DBSCAN) algorithm defines cluster as continuous regions of high density. Here is how it works:
+    - For each instance, the algorithm counts how many instances are located within a small distance $\varepsilon$ (epsilon) from it. This region is called the instances's *$\varepsilon$-neighborhood*.
+    - If an instance has at least `min_samples` instances in its $\varepsilon$-neighborhood (including itself), then it is called a *core instance*. In other words, core instances are those located in dense regions.
+    - All instances in the neighborhood of a core instance belong to the same cluster. This neighborhood may include other core instances; therefore, a long sequence of neighboring core instances form a single cluster.
+    - Any instance that is not a core instance and does not have one in its neighborhood is considered an anomaly.
+- Most of this part will be in the learning notebook. Visit it for more detail.
+- This algorithm works well if all the clusters are well separated by low-density regions.
+- In short, DBSCAN is a very simple yet powerful algorithm capable of identifying any number of clusters of any shape. It is robust to outliers, and only have two hyperparameters to tweak (`min_samples` and `eps`)
+- However, if the density varies across the clusters or if there's no sufficiently low-density region around some cluster, DBSCAN will be struggle to capture all the clusters properly.
+- Moreover, its computational complexity is $O(m^2n)$, hence it doesn't scale well with large datasets.
+- You may want to try *hierarchial DBSCAN* (HDBSCAN), which is implemented in the [scikit-learn-contrib project](https://github.com/scikit-learn-contrib/hdbscan), as it is usually better than DBSCAN at finding clusters of varying densities.
