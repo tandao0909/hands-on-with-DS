@@ -244,3 +244,12 @@ Scikit-learn offers several more clustering algorithms that you should take a lo
 - The computational complexity of training a `GaussianMixture` model depends on the number of instances *m*, the number of dimensions *n*, and the constraints on the covariance matrices:
     - If `covariance_type` is `"spherical"` or `"diag"`, it is $O(kmn)$, assuming the dataset has a clustering structure.
     - If `covariance_type` is `"spherical"` or `"diag"`, it is $O(kmn^2 + kn^3)$, so it wont't scale to large numbers of features.
+
+## Using Gaussian Mixture for Anomaly Detection
+
+- Using Gaussian mixture model for anomaly detection is quite simple: any instances located in a low-density region can be considered an anomaly. You just need to define the threshold you want to use.
+- For example, for a manufacturing that tries to detect defect products, the ratio of defective products is usually well known. Say it is 1%. You can then set the density threshold to be the value that results in having 1% of the instances located in ares below that threshold density.
+- If you get too many false positive, you can lower the threshold. If you get too many false negative, you can increase the threshold. This is the precision/recall trade-off we mentioned in chapter 3.
+- A closely related task is *novelty detection*: it differs from anomaly detection in that the algorithm is assumed to be trained on a "clean" dataset, uncontaminated by outliers, whereas anomaly detection does not make this assumption. In fact, outlier detection is often used to clean up a dataset.
+- Gaussian mixture models will try to fit all the data, including the outliers; so if you have to many of them will bias the model viewpoint about "normality", and some outliers may wrongly be considered as normal.
+- If this happen, you can try to fit the model once, use it to detect and remove the most extreme outliers, then refit the model on the cleaned-up dataset. Another approach is to use robust covariance estimation methods (see the `EllipticEnvelope` class).
