@@ -218,7 +218,7 @@ Scikit-learn offers several more clustering algorithms that you should take a lo
 - There are several GMM variants. In the simplest variant, which is implemented in the `GaussianMixture` class, You must know in advance the number of Gaussian distributions $k$.
 - The dataset then is assumed tp have been generated through the following probabilistic process:
     - For each instance, a cluster is chosen randomly from among $k$ clusters. The probability of choosing the $j^{th}$ cluster is the cluster weight $\phi^{(j)}$. The index of the cluster chosen for the $i^{th}$ instance in noted $z^{i}$.
-    - If the $i^{th}$ instance is assigned to the $j^{th}$ cluster (i.e., $z^{i}=j$), then the location $x^{i}$ of this instance is sampled randomly from the Gaussian distribution with mean $\mu^{j}$ and covariance matrix $\Sigma^{(j)}$. This is noted as $x^{(i)} ~\sim \textbf{N}\left(\mu^{(j)}, \Sigma^{(j)}\right)$.
+    - If the $i^{th}$ instance is assigned to the $j^{th}$ cluster (i.e., $z^{i}=j$), then the location $x^{i}$ of this instance is sampled randomly from the Gaussian distribution with mean $\mu^{j}$ and covariance matrix $\Sigma^{(j)}$. This is noted as $x^{(i)} ~\sim \mathcal{N}\left(\mu^{(j)}, \Sigma^{(j)}\right)$.
 - So what can you do with such model? Given the dataset $\textbf{X}$, you typically want to start by estimating the weight $\phi$ and all the distributions parameters $\mu^{(1)}$ to $\mu^{(k)}$ and $\Sigma^{(1)}$ to $\Sigma^{(k)}$.
 - We have implemented a Gaussian Mixture model in the learning notebook. This model is pretty good:
     - We created 3 clusters: The first two contain 500 instances each, while the third one only has 250 instances. So the true cluster weights are 0.4, 0.4 and 0.2, the order can be switched, and that is roughly what the algorithm found.
@@ -253,3 +253,31 @@ Scikit-learn offers several more clustering algorithms that you should take a lo
 - A closely related task is *novelty detection*: it differs from anomaly detection in that the algorithm is assumed to be trained on a "clean" dataset, uncontaminated by outliers, whereas anomaly detection does not make this assumption. In fact, outlier detection is often used to clean up a dataset.
 - Gaussian mixture models will try to fit all the data, including the outliers; so if you have to many of them will bias the model viewpoint about "normality", and some outliers may wrongly be considered as normal.
 - If this happen, you can try to fit the model once, use it to detect and remove the most extreme outliers, then refit the model on the cleaned-up dataset. Another approach is to use robust covariance estimation methods (see the `EllipticEnvelope` class).
+
+## Selecting the Number of Clusters
+
+- Just like k-means, the `GaussianMixture` algorithm needs to now the number of clusters prior to training.
+- With k-means, you can use inertia or the silhouette score to find the optimal number of clusters. However, they are not suitable for Gaussian mixture, as they are not reliable when the clusters are not spherical or have different sizes.
+- You should try to find the model that minimizes a *theoretical information criterion*, such as the *Bayesian information criterion* (BIC) or the *Akaike information criterion* (AIC):
+    $$BIC = \log(m)p-2\log(\hat{\mathcal{L}})$$
+    $$AIC = 2p-2\log(\hat{\mathcal{L}})$$
+    where:
+    - *m* is the number of instances, as always.
+    - *p* is the number of parameters learned by the model.
+    - $\hat{L}$ is the maximum value of the *likelihood function* of the model.
+- Both BIC and AIC penalize models that have more parameters to learn (e.g. more clusters) and rewards models that fit the data well. They often end up selecting the same model. However, when they differ, the model selected by BIC tends to be simpler (fewer parameters) than the one selected by AIC, but tends to not fit the data quite as well (this is especially true for larger dataset).
+
+### Likelihood Function
+
+- The terms "probability" and "likelihood" are often used interchangeably in everyday languages, bu they have very different meanings in statistics.
+- Given a statistic model with some parameters $\theta$, "probability" is used to describe how plausible  a future outcome $\textbf{x}$ is (knowing the parameter values $\theta$), while the word "likelihood" is used to describe how plausible a particular set of parameter values $\theta$ is, after the outcome $\textbf{x}$ is known.
+- In other words, (which may be too much simplistic) we can think of likelihood is when we try to estimate the past, and probability is when we try to guess the future.
+- Consider a 1D mixture model of two Gaussian distributions centered at -4 and 1.
+- For simplicity, this toy model has a single parameter $\theta$ that controls the standard deviations of both distributions.
+- The top left contour plot shows the entire $f(x, \theta)$ as a function of both $x$ and $\theta$.
+- To estimate the probability distribution of a future outcome $x$, you need to set the model parameter $\theta$.
+- For example, if you set $\theta = 1.3$ (the black horizontal line), you get the probability density function (PDF) $f(x; \theta=1.3)$ shown in the lower-left plot.
+- Say you want to estimate the probability that $x$ will fall between -2 and 2. Then you must calculate the integral of the PDF on this range (i.e., the surface of the shaded region).
+- But what if you observed a single instance $x=2.5$ (the blue vertical line in the upper-left plot)? In this case, you need to get the likelihood function $\mathcal{L}(\theta|x=2.5)= f(x=2.5|\theta)$, described in the upper-right plot.
+- In short, the PDF is a function of $x$ (with $\theta$ fixed), while the likelihood function is a function of $\theta$ (with $x$ fixed).
+- It's worth noticed that the likelihood function is not a probability distribution: if you integrate a possibility distribution over all possible values of $x$, you always get 1, but if you integrate the likelihood function over all possible values of $\theta$, the result can be any positive value.
