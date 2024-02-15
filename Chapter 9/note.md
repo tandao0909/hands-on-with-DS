@@ -266,6 +266,7 @@ Scikit-learn offers several more clustering algorithms that you should take a lo
     - *p* is the number of parameters learned by the model.
     - $\hat{L}$ is the maximum value of the *likelihood function* of the model.
 - Both BIC and AIC penalize models that have more parameters to learn (e.g. more clusters) and rewards models that fit the data well. They often end up selecting the same model. However, when they differ, the model selected by BIC tends to be simpler (fewer parameters) than the one selected by AIC, but tends to not fit the data quite as well (this is especially true for larger dataset).
+- AS you can see in the learning notebook, both AIC and BIC reaches the minimum when $k=3$, so it is most likely the best choice.
 
 ### Likelihood Function
 
