@@ -281,3 +281,11 @@ Scikit-learn offers several more clustering algorithms that you should take a lo
 - But what if you observed a single instance $x=2.5$ (the blue vertical line in the upper-left plot)? In this case, you need to get the likelihood function $\mathcal{L}(\theta|x=2.5)= f(x=2.5|\theta)$, described in the upper-right plot.
 - In short, the PDF is a function of $x$ (with $\theta$ fixed), while the likelihood function is a function of $\theta$ (with $x$ fixed).
 - It's worth noticed that the likelihood function is not a probability distribution: if you integrate a possibility distribution over all possible values of $x$, you always get 1, but if you integrate the likelihood function over all possible values of $\theta$, the result can be any positive value.
+- Given a dataset X, a common task is to estimate the most likely value for the model parameters.
+- To do this, you must find the value that maximizes the likelihood function, given X. In the given example, if you have observed a single instance $x=2.5$, the *maximum likelihood estimate* (MLE) of $\theta$ is $\hat{\theta} \approx 1.66$.
+- If a prior probability distribution $g$ over $\theta$, we cna take it into account by maximizing $\mathcal{L}\{\theta|x\}g(\theta)$ instead of $\mathcal{L}\{\theta|x\}$.
+- This is called *maximum a-posteriori* (MAP) estimation. Since MAP constrains the parameter values, you can think of it as a regularized version of MLE.
+- Note that optimizing the likelihood function is equivalent to optimizing its logarithm (plotted in the lower-left plot).
+- It turns out that it is generally easier to work with the log of the likelihood function. For example, if you observed several independent instances $x^{(1)}$ to $x^{(m)}$, then you need to find the value of $\theta$ that maximizes the product of individual likelihoods functions.
+- But we can do that in a simpler way, to maximize the sum (not the product) of the log likelihood functions, thanks to the property $\log(ab) = \log(a)+\log(b)$ of the log function.
+- Once you have estimated $\hat{\theta}$, which is the value of $\theta$ that maximizes the likelihood function, then you can compute $\hat{\mathcal{L}} = \mathcal{L}(\hat{\theta}, X)$, which in turn will be used to calculate the AIC and BIC. You can think of $\hat{\mathcal{L}}$ as a measure of how well the model fits the dataset.
