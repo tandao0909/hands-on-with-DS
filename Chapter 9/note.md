@@ -290,3 +290,12 @@ Scikit-learn offers several more clustering algorithms that you should take a lo
 - It turns out that it is generally easier to work with the log of the likelihood function. For example, if you observed several independent instances $x^{(1)}$ to $x^{(m)}$, then you need to find the value of $\theta$ that maximizes the product of individual likelihoods functions.
 - But we can do that in a simpler way, to maximize the sum (not the product) of the log likelihood functions, thanks to the property $\log(ab) = \log(a)+\log(b)$ of the log function.
 - Once you have estimated $\hat{\theta}$, which is the value of $\theta$ that maximizes the likelihood function, then you can compute $\hat{\mathcal{L}} = \mathcal{L}(\hat{\theta}, X)$, which in turn will be used to calculate the AIC and BIC. You can think of $\hat{\mathcal{L}}$ as a measure of how well the model fits the dataset.
+
+## Bayesian Gaussian Mixture Models
+
+- Rather than manually searching for the optimal number of clusters, you can use the `BayesianGaussianMixture` class from Scikit-learn, which is capable of giving weights equal (or close) to zero to unnecessary clusters.
+- Set the number of clusters `n_components` to a value you have a good reason to believe is greater than the optimal number of clusters (this requires some minimal knowledges about the problem at hand), and the algorithm will eliminate unnecessary clusters automatically.
+- However, a note about Gaussian Mixture models: although they excel at clusters with ellipsoid shape, they don't do so well with cluster with different shape.
+- We try to use a Bayesian Mixture models to cluster the moons dataset in the learning notebook.
+- Not so good! The algorithm desperately look for ellipsoids, so it found eight different clusters instead of two.
+- The density estimation is not so bad, so it can be used for anomaly detection, but it failed to identify the two moons.
