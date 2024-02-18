@@ -3,7 +3,7 @@
 ## Logical Computations with Neurons
 
 - Artificial neurons can be seen as a node, symbolize for a function which has many inputs and one output.
-- Each input is binary (on/off) and output is also binary
+- Each input is binary (on/off) and output is also binary.
 - Here is [Tensorflow's playground](https://playground.tensorflow.org/) to play with.
 - Conclusion after playing (Maybe wrong):
     - The activation affect a lot on the shape of the decision boundaries, in case of ReLU, the decision boundaries are straight lines.
@@ -20,7 +20,7 @@
 - The TLU first calculate the dot product between the inputs and the weights, then add the bias:
     $$z = w_1x_1 + w_2x_2 + \dots + w_nx_n + b = w^Tx+b$$
 - Then we apply a step function (A step function is a function changes its value at certain points and remains constant between these points) to the result.
-- This is nearly the same as logistic regression (chapter 4), we just apply the step function in stead of sigmoid.
+- This is nearly the same as logistic regression (chapter 4), we just apply the step function instead of sigmoid.
 - Like the logistic regression, the hyperparameters are the weights term w and the bias term b.
 - The most common step function is *Heaviside step function*:
     $$heaviside (z) = \begin{cases} 
@@ -34,7 +34,7 @@
         1 \text{ if } z > 0 \\
         \end{cases}$$
 - A single TLU can be used to train simple linear binary classification. It computes a linear function of its inputs. Then if the result exceeds a certain threshold, it predicts the positive class; otherwise it predicts the negative class.
-- This is ver similar to logistic regression (Chapter 4) and linear support vector machine classification (Chapter 5).
+- This is very similar to logistic regression (Chapter 4) and linear support vector machine classification (Chapter 5).
 - A perceptron is a layer of one or more TLU composed together, where every TLU is connected to every input.
 - Such layer is called a fully connected layer, or a dense layer.
 - This layer of TLUs produces the final outputs, which is called the output layer.
@@ -46,7 +46,7 @@
     - X is the input matrix, with each row is an instance and each column is an feature.
     - W is the weight matrix, with each row is an input neuron and each column is an output neuron.
     - b is the bias row vector, with each element is associated with an output neuron.
-- Note: In math, add a matrix and a vector makes no sense. However, in CS, we allow something called "broadcast", which means after calculating the matrix, we add each row of the matrix with the vector. After that, we apply $\phi$ element-wise to every element in the result matrix.
+- Note: In math, add a matrix and a vector makes no sense. However, in CS, we allow something called "broadcasting", which means after calculating the matrix, we add each row of the matrix with the vector. After that, we apply $\phi$ element-wise to every element in the result matrix.
 - The way we train the neuron network based on an observation on biological neuron: "Cells that fire together, wire together". 
 - So we encourage neuron connection that reduces the error.
 - The *weight update* equation is:
@@ -58,10 +58,11 @@
     - $y_j$ is the j-th target output for the current training instance.
     - $\eta$ is the learning rate (Similar to Logistic regression in chapter 4).
 - The decision boundaries of each output neuron is linear, so Perceptrons are incapable of learning complex structure (similar to Logistic Regression).
-- However, if the training dataset is linearly separable, then Rosenblatt, the author of Perceptron, [proofs](https://en.wikipedia.org/wiki/Perceptron#Convergence_of_one_perceptron_on_a_linearly_separable_dataset) that this algorithm would converge to a solution. Note that this solution is not unique, as there are an infinity amount of hyperplane that can separate a linearly separable dataset.
-- The Perceptron's implementation is very similar to SGD. In fact, in scikit-learn, we can implement Perceptron using SGDClassifier, as shown in the learn notebook.
+- However, if the training dataset is linearly separable, then Rosenblatt, the author of Perceptron, [proofed](https://en.wikipedia.org/wiki/Perceptron#Convergence_of_one_perceptron_on_a_linearly_separable_dataset) that this algorithm would converge to a solution. Note that this solution is not unique, as there are an infinity amount of hyperplane that can separate a linearly separable dataset.
+- The Perceptron's implementation is very similar to SGD. In fact, in Scikit-learn, we can implement Perceptron using SGDClassifier, as shown in the learning notebook.
 - However, perceptron has some serious weaknesses, like incapable of solving some trivial problems (e.g. the *exclusive OR* (XOR) classification problem). Of course other linear classification model also suffer from the same problems.
 - But, we can overcome some limitations of Perceptrons by stacking several layers of them on each other. 
+- Contrary to Logistic regression classifiers, perceptrons don't output a class probability. This is one reason to prefer logistic regression over perceptrons. Moreover, perceptrons do not use any regularization by default, and training stops as soon as there is noe more prediction errors on the training set, so the model typically doesn't generalize as well as logistic regression or a linear SVM classifier. However, perceptrons may train a bit faster.
 
 ## The Multilayer Perceptron and Backpropagation
 
@@ -75,7 +76,7 @@
 - Many generations of researchers have studied how to train a neural network and we, stand on the shoulder on many giants, have some best practices passed down to us by them:
     - Reverse-mode automatic differentiation (or reversed-mode auto diff for short): Using two passes through the network (one forward, then one backward), we can calculate the gradients of the neural network's errors with regard to every weights and biases. In other words, we can find out how to tweak each weights and biases to reduce the error the most efficiently. 
     - We combine this with gradient descent and have *the most popular AI algorithms* nowadays, named **Backpropagation**.
-- Backpropagation can be applied to all sorts of computational graph, not only neural networks.
+- Backpropagation can be applied to all sorts of computational graphs, not only neural networks.
 - Let's walk through the process of backpropagation step by step:
     - It handles one mini-batch at a time (for example, containing 32 instances each), and it goes through the full training multiple times. Each pass is called an *epoch*.
     - Each mini-batch enters the network through the input layer. At each layer, we computes the output using the input from the previous layer, then pass to the next layer. This is the *forward pass*: This is exactly the same as making predictions, expect we save all the intermediate result for the backward pass.
@@ -85,7 +86,7 @@
     - Finally, the algorithm performs a gradient descent step to tweak all the weights and biases using the gradient we just computed.
 - Note that it is crucial to initialize the weights and biases randomly. For example, if you initialize all the weight and bias to the same number, then all neurons in a given layer will be perfectly identical. So the propagation step will treat all of them equally, so after the gradient descent step, all weights and biases in the same layer will remain the same. So at the end, your layer will perform just like it has only one neuron, leads to the fact that it would not be smart. if you initialize the parameters randomly instead, you break the symmetry of the network and allow different patterns can emerge form the neurons.
 - In short, backpropagation predicts a mini-batch (forward-pass), computes the error, and then traverse the layers back and calculate the gradient error for each parameter (backward-pass), after that, it performs a gradient descent step on every parameter.
-- So if you backpropagation to work, you need a cost function that is differentiable and the its differentiation is not 0. because gradient descent cannot move on a flat surface.
+- So if you want backpropagation to be working, you need a cost function that is differentiable and the its differentiation is not 0, because gradient descent cannot move on a flat surface.
 - That is the reason why we don't use step functions as an activation function nowadays, because step functions consist of many flat segments, which means gradient descent will perform poorly on it.
 - Three popular choice nowadays is:
     - Sigmoid function:
@@ -99,12 +100,12 @@
     The ReLU is continuous but not differentiable at 0 and its derivate when $z<0$ is 0. So around 0, the slope change suddenly, so the gradient descent would bounce the model around. In practice, however, ReLU works very well and has the advantage of being fast to compute, so it has become the default (this is a case where the biology model can be misleading, because while it seems like biological neuron follow a roughly S-shape activation function, but ReLU is better in practice).
 - But why we need activation functions in the first place? 
     > Imagine we don't have activation functions in the first place. Then we would chain multiple linear transforms and apply them sequentially. But, if you apply linear transform on a line, you obtain a line. So in the end, you just have a line. In conclusion, if you don't have some form of nonlinearity, then even with a deep stack of neuron layers, you can't solve a complex problem with it. In contrast, a large enough with nonlinear activation functions can [approximate any function](https://www.youtube.com/watch?v=TkwXa7Cvfr8&t=230s) to any degree of precisions.
-- In this chapter, we will implement a Dense layer, which is just a layer consists of many Perceptron
+- In this chapter, we will implement a Dense layer, which is just a layer consists of many Perceptron.
 
 ## Regression MLPs
 
 - MLPs can be used to train a regression model. Then the number of neurons in the input layer is the number of features and the number of neurons in the output layer is the number of output dimensions.
-- You can use MLPRegressor in scikit-learn to implement MLPs. The implementation detail is in the learn notebook.
+- You can use MLPRegressor in Scikit-learn to implement MLPs. The implementation detail is in the learning notebook.
 - There should be no activation function in the output layer, so the neural network is free to output any values it wants.
 - But if you want to add some restrictions on top of the output, then you can apply an activation function to the output player. Here are some usually encountered situations and their solutions:
     - You want the output to be non-negative. Then you can apply a ReLU to the output layer. Alternatively, you can try *softplus* function, which is a smooth variant of ReLU:
@@ -135,4 +136,18 @@
 ## Classification MLPs
 
 - MLPs can be used for classification tasks.
-- For a 
+- For a binary classification problem, you just need to use a single output neuron using the sigmoid activation function: the output will be a number between 0 and 1, which you can interpret as the estimated probability of the positive class. The estimated probability of the negative class is equal to 1 minus that number.
+- MLPs can also handle multilabel classification tasks (mentioned in chapter 3).
+- For example, you can have an email classification system that predicts whether or not each incoming email is spam or ham, and simultaneously predicts whether it is urgent or non-urgent email. In this case, you would need two output neurons, both using the sigmoid activation function: the first would output the probability hat the email is spam and the second would output the probability that it is urgent. 
+- More generally, you would dedicate one output neuron for each positive class. Note that the output probabilities do not necessarily add up to 1. This lets the model output any combination of labels: you can have non-urgent ham, urgent ham, non-urgent spam, and perhaps even urgent spam (although that would probably be an error).
+- If each instance can belong only to a single class, out of three or more possible classes (e.g., classes 0 through 9 for digit image classification), then you need to one output neuron per class, and you should use the softmax activation function for the whole output layer. The softmax function (mentioned in chapter 4) will ensure that all the estimated probability are between 0 and 1 and they add up to 1, since the classes a exclusive. As you saw in chapter 3, this is called multiclass classification.
+- Regrading the loss function, since we are predicting probability distributions, the cross-entropy loss (or *x-entropy* or log loss for short, see chapter 4) is generally a good choice.
+- Scikit-learn has an `MLPClassifier` class in the `sklearn.neural_network` package. It is almost identical to the `MLPRegressor` class, expect that it minimizes the cross entropy instead of MSE.
+- Typically classification MLP architecture:
+
+| Hyperparameter              | Binary classification         | Multilabel binary classification | Multiclass classification |
+|-----------------------------|-------------------------------|----------------------------------|----------------------------|
+| Hidden layers               | Typically 1 to 5 layers, depending on the task |                                                        
+| # Output neurons            | 1                             | 1 per label                      | 1 per class                |
+| Output layer activation     | Sigmoid function              | Sigmoid function                 | Softmax function           |
+| Loss function               | X-entropy                     | X-entropy                        | X-entropy                  |
