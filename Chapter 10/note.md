@@ -158,6 +158,32 @@
 
 ## Building an Image Classifier Using the Sequential API
 
+### Using Keras to load the dataset
+
 - We will use the Fashion MNIST dataset. This dataset is similar to MNIST, but consists of fashion items instead of handwritten digits.
 - This dataset is significantly more challenging than MNIST.
 - Most of this part will be in the learning notebook, as it focuses more on code instead of knowledge.
+
+### Creating the model using the sequential API
+
+- We go through the first code block in the learning notebook line by line:
+    - First, we set TensorFlow's random seed to make the result reproducible: the random weights of the hidden layers and the output layer will be the same every time you run the notebook. You could use `tf.keras.utils.set_random_seed()` function, which conveniently set the random seeds for TensorFlow, Python (`random.seed()`), and NumPy (`np.random.seed()`).
+    - The next line creates a `Sequential` model. This is the simplest kind of Keras model for neural networks that are just composed of a single stack of layers connected sequentially. This is called the sequential API.
+    - Next, we build the first layer (an `Input` layer) and add it to the model. We specify the input `shape`, which doesn't include the batch size, only the shape of the instances. TensorFlow needs to know the shape of the inputs so it can determine the shape of the connection weight matrix of the first hidden layer.
+    - Then we add a `Flatten` layer. Its role is to convert each input image into an 1D array: for example, if it receives a batch of shape [32, 28, 28], it will reshape this batch to [32, 784]. In other words, if it receives input data `X`, it computes `X.reshape(-1, 784)`. This layer doesn't have any parameters, it's juts there to do some simple preprocessing.
+    - Next we add a `Dense` hidden layer with 300 neurons. It will use the ReLU activation function. Each `Dense` layer manages its own weight matrix, containing all the connection weights between the neurons and their inputs. It also manages a vector of bias terms (one per neuron). When it receives some input data, it computes the hypothesis function in [this section](#the-perceptron).
+    - Then we add a second `Dense` hidden layer with 100 neurons, also using the ReLu activation function.
+    - Finally, we add a `Dense` output layer with 10 neurons (one per class), using the softmax activation function because the classes are exclusive.
+- Specifying `activation="relu"` is equivalent to specifying `activation=tf.keras.activations.relu`. Other activation functions are available in the `tf.keras.activations` package. We will many of them, and you can find the full list in [the documentation](https://keras.io/api/layers/activations). We will also define our own custom activation functions in Chapter 12.
+- The model's `summary()` method displays all the model's layers, including:
+    - Each layer's name (which is automatically generated unless you set it when creating the layers).
+    - Each layer's shape (`None` means the batch size can be anything)
+    - Each layer's number of parameters.
+    - Ends with the total number of parameters, including trainable and non-trainable parameters.
+- Alternatively, you can use `tf.keras.utils.plot_model()` to generate an image of your model.
+- Note that `Dense` layers often have a lot of parameters. For example, the first hidden layer has $784 \times 300$ connection weights, plus 300 bias terms, which adds up to 235,500 parameters. This gives the model quite a lot of flexibility to fit the training set, but it also means the model has a risk of overfitting, especially when you don't have a lot of training data.
+- Each layer has a unique name (e.g., `"dense_2"`). You can set the name explicitly using the construct's `name` argument, but it generally is simpler to let Keras name the layers automatically. Keras takes the layer's class name and converts it to snake case (e.g., a layer from the `"MyAbsolutelyNormalLayer"` will be named `"my_absolutely_normal_layer"` by default).
+- Keras also ensures that the name is globally unique, even across the same model, by appending an index if needed, as in `"dense_2"`. The reason why Keras tries to make the name unique across models is to make it possible to merge models easily without getting name conflicts.
+- All global state managed by Keras is stored in a *Keras session*, which you can clear using `tf.keras.backend.clear_session()`. In particular, this resets the name counters.
+- Notice that the `Dense` layer initialized the connection weights randomly (which is needed to break symmetry, as discussed earlier), and the biases are initialized to zeros, which is fine. If you want to use a different initialization method, you can set `kernel_initializer` (*kernel* is another name for the matrix of the connection weights) or `bias_initializer` when creating the layer. We will discuss initializers further in chapter 11, and the full list can be found in [the documentation](https://keras.io/api/layers/initializers).
+- The shape of the weight matrix depends on the number of inputs, which is why we need to specify the `input_shape` when creating the model. If you do not specify the input shape, it's OK: Keras will simply wait until it knows the input shape before it actually builds the model parameters. This will happen either when you feed it some data (e.g., during training) or when you call its `build()` method. Until the model parameters are built, you will not be able to do certain things, such as display the model's summary or save the model. So if you know the input shape when creating the model, it is best to specify it.
