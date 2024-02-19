@@ -151,3 +151,13 @@
 | # Output neurons            | 1                             | 1 per label                      | 1 per class                |
 | Output layer activation     | Sigmoid function              | Sigmoid function                 | Softmax function           |
 | Loss function               | X-entropy                     | X-entropy                        | X-entropy                  |
+
+# Implementing MLPs with Keras
+
+- Keras is TensorFlow's high-level depp learning API: it allows you to build, train , evaluate, and execute all sorts of neural networks.
+
+## Building an Image Classifier Using the Sequential API
+
+- We will use the Fashion MNIST dataset. This dataset is similar to MNIST, but consists of fashion items instead of handwritten digits.
+- This dataset is significantly more challenging than MNIST.
+- Most of this part will be in the learning notebook, as it focuses more on code instead of knowledge.
