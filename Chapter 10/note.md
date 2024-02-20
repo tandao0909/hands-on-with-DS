@@ -200,3 +200,35 @@
 - Regarding the optimizer, `"sgd"` means that we will train the model using stochastic gradient descent. In other words, Keras will perform the backpropagation algorithm described earlier (i.e., reversed-mode autodiff plus gradient descent). There are more efficient optimizers, which we will discussed in chapter 11. They improve gradient descent, not autodiff.
 - When using the `SGD` optimizer, it is important to tune the learning rate. So you will generally want to use `optimizer=tf.keras.optimizer.SGD(learning_rate=__???__)` to set the learning rate, rather than `optimizer="sgd"`, which defaults to a learning rate of 0.01.
 - Finally, since this is a classifier, it's useful to measure its accuracy during training and evaluation, hence we set `metrics=["accuracy"]`.
+
+### Training and evaluating the model
+
+- Now we can train the model by simply call its `fit()` method.
+- We pass it the input features (`X_train`) and the target class (`y_train`), as well as the number fo epochs to train (or else it would default to 1, which would definitely not enough to converge t a good solution).
+- We also pass a validation (this is optional). Keras will measure the loss and the extra metrics on this set at the end of each epoch, which is very useful to see how well the model really performs.
+- If the performance on the training set is much better than the validation set, your model is probably overfitting the training set, or there is a bug, such as a data mismatch between the training set and the validation set.
+- At each epoch during training, Keras displays the number of mini-batches processed so far on the left side of the progress bar.
+- The batch size is 32 by default, and the training set consists of 55,000 images, the model goes through 1,719 mini-batches per epoch: 1,718 of size 32, 1 of size 24. 
+- After the progress bar, you can see the mean training time per sample, and the loss and accuracy (and any other extra metrics you asked for earlier) on both the training set and the validation set.
+- Instead of passing a validation set using `validation_data` argument, you could set `validation_split` to the ratio of the training set that you want Keras to use for validation. For example, `validation_split=0.1` tells Keras to use the last 10% of the data (before shuffling) for validation.
+- If the dataset was very skewed, with some classes being overrepresented and others underrepresented, it would be useful to set the `class_weight` argument when calling the `fit()` method, to give a larger weight to underrepresented classes and a lower weight to overrepresented classes. These weights would be used by Keras when computing the loss.
+- If you need per-instance weights, set the `sample_weight` argument. 
+- If both `class_weight` and `sample_weight` are provided, then Keras multiplies them.
+- Per-instances could be useful, for example, if some instances are labeled by experts, while others are labeled using a crowdsourcing platform: you might want to give more weights to the former.
+- You can also provide sample weights (not class weights) for the validation set by adding them as a third item in the `validation_data` tuple.
+- The `fit()` method returns a `History` object containing the training parameters (`history.params`), the list of epochs it went through (`history.epoch`), and most importantly a dictionary (`history.history`) containing the loss and extra metrics it measured at the end of each epoch on the training set and the validation set.
+- You can see the plot of `history.history` in the learning notebook:
+    - Both the training accuracy and the validation accuracy steadily increase during training, while the training loss and the validation loss decrease. This is good.
+    - The validation curves are relatively close to each other at first, but they get further apart over time, showing a bit of overfitting.
+    - In this particular case, the model looks like it performed better on the validation set than on the training set at the beginning of training, but that's actually not the case.
+    - The validation error is computed at the *end* of each epoch, while the training error is computed *during* each epoch, so the validation curve should be shifted by half an epoch to the left.
+    - If you do that, you will see that the training and validation curves overlap almost perfectly at the beginning of the training.
+- The training set performance ends up beating the validation performance, as is generally the case when you train for long enough.
+- You can tell that the model has not quite converged yet, as the validation loss is still going down, so you should probably continue training. This is as simple as calling the `fit()` method, since Keras will continue training where it left off.
+- If you are not satisfied with your model's performance, you should go back and tune the hyperparameters:
+    - The first one to check is the learning rate. If that doesn't help, try another optimizer (and always retune the learning rate after changing any hyperparameter).
+    - If the performance is still not great, then try tuning the model hyperparameters such as the number of layers, the number of neurons per layer, and the type of activation functions to use for each hidden layer.
+    - You can also try tuning other hyperparameters, such as the batch size (it can be set in the `fit()` method using the `batch_size` argument, which defaults to 32).
+- Once you are satisfied with your model's validation accuracy, you should evaluate it on the test set to estimate the generalization error before you deploy your model to production.
+- As discussed in chapter 2, it i common to get slightly worse performance on the test set than on the validation set, because the hyperparameters tuning is done on the validation set, not the test set. In our case, because we do not perform any hyperparameters tuning, the lower accuracy is mere bad luck.
+- Remember to resist the temptation to tweak the hyperparameters on the test set, or else your estimate of the generalization error will be too optimistic.
