@@ -238,3 +238,12 @@
 - We can use the model's `predict()` method to make predictions on new instances.
 - In our case, for each instance, the model estimates one probability per class, from class 0 to class 9. This is similar to the output of `predict_proba()` method in Scikit-learn classifiers.
 - If you only care about the class with the highest estimated probability (even if that probability is quite low), then you can use the `argmax()` method to get the highest probability class index for each instance.
+
+### Building a Regression MLP Using the Sequential API
+
+- We switch back to the California housing price problem in chapter 2 and tackle it using the same MLP as earlier, with 3 hidden layers composed of 50 neurons each, but this time building it with Keras.
+- Using the sequential API to build, train, evaluate and use a regression MLP is quite similar to what we did for classification.
+- The main differences are the output layer has a single neuron (since we only want to predict a single value) and it uses no activation function, the loss function is mean squared error, the metric is RMSE, and we're using an Adam optimizer like Scikit-learn's `MLPregressor` did.
+- Moreover, in this example, we don't need a `Flatten` layer, and instead we use a `Normalization` layer as the first layer: it does the same thing as Scikit-learn's `StandardScaler`, but it must be fitted ot the training data using its `adapt()` method before you call the `fit()` method.
+- The `Normalization` layer learns the feature means and standard deviations from the training data when you call its `adapt()` method. 
+- Yet when you display the model's summary, these statistics are listed as non-trainable. This is because these these parameters are not affected by gradient descent.
