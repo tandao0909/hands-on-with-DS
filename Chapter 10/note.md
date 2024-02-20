@@ -232,3 +232,9 @@
 - Once you are satisfied with your model's validation accuracy, you should evaluate it on the test set to estimate the generalization error before you deploy your model to production.
 - As discussed in chapter 2, it i common to get slightly worse performance on the test set than on the validation set, because the hyperparameters tuning is done on the validation set, not the test set. In our case, because we do not perform any hyperparameters tuning, the lower accuracy is mere bad luck.
 - Remember to resist the temptation to tweak the hyperparameters on the test set, or else your estimate of the generalization error will be too optimistic.
+
+### Using the model to make predictions
+
+- We can use the model's `predict()` method to make predictions on new instances.
+- In our case, for each instance, the model estimates one probability per class, from class 0 to class 9. This is similar to the output of `predict_proba()` method in Scikit-learn classifiers.
+- If you only care about the class with the highest estimated probability (even if that probability is quite low), then you can use the `argmax()` method to get the highest probability class index for each instance.
