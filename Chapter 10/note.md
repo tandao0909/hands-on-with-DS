@@ -239,7 +239,7 @@
 - In our case, for each instance, the model estimates one probability per class, from class 0 to class 9. This is similar to the output of `predict_proba()` method in Scikit-learn classifiers.
 - If you only care about the class with the highest estimated probability (even if that probability is quite low), then you can use the `argmax()` method to get the highest probability class index for each instance.
 
-### Building a Regression MLP Using the Sequential API
+## Building a Regression MLP Using the Sequential API
 
 - We switch back to the California housing price problem in chapter 2 and tackle it using the same MLP as earlier, with 3 hidden layers composed of 50 neurons each, but this time building it with Keras.
 - Using the sequential API to build, train, evaluate and use a regression MLP is quite similar to what we did for classification.
@@ -247,3 +247,42 @@
 - Moreover, in this example, we don't need a `Flatten` layer, and instead we use a `Normalization` layer as the first layer: it does the same thing as Scikit-learn's `StandardScaler`, but it must be fitted ot the training data using its `adapt()` method before you call the `fit()` method.
 - The `Normalization` layer learns the feature means and standard deviations from the training data when you call its `adapt()` method. 
 - Yet when you display the model's summary, these statistics are listed as non-trainable. This is because these these parameters are not affected by gradient descent.
+
+## Building Complex Models Using the Functional API
+
+- As you can see, the sequential API is quite clean and straightforward. However, although `Sequential` models are very common, it's sometimes useful to build neural networks with more complex topologies, or with multiple inputs or outputs. That's why Keras offers the functional API.
+- One example of nonsequential neural networks is a *Wide & Deep* neural network. This neural network architecture was introduced in a 2016 paper by [Heng-Tze Cheng et al](https://arxiv.org/abs/1606.07792).
+- This architecture connect all or part of the inputs directly to the output layer. This makes it possible for the neural network to learn both the deep patterns (using the deep path) and the simple rules (through the short path).
+- This is in contrast to MLP, as a regular MLP forces all the data to flow through a full stacks of layers; thus, simple patterns in the dataset may end up being distorted by this sequence of transformations.
+- We build a simple neural network with this architecture in the learning notebook. Here I go through this code for more detail:
+    - First, we create five layers: a `Normalization` layer to standardize the inputs, two `Dense` layers with 30 neurons each, using the ReLU activation function, a `Concatenate` layer, and one more `Dense` layer with a single neuron for the output layer, without any activation function.
+    - Next, we create an `Input` object (the name `input_` is used to avoid overshadowing the built-in `input()` function in Python). This is a specification of the kind of input the model will get, including its `shape` and optionally its `dtype`, which defaults to 32-bit floats. A model may actually have multiple inputs, as you will see shortly.
+    - Then we use the `Normalization` layer just like a function, passing it the `Input` object. This is why this is called the functional API. Note that we are just telling Keras how it should connect the layers together; no actual data is being processed yet, as the `Input` object is just a data specification. In other words, it is a symbolic input. The output of this call is also symbolic: `normalized` does not store any actual data, it just need to construct the model.
+    - In the same way, we then pass `normalized` to the `hidden_layer1`, which outputs `hidden1`, and we pass `hidden1` to `hidden_layer2`, which outputs `hidden2`.
+    - So far, we have connected the layers sequentially, but then we use the `concat_layer` to concatenate the normalized input and the second hidden layer's output. Again, no actual data is concatenated yet: it's all symbolic, to build the model.
+    - Then we pass `concat` to the `output_layer`, which gave us the final output.
+    - Lastly, we create a `Keras Model`, specifying which inputs and outputs to use.
+    - Note that, all we did above is all symbolic. In other words, this is just a blueprint of how the pipeline would be structured. It does not process any actual data yet.
+- After creating this Keras model, everything else is the same as earlier: You compile the model, adapt the `Normalization` layer, fit the model, evaluate it and use it to make predictions.
+- But what if you want to send a subset of features through the wide path and a different subset (possibly overlapping) through the deep path? The code in the learning notebook shows how we can do this in Keras.
+- There are a few things to note in this example, compared to the previous one:
+    - Each `Dense` layer is created and called on the same line. This is a common practice, as it makes the code more concise without losing clarity. However, we can't do this with the `Normalization` layer since we need a reference to the layer to be able to call its `adapt()` method before fitting the model.
+    - We used `tf.keras.layers.concatenate()`, which creates a `Concatenate` layer and calls it with the given inputs.
+    - We specified `inputs=[input_wide, input_deep]` when creating the model, since there are two inputs.
+- Now we can compile the model as usual, but when we call the `fit()` method, instead of passing a single input matrix `X_train`, we must pass a pair of matrices `(X_train_wide, X_train_deep)`, one per input. The same for `X_valid` and also for `X_test` and `X_new` when you call `evaluate()` or `predict()`.
+- Instead of passing a tuple `(X_train_wide, X_train_deep)`, you can pass a dictionary `{"input_wide": X_train_wide, "input_deep": X_train_deep}`, if you set `name="input_wide"` and `name="input_deep"` when creating the input layers. This is highly recommended when there are many inputs, to clarify the code and avoid getting the order wrong.
+- There are also many use cases in which you may want to have multiple outputs:
+    - The task may demand it. For instance, you may want to locate and classify the main object in a picture. This is both a regression task and a classification task.
+    - Similarly, you may have multiple independent tasks based on the same data. Sure, you can train one neural networks per task, but in many cases, you will get better results on all tasks by training a single neural network with one output neuron per task. This is because the neural network can learn features in the data that are useful across tasks. For example, you could perform *multitask classification* on pictures of face, using one output to classify the person's facial expression (smiling, surprised, angry, etc.) and another output neuron to identify whether they are wearing glasses or not.
+    - Another use case is as a regularization technique (i.e., a training constraint whose objective is to reduce overfitting and thus improve the model's ability to generalize). For example, you may want to add an auxiliary output in a neural network architecture to ensure the underlying part of the network learns something useful on its own, without relying on the rest of the network.
+- Adding an extra output is quite easy: we just connect it to the appropriate layer and add it to the model's list of outputs.
+- Each output will need its own loss function. Therefore, when we compile the model, we should pass a list of losses. If we pass a single loss, Keras will assume that the same loss must be used for all outputs.
+- By default, Keras will compute all the losses and simply add them up to get the final loss used for training.
+- Since we care much more about the main output than about the auxiliary output (as it is just used for regularization), we want to give the main output's loss a much greater weight. Luckily, it is possible to set all the loss weights when compiling the model.
+- Instead of passing a tuple `loss=("mse", "mse")`, you can a dictionary `loss={"output": "mse", "aux_output": "mse"}`, assuming you created the output layers with `name="output"` and `name="aux_output"`. Just like for the inputs, this clarifies the code and avoid errors when there are several outputs. You can also pass a dictionary for `loss_weights`.
+- Now when we train the model, we need to provide the labels for each output. In this example, the main output and the auxiliary output should try to predict the same thing, so they should use the same labels.
+- So instead of passing `y_train`, we need to pass `(y_train, y_train)` or a dictionary `{"output": y-train, "aux_output": y_train}` if the outputs were named `"output"` and `"aux_output"`. The same goes for `y_valid` and `y_test`.
+- When we evaluate the model, Keras returns the weighted sum of the losses, as well as all individual losses and metrics.
+- If we set `return_dict=True`, then `evaluate()` will return a dictionary instead of a big tuple.
+- Similarly, the `predict()` method will return predictions for each outputs.
+- The `predict()` method returns a tuple, and it does not have a `return_dict` argument to get a dictionary instead. You can create one yourself using `model.output_names`.
