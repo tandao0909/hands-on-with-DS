@@ -311,3 +311,21 @@
     - Is easier to make mistakes.
 - Unless you really need tat extra flexibility, you better stick to the sequential API and the functional API.
 - Keras models can be used as regular layers, so you can easily combine them to build complex architectures.
+
+## Saving and Restoring a Model
+
+- You simply save a model by calling its `save()` method.
+- When you set `save_format="tf"`, Keras saves the model using TensorFlow's `SavedModel` format: this is a directory (with the given name) containing several files and subdirectories.
+- In particular:
+    - The `save_model.pb` file contains the model's architecture and logic in the form of a serialized computation graph, so you don't need to deploy the model's source code in order to use it in production; the SavedModel is sufficient, you will see how this works in chapter 12.
+    - The `keras_metadata.pb` file contains extra information needed by Keras.
+    - The `variables` subdirectory contains all the parameter values (including the connection weights, the biases, the normalization statistics, and the optimizer's parameters), possibly split across multiple files if the model is very large.
+    - The `assets` directory may contain extra files, such as data samples, feature names, class names, and so on. By default, the `assets` directory is empty.
+- Since the optimizer is also saved, including all its hyperparameters and any state it may have, after loading the model you can continue training if you want.
+- If you set `save_format="h5"` or use a filename that ends with `.h5`, `.hdf5` or `.keras`, then Keras will save the model to a single file using a Keras-specific format based on the HDF5 format. However, most TensorFlow deployment tools require the SavedModel format instead.
+- You will typically have a script that trains a model and saves it, and one or more scripts (or web services) that load the model and use it to evaluate and make predictions.
+- You can load the model easily by using `tf.keras.models.load_model()` function.
+- You can also use `save_weights()` and `load_weights()` to save and load only the parameter values. This includes the connection weights, biases, preprocessing stats, optimizer state, etc.
+- The parameter values are saved in one or more files such as `my_weights.data-00000-of-00001`, plus an index file like `my_weights.index`.
+- Saving just the weights is faster and use less disk space than saving the whole model, so it's perfect to save quick checkpoints during training.
+- If you train a big model, and it take hours or days, then you must save checkpoints regularly in case the computer crashes.
