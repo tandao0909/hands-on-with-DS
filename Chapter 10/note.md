@@ -286,3 +286,28 @@
 - If we set `return_dict=True`, then `evaluate()` will return a dictionary instead of a big tuple.
 - Similarly, the `predict()` method will return predictions for each outputs.
 - The `predict()` method returns a tuple, and it does not have a `return_dict` argument to get a dictionary instead. You can create one yourself using `model.output_names`.
+
+## Using the Subclassing API to Build Dynamic Models
+
+- Both the sequential API and functional API are declarative: you start by declaring which layers you want to use and how they should be connected, and only then you can start feeding the model some data for training or inference.
+- This has many advantages:
+    - The model can be easily saved, cloned and shared.
+    - Its structure can be displayed and analyzed.
+    - The framework can infer shapes and check types, so errors can be caught early (i.e., before any data ever goes through the model).
+    - It's also fairly straightforward to debug, since the whole model is a static graph of layers.
+- The flip side is also the fact that the model is static.
+- Some models involve loops, varying shapes, conditional branching, and other dynamic behaviors.
+- For such cases, or simply if you prefer a more imperative programming style, the subclassing API is for you.
+- With this approach, you subclass the `Model` class, create the layers you need in the constructor, and use them to perform the computations you want in the `call()` method. 
+- You must implement the `call()` method, as it is used to define the forward pass of your model, e.g., how to compute the outputs given the inputs.
+- After having the model instance, we can compile it, adapt its normalization layers, fit it, evaluate it and use it to make predictions, exactly what we did when using the Functional API.
+- The difference with this API is that you can include pretty much anything you want in the `call()` method: `for` loops, `if` statements, low-level TensorFlow operations, etc (we will do this in chapter 12).
+- This makes it a great API when experimenting with new ideas, especially for researchers.
+- However, this flexibility comes at a cost:
+    - Your model's architecture is hidden within the `call()` method, so Keras cannot easily inspect it.
+    - The model cannot be cloned using `tf.keras.models.clone_model()`.
+    - When you call the `summary()` method, you only get a list of layers, without any information on how they are connected to each other.
+    - Keras cannot check types and shapes ahead of time.
+    - Is easier to make mistakes.
+- Unless you really need tat extra flexibility, you better stick to the sequential API and the functional API.
+- Keras models can be used as regular layers, so you can easily combine them to build complex architectures.
