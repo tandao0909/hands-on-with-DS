@@ -3,6 +3,7 @@ venv/
 __pycache__/
 .vscode/
 .ipynb_checkpoints/
+Chapter 10/
 my_*
 *.bak
 *.pyc
