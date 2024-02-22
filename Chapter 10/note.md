@@ -329,3 +329,19 @@
 - The parameter values are saved in one or more files such as `my_weights.data-00000-of-00001`, plus an index file like `my_weights.index`.
 - Saving just the weights is faster and use less disk space than saving the whole model, so it's perfect to save quick checkpoints during training.
 - If you train a big model, and it take hours or days, then you must save checkpoints regularly in case the computer crashes.
+
+## Using Callbacks
+
+- The `fit()` method accepts a `callbacks` argument that lets you specify a list of objects that Keras will call before and after training, before and after each epoch, and even before and after processing each batch.
+- For example, the `ModelCheckpoint` callback saves checkpoints of your model at regular intervals during training, by default at the end of each epoch.
+- Moreover, if you use a validation set during training, you can set `save_best_only=True`. In this case, it will only save your model when its performance on the validation set is the best so far.
+- This way, you do not need to worry about training for too long and overfitting the training set: simply restore the last saved model after training, and that will be the best model on the validation set. This is one way to implement early stopping (discussed in chapter 4), but it won't actually stop training.
+- Another way is to use the `EarlyStopping` callback. It will interrupt training when it measures no progress on the validation set for a number of epochs (define by the `patience` argument), and if you set `restore_best_weights=True` it will roll back to the best model at the end of training.
+- You can combines both callbacks to save checkpoints of your model is case your computer crashes, and interrupt training early when there is no more progress, to avoid wasting time and resources and to reduce overfitting.
+- The number of epochs can be set to a large value since training will stop automatically when there is no more progress (just make sure the learning rate is not too small, or else it might keep making slow progress until the end). The `EarlyStopping` callback will store the weights of the best model in RAM, and it restore it for you at the end fo training.
+- Many other callbacks are available in the [`tf.keras.callbacks` package](https://keras.io/api/callbacks/).
+- If you need extra control, you can easily write your own custom callbacks.
+- You can implement `on_train_begin()`, `on_train_end()`, `on_epoch_begin()`, `on_epoch_end()`, `on_batch_begin()` and `on_batch_end()`.
+- Callbacks can be used during evaluation and predictions, if you ever need them (e.g., for debugging).
+- For evaluation, you should implement `on_test_begin()`, `on_test_end()`, `on_test_batch_begin()` or `on_test_batch_end()`, which are called by `evaluate()`.
+- For prediction, you should implement `on_predict_begin()`, `on_predict_end()`, `on_predict_batch_begin()` or `on_predict_batch_end()`, which are called by `predict()`.
