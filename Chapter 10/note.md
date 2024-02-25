@@ -428,3 +428,22 @@
     - Evolutionary algorithms have been used successfully to train individual neural networks, replacing the ubiquitous gradient descent!
     - For example, a [blog post](https://www.uber.com/en-VN/blog/deep-neuroevolution/) by Uber in 2017 where the authors introduce their *Deep Neuroevolution* technique.
 - Despite all the exciting progress and all these tools and services, it stills helps to have an idea of what values are reasonable for each hyperparameter, so that you can build a quick prototype and restrict the search space.
+
+## Number of Hidden Layers
+
+- For many problems, you can start with a single hidden layer and get modest result.
+- An MLP with a single hidden layer can theoretically model even complex functions, given it has sufficient neurons.
+- But for complex problems, depp network have a much higher *parameter efficiency* than shallow ones: they can model complex functions using exponential fewer neurons than shallow networks, allowing them to reach much better performance with the same amount of training data.
+- To understand why, assume you want to draw a forest using some softwares, but are not allowed to copy and paste anything. It would take an enormous amount of time: you would have to draw each tree independently, branch by branch, leaf by leaf.
+- If you could instead draw a leaf, copy and paste it to draw a branch, then copy and paste that branch to create a tree, and finally copy and paste that tree to make a forest, you can finished in no time.
+- Real-world data is often structured in such hierarchial way, and deep neural networks automatically take advantages of this fact: lower hidden layers model low-level structures (e.g., line segments of various shapes and orientations), intermedia hidden layers combine these low-level structures to model intermedia-level structures (e.g., squares, circles), and the highest hidden layers and the output layer combine these intermedia to model high-level structures (e.g., faces, digits).
+- Not only does this hierarchial help DNNs converge faster to a good solution, but it also improves their capability to generalize to new datasets.
+-For example, you have trained a model to recognize faces in pictures already and you now want to train anew neural network to recognize hair styles, you can kickstart the training by reusing the lower layers of the first neural network.
+- Instead of randomly initializing the weights and biases of the first few layers of the new neural network, you can initialize them to the value of the weights and biases of the lower layer of the first neural network.
+- This way, the network will not have learn from scratch all the low-level structures that occur in most pictures, it will only have learn the higher-level structures (e.g., hairstyles).
+- This is called *transfer learning*.
+- In summary, for many problems, you can start with juts one or two hidden layers and the neural network will work just fine.
+- For instance, you can reach above 97% accuracy on the MNIST dataset using just one hidden layer with a few hundred neurons, and above 98% accuracy using two hidden layers with the same total number of neurons, in roughly the same amount of training time.
+- For more complex problems, you can ramp up the number of hidden layers until you start overfitting the training set.
+- Very complex tasks, such as large image classification or speech recognition, typically involve networks with dozens of layers (or even hundreds, but not fully connected ones, as we will see in chapter 14), and they need a huge amount of training data.
+- You will rarely have to train such networks from scratch: it's much more common to reuse parts of a pretrained state-of-the-art network that performs a similar task. Training will then be a lot faster and require much less data.
