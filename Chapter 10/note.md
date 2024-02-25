@@ -461,3 +461,29 @@
 - Indeed, if a layer has too few neurons, it will not have enough representational power to preserve all the useful information from the inputs (e.g., a layer with two neurons can only output 2D data, so if it gets 3D data as inputs, some information will be lost).
 - No matter how big and powerful the rest of the network is, that lost information will never be recovered.
 - In general, you will get more bang for the buck by increasing the number of hidden layers instead of the number of neurons per layers.
+
+## Learning Rate, Batch Size, and Other Hyperparameters
+
+- Here we discuss some of the most important hyperparameters you can tweak in a MLP, and tips on how to set them
+- *Learning rate*: This is arguably the most important hyperparameter. 
+- In general, the optimal learning rate is about half of the maximum learning rate (i.e., the learning rate above which the learning algorithm, as we saw in Chapter 4). 
+- One way to find a good learning rate is to train the model for a few hundred iterations, starting with a low learning rate (e.g., $10^{-5}$) and gradually increasing it up to a very large value (e.g., 10).
+- This is done by multiplying the learning rate by a constant factor at each iteration (e.g., by $(10 / 10^{-5})^{1/500}$ to go from $10^{-5}$ to 10 in 500 iterations).
+- If you plot the loss as a function of the learning rate (using a log scale for the learning rate), you will see:
+    - The loss will drop at first.
+    - After a while, the learning rate will to be too large, so the loss will shoot back up.
+    - The optimal learning rate will be a bit lower than the point at which the loss starts to climb (typically about 10 times smaller than the turning point).
+    - You can then reinitialize your model and train it normally using this good learning rate.
+- We will look at more learning rate optimization techniques later in chapter 11.
+- *Optimizer*: Choosing a better optimizer than plain old mini-batch gradient descent is also quite important. We will look at several optimizers later in chapter 11.
+- *Batch size*: The batch size can have significant impact on your model's performance and training time.
+- The main benefit of using large batch sizes is that hardware accelerators like GPUs can process them efficiently, so the training algorithm can see more instances per second.
+- Therefore, many researchers and practitioners recommend using the largest batch size that fits in the GPU RAM.
+- There's a catch though: in practice, large batch size often lead to training instabilities, especially in the beginning of training, and the resulting model may not generalize as well as a model trained with a small batch size.
+- In [a 2018 paper](https://arxiv.org/pdf/1804.07612.pdf) by Dominic Masters and Carlo Luschi concluded that using small batches (from 2 to 32) was preferable, as small batches led to better models in less training time.
+- However, in 2017, papers by [Elad Hoffer et al.]() and [Priya Goyal et al.]() showed that it was possible to use very large batch sizes (up to 8,192) along with various techniques such as warming up the learning rate (i.e., starting training with a small learning rate, then rampling it up, as will be discussed in chapter 11) and to obtain very short training times, without any generalization gap.
+- So one strategy is to try to using large batch size, with learning rate warmup, and if training is unstable or the final performance is disappointing, then try to use a small batch size (2 to 32) instead.
+- *Activation function*: We discussed this earlier: In general, the ReLU activation function will be a good default for all hidden layers, but for the output layer it really depends on the task.
+- *Number of iterations*: In most cases, the number of training iterations does not actually need to be tweaked: just use early stopping instead.
+- The optimal learning rate depends on other hyperparameters, especially the bach size, so if you modify any hyperparameter, make sure to update the learning rate as well.
+- For more best practices regrading tuning hyperparameters, check out this [2018 paper]() by Leslie Smith.
