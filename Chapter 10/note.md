@@ -4,7 +4,7 @@
 
 - Artificial neurons can be seen as a node, symbolize for a function which has many inputs and one output.
 - Each input is binary (on/off) and output is also binary.
-- Here is [Tensorflow's playground](https://playground.tensorflow.org/) to play with.
+- Here is [TensorFlow's playground](https://playground.tensorflow.org/) to play with.
 - Conclusion after playing (Maybe wrong):
     - The activation affect a lot on the shape of the decision boundaries, in case of ReLU, the decision boundaries are straight lines.
     - The more hidden layers, the more complex structure that the neural network can learn.
@@ -154,7 +154,7 @@
 
 # Implementing MLPs with Keras
 
-- Keras is TensorFlow's high-level depp learning API: it allows you to build, train , evaluate, and execute all sorts of neural networks.
+- Keras is TensorFlow's high-level deep learning API: it allows you to build, train , evaluate, and execute all sorts of neural networks.
 
 ## Building an Image Classifier Using the Sequential API
 
@@ -433,7 +433,7 @@
 
 - For many problems, you can start with a single hidden layer and get modest result.
 - An MLP with a single hidden layer can theoretically model even complex functions, given it has sufficient neurons.
-- But for complex problems, depp network have a much higher *parameter efficiency* than shallow ones: they can model complex functions using exponential fewer neurons than shallow networks, allowing them to reach much better performance with the same amount of training data.
+- But for complex problems, deep network have a much higher *parameter efficiency* than shallow ones: they can model complex functions using exponential fewer neurons than shallow networks, allowing them to reach much better performance with the same amount of training data.
 - To understand why, assume you want to draw a forest using some softwares, but are not allowed to copy and paste anything. It would take an enormous amount of time: you would have to draw each tree independently, branch by branch, leaf by leaf.
 - If you could instead draw a leaf, copy and paste it to draw a branch, then copy and paste that branch to create a tree, and finally copy and paste that tree to make a forest, you can finished in no time.
 - Real-world data is often structured in such hierarchial way, and deep neural networks automatically take advantages of this fact: lower hidden layers model low-level structures (e.g., line segments of various shapes and orientations), intermedia hidden layers combine these low-level structures to model intermedia-level structures (e.g., squares, circles), and the highest hidden layers and the output layer combine these intermedia to model high-level structures (e.g., faces, digits).
@@ -447,3 +447,17 @@
 - For more complex problems, you can ramp up the number of hidden layers until you start overfitting the training set.
 - Very complex tasks, such as large image classification or speech recognition, typically involve networks with dozens of layers (or even hundreds, but not fully connected ones, as we will see in chapter 14), and they need a huge amount of training data.
 - You will rarely have to train such networks from scratch: it's much more common to reuse parts of a pretrained state-of-the-art network that performs a similar task. Training will then be a lot faster and require much less data.
+
+## Number of Neurons per Hidden Layer
+
+- The number of neurons in the input and output layers is determined by the type of input and output your task requires. For example, the MNIST task requires $28 \times 28 = 784$ inputs and output neurons.
+- As for the hidden layers, it used to be common to size them to form a pyramid, with fewer and fewer neurons at each layer - the rationale being many low-level features can coalesce into far fewer high-level features. For example, a neural network for MNIST might have 3 hidden layers, the first with 300 neurons, the second with 200 and the third with 100.
+- However, this practice has been largely abandoned because it seems that using the same number of neurons in all hidden layers performs just well, or even better, in most cases. Moreover, there is inly one hyperparameter to tune, instead of one per layer.
+- That said, depending on the dataset, it can sometimes help to make the first hidden layer bigger than the others.
+- Just like the number of layers, you can try increasing the number of neurons gradually until the neural network starts overfitting.
+- Alternatively, you can try building a model with slightly more layers and neurons than you actually need, and use other regularization techniques to prevent it from overfitting too much.
+- Vincent Vanhoucke, a scientist at Google, has dubbed this as the "stretch pants" approach: instead of wasting time looking for pants that perfectly match your size, just use large stretch pants that will shrink down to the right size.
+- With this approach, you avoid bottleneck layers that could ruin your model.
+- Indeed, if a layer has too few neurons, it will not have enough representational power to preserve all the useful information from the inputs (e.g., a layer with two neurons can only output 2D data, so if it gets 3D data as inputs, some information will be lost).
+- No matter how big and powerful the rest of the network is, that lost information will never be recovered.
+- In general, you will get more bang for the buck by increasing the number of hidden layers instead of the number of neurons per layers.
