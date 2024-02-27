@@ -89,3 +89,30 @@ $$\text{LeakyReLU}_{\alpha}(z)=\max(\alpha z, z)$$
 - ReLU, leaky ReLU and PReLU and suffer from the same problem that they are not smooth functions: their derivates abruptly change (at z = 0). 
 - As we saw in chapter 4 when we discussed lasso, this sort of discontinuity can make gradient descent bounce around the optimum, and slow down converge.
 - We only look at some smooth variants of the ReLU activation function, such as ELU and SELU.
+
+### ELU and SELU
+
+- In a [2015 paper](https://arxiv.org/pdf/1511.07289.pdf) by Djork-Arné Clevert et al. proposed a new activation function, called the *exponential linear unit* (ELU), that outperformed all the ReLU variants in the author's experiment: training time was reduced, and the performance on the test set was better:
+$$\text{ELU}_\alpha(z)=\begin{cases}
+\alpha  (\exp(z)-1) \text{ if } z < 0 \\
+z \text{ if } z \geq 0 \\
+\end{cases}$$
+- The ELU activation function looks a lot like the ReLU activation function (see in the learning notebook), with a few major differences:
+    - It takes on negative values when $z < 0$, which allows the unit to have an average closer to 0 and helps alleviate the vanishing gradients problem. 
+    - The hyperparameter $\alpha$ defines the opposite of the value that the ELU function approaches when $z$ is a large negative number. It is usually set to 1, but you can tweak it like any other hyperparameter.
+    - It has nonzero gradient for $z<0$, which avoids the dead neurons problem.
+    - If $\alpha$ is equal to 1, then the function is smooth everywhere, including around $z=0$, which helps speed up gradient descent since it does not bounce as much to the left and right of $z=0$.
+- Using ELU with Keras is as easy as setting `activation="relu"`, and like with other variants of ReLU, you should use the He initialization.
+- The main drawback of ELU is that it is slower to compute than the ReLU and its variants (due to the use of the exponential function).
+- It has faster convergence rate during training, which may compensate for that slow computation, but still, at test time ELU will be a bit slower than ReLU.
+- Not long after, a [2017 paper](https://arxiv.org/pdf/1706.02515.pdf) by Günter Klambauer et al. introduced the *scaled ELU* (SELU) activation function.
+- As the name suggests, it is a scaled variant of ELU activation function (about 1.5 times ELU, using $\alpha \approx 1.67$).
+- The author showed that if you build a neural network composed exclusively of a stack of dense layers (i.e., an MLP), and if all hidden layers use the SELU activation function, then the network wil *self-normalize*: the output of each layer will tend to preserve a mean of 0 and a standard deviation of 1 during training, which solves the vanishing/exploding gradients problem. 
+- As a result, the SELU activation function may outperform other activation function for MLPs, especially deep ones. To use it with Keras, just set `activation="selu"`.
+- However, there are a few conditions for self-normalization to happen:
+    - The input features must be standardized: mean 0 and standard deviation 0.
+    - Every hidden layer's weights must be initialized using LeCun normal initialization. In Keras, this means setting `kernel_initializer="lecun_normal"`.
+    - The self-normalizing property is only guaranteed with plain MLPs. If you try to use SELU in other architectures, like recurrent networks (will be discussed in chapter 15) or networks with *skip connections* (i.e., connections that skip layers, such as in Wide & Deep nets), it will probably not perform ELU.
+    - You cannot use regularization techniques like $\ell_1$ or $\ell_2$ regularization, max-norm, batch-norm, or regular dropout (will be discussed later in this chapter).
+- These are significant constraints, so despite its promise, SELU did not gain a lot of traction.
+- Moreover, three more activation functions seem to outperform it quite consistently on most task: GELU, Swish and Mish.
