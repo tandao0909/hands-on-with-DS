@@ -58,3 +58,34 @@
 - By default, Keras uses Glorot initialization with a uniform distribution.
 - When you create a layer, you can switch to He initialization by setting `kernel_initializer="he_uniform"` or `kernel_initializer="he_normal"`.
 - ALternatively, you can obtain any of the initialization listed in the above table and more using the `VarianceScaling` initializer.
+
+## Better Activation Functions
+
+- One of the insights in the 2010 paper by Glorot and Bengio was that the problems with unstable gradients were in part due to a poor choice of activation function.
+- Back then, people thought that if biological neurons use roughly sigmoid activation functions, they must be a great choice.
+- But it turns out other activation functions behave much better in deep neural network, in particular the ReLU activation function, as it does not saturate for positivize values, and also because it is very fast to compute.
+- Unfortunately, ReLU activation function is not perfect. It suffers from a problem known as *dying ReLUs*: during training, some neurons effectively "die", meaning they stop outputting anything other than 0.
+- In some cases, you may find that half of your network's neurons are dead, especially if you used a big learning rate.
+- A neuron dies if its weights get tweaked in such a way that the input of the ReLU function (i.e., the weighted sum of the neurons's inputs plus its bias term) is negative for all instances in the training set.
+- When this happens, it just keeps outputting zeros, and gradient descent does not affect it anymore because the gradient of the ReLU function is zero when its input is negative.
+
+### Leaky ReLU
+
+- The Leaky ReLU activation function is defined as:
+$$\text{LeakyReLU}_{\alpha}(z)=\max(\alpha z, z)$$
+- The hyperparameter $\alpha$ defines how much the function "leaks": it is the slope of the function for $z<0$.
+- Having a slope for $z<0$ ensures that leaky ReLUs never die; they can go into a long coma, but they have a chance to eventually wake up.
+- A [2015 paper](https://arxiv.org/pdf/1505.00853.pdf) by Bing Xu et al. compared several variants of the ReLU activation function, and here are some of its conclusions:
+    - Leaky variants always outperformed the strict ReLU activation function.
+    - In fact, setting $\alpha=0.2$ (a huge leak) seemed to result in better performance than $\alpha=0.01$ (a small leak).
+    - The paper also evaluated the *randomized leaky ReLU* (RReLU), where $\alpha$ is picked randomly from a uniform distribution and is fixed to an average value during testing.
+    - RReLU also performed fairly well and seemed to act as a regularizer, reducing the risk of overfitting the training set.
+    - Finally, they evaluated the *parametric leaky ReLU* (PReLU), where $\alpha$ is authorized to be learn during training: instead of being a hyperparameter, it becomes a parameter that can be modified by backpropagation like any other parameter.
+    - PReLU was reported to strongly outperform the ReLU on large datasets, but on smaller datasets, it has the risk of overfitting the training set.
+- Keras includes the classes `LeakyReLU` and `PReLU` in the `tf.keras.layers` package.
+- Just like other ReLU variants, you should use He initialization with these.
+- If you prefer, you can use `LeakyReLU` as a separate layer in your model; it makes no difference for training and predictions.
+- For PReLU, replace `LeakyReLU` with `PReLU`. There is currently no official implementation of PReLU in Keras, but you can fairly easily implement your own.
+- ReLU, leaky ReLU and PReLU and suffer from the same problem that they are not smooth functions: their derivates abruptly change (at z = 0). 
+- As we saw in chapter 4 when we discussed lasso, this sort of discontinuity can make gradient descent bounce around the optimum, and slow down converge.
+- We only look at some smooth variants of the ReLU activation function, such as ELU and SELU.
