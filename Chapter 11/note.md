@@ -129,7 +129,7 @@ z \text{ if } z \geq 0 \\
 - In practice, it often outperforms every other activation function discussed so far.
 - However, it is a bit more computationally intensive, and the performance boost it provides is not always sufficient to justify the extra cost.
 - That said, it is possible to show that it is approximately equal to $z\sigma(1.702z)$, where $\sigma$ is the sigmoid function: using this approximation also works very well, and it has the advantage of being much faster to compute.
-- A [2017 paper]() by Prajit Ramachandran et al. rediscovered the Swish activation function (early named SiLU and introduced in the GELU paper):
+- A [2017 paper](https://arxiv.org/pdf/1710.05941.pdf) by Prajit Ramachandran et al. rediscovered the Swish activation function (early named SiLU and introduced in the GELU paper):
 $$Swish(z) = z\sigma(z)$$
 - In their paper, Swish outperformed every other activation functions, including GELU.
 - They also generalized Swish by adding an extra hyperparameter $\beta$ to scale the sigmoid function's input:
@@ -151,3 +151,47 @@ $$Swish(z) = z\sigma(z)$$
     - If you have spare time and computing power, you can use cross-validation to evaluate other activation functions as well.
 - Keras supports GELU adn Swish out of the box; just use `activation="gelu"` or `activation="swish"`.
 - However, it doesn't support Mish or generalized activation function yet (but we can implement our own, instruction in chapter 12).
+
+# Batch Normalization
+
+- Although using HE initialization along with ReLU (or any of its variants) can significantly reduce the danger of vanishing/exploding gradients problem at the beginning of training, it doesn't guarantee that they won't come back during training.
+- In a [2015 paper](https://arxiv.org/pdf/1502.03167.pdf), Sergey Ioffe and Christian Szegedy proposed a technique called *batch normalization* (BN) that addresses these problems.
+- The technique consists of adding an operation in the model just before or after the activation function of each hidden layer.
+- This operation simply zero-centers and normalizes each input, then scales and shifts the result using two new parameter vectors per layer: one for scaling, the other for shifting.
+- In other words, the operation lets the model learn the optimal scale and mean of each of the layer's inputs.
+- Here, the inputs are the output features of the previous layer (may be activated or not).
+- In many cases, if you add a BN layer as the very first layer of you training set, you do not need to standardize you training set. That is, there's no need for `StandardScaler` and `Normalization`; the Bn layer will do it for you.
+- In order to zero-center and normalize the input, the algorithm needs to estimate each input's mean and standard deviation. It does so by evaluating the mean and standard deviation of the input over the current mini-batch, hence the name "batch normalization".
+- The whole operation can be summarized in 4 equations:
+    1. $\mu_B = \displaystyle\frac{1}{m_B}\sum\limits_{i=1}^{m_B}x^{(i)}$
+    2. $\sigma_B^2 = \displaystyle\frac{1}{m_B}\sum\limits_{i=1}^{m_B}\left(x^{(i)}-\mu_B\right)^2$
+    3. $\hat{x}^{(i)}=\displaystyle\frac{x^{(i)}-\mu_B}{\sqrt{\sigma_B^2+\epsilon}}$
+    4. $z^{(i)} = \gamma \otimes \hat{x}^{(i)} + \beta$
+- In this algorithm:
+    - $\mu_B$ is the vector of input means, evaluated over the the whole mini-batch $B$ (it contains one mean per input).
+    - $m_B$ is the number of instances in the mini-batch.
+    - $\sigma_B$ is the vector of the input standard deviations, also evaluated over the whole mini-batch (it contains one standard deviation per input).
+    - $\hat{x}^{(i)}$ is the vector of zero-centered and normalized inputs for instances i.
+    - $\epsilon$ is a small number that avoid division by zero and ensures the gradients don't grow too large (typically $10^{-5}$). This is called a *smoothing term*.
+    - $\gamma$ is the output scale parameter vector for the layer (it contains one scale parameter per input).
+    - $\otimes$ represents element-wise multiplication (each input is multiplied by its corresponding output scale parameter).
+    - $\beta$ is the output shift (offset) parameter vector for the layer (it contains one offset parameter per input). Each input is offset by its corresponding shift parameter.
+    - $z^{(i)}$ is the output of the BN operation. It is a rescaled and shifted version of the inputs.
+- So during training, BN standardize its inputs, then rescales and offsets them.
+- What about at test time? That's not a simple task. We may need to make prediction for individual instances instead of batches of instances: in this case, we will have no way to compute each input's mean and standard deviation.
+- Moreover, even if we do have a batch of instances, it may be too small, or the instances may not be independent and identically distributed, so computing statistics over the batch instances would be unreliable.
+- One solution could be wait until the end of training, then run the whole training set through the network and compute the mean and standard deviation of each input of the BN layer. These "final" inputs means and standard deviation could then used instead of the batch means and standard deviation when making predictions.
+- However, most implementations of batch normalization estimate these final statistics during training by using a moving average of the layer's input means and standard deviations. This is what Keras does automatically when you use the `BatchNormalization` layer.
+- To usm up, four parameter vectors are learned in each batch-normalized layer: $\boldsymbol{\gamma}$ (the output scale vector) and $\boldsymbol{\beta}$ (the output offset vector) are learned through regular backpropagation, and $\boldsymbol{\mu}$ (the final input mean vector) and $\boldsymbol{\sigma}$ (the final input standard deviation vector) are estimated using an exponential moving average.
+- Note that $\boldsymbol{\mu}$ and $\boldsymbol{\sigma}$ are estimated during training, but they are used only after training (to replace the batch input means and standard deviations in the third equation).
+- Ioffe and Szegedy demonstrated that batch normalization considerably improved all the deep neural network they experimented with, leading to a huge improvement in the ImageNet classification task.
+- The vanishing gradients problems was strongly reduced, to the point that they could use saturating activation function such as the tanh and eve the sigmoid activation function. The networks were also much less sensitive to the weight initialization.
+- The authors were able to use much larger learning rate, significantly speeding up the learning process.
+- Finally, batch normalization acts like a regularizer, reducing the need for other regularization techniques, (such as dropout, discussed later in this chapter).
+- Batch normalization does, however, add some complexity to the model (although it can remove the need for normalizing the input data, as talked earlier). Moreover, there's a runtime penalty: the neural network makes slower predictions due to the extra computations at each layer.
+- Fortunately, it's often possible to fuse the the BN layer with the previous layer after training, there by avoiding the runtime penalty. 
+- This is done by updating the previous layer's weights and biases so that it directly produces outputs of the appropriate scale and offset.
+- for example, if the previous layer computes $XW + b$, then the BN layer will compute $\gamma \otimes (XW + b - \mu) / \sigma + \beta$ (ignoring the smoothing term in the denominator).
+- If we define $W' = \gamma \otimes X / \sigma$ and $b' = \gamma \otimes (b  - \mu) / \sigma + \beta$, the equation then simplifies to $XW' + b'$.
+- So if we replace teh previous layer's weights and biases ($W$ and $b$) with the updated weights and biasses ($W'$ and $b'$), we can get rid of the BN layer (TFLite's converter does this automatically; see chapter 19).
+- You may find training is rather slow because each epoch takes much more time when you use batch normalization. This is usually counterbalanced by the fact that convergence is much faster with BN, so it will take fewer epochs to reach the same performance. All in all, *wall time will usually be shorter* (this is the time measured by the clock on your wall).
