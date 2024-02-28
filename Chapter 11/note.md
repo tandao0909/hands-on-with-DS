@@ -195,3 +195,25 @@ $$Swish(z) = z\sigma(z)$$
 - If we define $W' = \gamma \otimes X / \sigma$ and $b' = \gamma \otimes (b  - \mu) / \sigma + \beta$, the equation then simplifies to $XW' + b'$.
 - So if we replace teh previous layer's weights and biases ($W$ and $b$) with the updated weights and biasses ($W'$ and $b'$), we can get rid of the BN layer (TFLite's converter does this automatically; see chapter 19).
 - You may find training is rather slow because each epoch takes much more time when you use batch normalization. This is usually counterbalanced by the fact that convergence is much faster with BN, so it will take fewer epochs to reach the same performance. All in all, *wall time will usually be shorter* (this is the time measured by the clock on your wall).
+
+### Implementing batch normalization with Keras
+
+- As with most things in Keras, implementing batch normalization is straightforward and intuitive: just add  a `BatchNormalization` layer before or after each hidden layer's activation function.
+- You may also add a BN layer as the first layer, but a plain`Normalization` layer generally performs just as well in this location, (its only drawback is that you must call its `adapt()` method).
+- You can look at the model's summary: each BN layer adds four parameters per input: $\boldsymbol{\gamma}, \boldsymbol{\beta}, \boldsymbol{\mu}$ and $\boldsymbol{\sigma}$ (for example, the first BN layer adds 3,136 parameters, which is $4 \times 784$).
+- The last two parameters, $\mu$ and $\sigma$, are the moving averages; they are not affected by backpropagation, hence Keras called them "non-trainable" (if you count the total number of BN parameters, 3,136 + 1,200 + 400, and divide by 2, you get 2,368, which is the total number fo non-trainable parameters in this model).
+- The authors of the BN paper argued in favor of adding the BN layers before the activation functions, rather than after (as we just did).
+- There are some debates about this, as which is preferable seems to depend on the task - you can experiment with this to see which option work best on your dataset.
+- To add the BN layers before the activation function, you must remove the activation functions from the hidden layers and add them as separate layers after the BN layers.
+- Moreover, since a batch normalization layer includes one offset parameter per input, you can remove the bias term from the previous, you can remove the bias term from the previous layer by passing `use_bias=False` when creating it.
+- Lastly, you can usually drop the first BN layer to avoid sandwiching the first hidden layer between two BN layers.
+- The `BatchNormalization` class has quite a few hyperparameters you can tweak: The defaults will usually be fine, but you may occasionally need to tweak the `momentum`.
+- This hyperparameter is used by the `BatchNormalization` layer when it updates the exponential moving averages; given a new value $v$ (i.e., a new vector of input means or standard deviations computed over the current batch), the layer updates the running average $\hat{v}$ using the following equation:
+    $$\hat{v} \leftarrow \hat{v} \times \text{momentum} + v \times (1-momentum)$$
+- A good momentum value is typically close to 1; for example, 0.9, 0.99, or 0.999. You want more 9s for larger datasets and for smaller mini-batches.
+- Another important hyperparameter is `axis`: it determined which axis should be normalized.
+- It defaults to -1, meaning it will normalize the last axis (using the means and standard deviations computes across the *other* axes).
+- When the input batch is 2D (i.e., the batch shape is [*batch size, features*]), this means that each input feature will be normalized based on the mean and standard deviation computed across all the instances in the batch.
+- For example, the first BN layer in our learning notebook will independently normalize (and rescale and shift) each of the 784 input features.
+- If you move the first BN layer before the `Flatten` layer, then the input batches will be 3D, with shape [*batch size, height, width*]; therefore, the BN layer will compute 28 means and 28 standard deviations (1 per column of pixels, computed across all instances in the batch and across all rows on the column), and it will normalize all pixels in a given column using the same mean and standard deviation. If instead you want to treat each of 784 pixels independently, then you should set `axis=[1, 2]`.
+- Batch normalization has become one the most-used layers in deep neural network, especially deep convolutional neural networks (discussed in chapter 14), to the point that it is omitted in the architecture diagrams: it is assumed that BN is added after every layer.
