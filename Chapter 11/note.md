@@ -217,3 +217,18 @@ $$Swish(z) = z\sigma(z)$$
 - For example, the first BN layer in our learning notebook will independently normalize (and rescale and shift) each of the 784 input features.
 - If you move the first BN layer before the `Flatten` layer, then the input batches will be 3D, with shape [*batch size, height, width*]; therefore, the BN layer will compute 28 means and 28 standard deviations (1 per column of pixels, computed across all instances in the batch and across all rows on the column), and it will normalize all pixels in a given column using the same mean and standard deviation. If instead you want to treat each of 784 pixels independently, then you should set `axis=[1, 2]`.
 - Batch normalization has become one the most-used layers in deep neural network, especially deep convolutional neural networks (discussed in chapter 14), to the point that it is omitted in the architecture diagrams: it is assumed that BN is added after every layer.
+
+## Gradient Clipping
+
+- Another technique to mitigate the exploding gradients problem is to clip the gradients during backpropagation so that they never exceed some threshold. This is called [*gradient clipping*](https://arxiv.org/pdf/1211.5063.pdf).
+- This technique is generally used in recurrent neural networks, where using batch normalization is tricky (as you'll see in chapter 15).
+- In Keras, implementing gradient clipping is just a matter of setting `clipvalue` or `clipnorm` argument when creating an optimizer.
+- This optimizer will clip every component of the gradient vector to a value between -1.0 and 1.0.
+- This means that all the partial derivates of the loss (with regard to each and every trainable parameter) will be clipped between -1.0 and 1.0.
+- The threshold is a hyperparameter you can tune.
+- Note that it may change the orientation of the gradient vector.
+- For instance, if the original gradient vector is [0.9, 100.0], it points mostly in the direction of the second axis; but once you clip it by value, you get [0.9, 1.0], which points roughly at the diagonal between the two axes.
+- In practice, this approach works well. 
+- If you want to ensure that gradient clipping does not change the direction of the gradient vector, you should clip by norm by setting `clipnorm` instead of `clipvalue`. This will clip the whole gradient if its $\ell_2$ norm is greater than the threshold you picked.
+- For example, if you set `clipnorm=1.0`, then the vector [0.9, 100.0] will be clipped to [0.00899964, 0.9999595], preserving its orientation but almost eliminating the first component.
+- If you observe that the gradients explode during training (you can track the size of the gradients using TensorBoard), you may want to try clipping by value and clipping by norm, with different thresholds, and see which option performs best on the validation set.
