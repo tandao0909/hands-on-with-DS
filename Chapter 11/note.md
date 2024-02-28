@@ -116,3 +116,38 @@ z \text{ if } z \geq 0 \\
     - You cannot use regularization techniques like $\ell_1$ or $\ell_2$ regularization, max-norm, batch-norm, or regular dropout (will be discussed later in this chapter).
 - These are significant constraints, so despite its promise, SELU did not gain a lot of traction.
 - Moreover, three more activation functions seem to outperform it quite consistently on most task: GELU, Swish and Mish.
+
+### GELU, Swish and Mish
+
+- GELU was introduced in a [2016 paper](https://arxiv.org/pdf/1606.08415.pdf) by Dan Hendrycks and Kevin Gimpel.
+- We can, once again, think of GELU as a smooth variant of the ReLU activation function:
+    $$\text{GELU}(z)=z\Phi(z)$$
+    where $\Phi$ is the standard Gaussian cumulative distribution function (CDF): $\Phi(z)$ corresponds to the probability that a value sampled randomly from a normal distribution of mean 0 and variance 1 is less than $z$.
+- As you can see in the learning notebook, GELU resembles ReLU: it approaches 0 when its input z is very negative, and it approaches z when z is very positive. 
+- However, whereas all the activation functions we've discussed so far were both convex and monotonic, the GELU activation function is neither: from left to right, it starts by going straight, then it wiggles down, reaches a low point around -0.17 (near $z\approx -0.75$), and finally bounces up and ends up going straight toward the top right.
+- This fairly complex shape and the fact that it has curvature at every point explain why it works so well, especially for complex tasks: gradient descent may find ti easier to fit complex patterns.
+- In practice, it often outperforms every other activation function discussed so far.
+- However, it is a bit more computationally intensive, and the performance boost it provides is not always sufficient to justify the extra cost.
+- That said, it is possible to show that it is approximately equal to $z\sigma(1.702z)$, where $\sigma$ is the sigmoid function: using this approximation also works very well, and it has the advantage of being much faster to compute.
+- A [2017 paper]() by Prajit Ramachandran et al. rediscovered the Swish activation function (early named SiLU and introduced in the GELU paper):
+$$Swish(z) = z\sigma(z)$$
+- In their paper, Swish outperformed every other activation functions, including GELU.
+- They also generalized Swish by adding an extra hyperparameter $\beta$ to scale the sigmoid function's input:
+    $$\text{Swish}_\beta=z\sigma(\beta z)$$
+    so GELU is approximately equal to the generalized Swish function using $\beta=1.702$.
+- You can tune $\beta$ as any other hyperparameter.
+- Alternatively, you can make $\beta$ trainable and let gradient descent optimizes it: much like PReLU, this can make your model more powerful, but it also runs the risk of overfitting.
+- Another quite similar activation function is *Mish*, which was introduced in a [2019 paper]() by Diganta Misra:
+    $$\text{Mish}(z)=z\tanh(\text{softplus}(z))$$
+- Just like GELU and Swish, it is a smooth, nonconvex, and monotonic variant of ReLU.
+- The author, one again, ran many experiments and found that Mish generally outperformed other activation functions, even Swish and GELU, by a tiny margin.
+- As you can see in the learning notebook, Mish overlaps almost perfectly with Swish when z is negative, and overlaps almost perfectly with GELU when z is positive.
+- So in the end, which activation function should you choose for the hidden layers of your neural network?
+    - ReLU remains a good default for simple tasks: it's often just as good as the more sophisticated activation functions, plus it's very fast to compute, and many libraries and hardware accelerators provide ReLU-specific optimizations.
+    - However, Swish is probably a better default for more complex tasks, and you can even try parametrized Swish with a learnable $\beta$ for most complex tasks.
+    - Mish may give you slightly better results, but it requires a bit more compute.
+    - If you care about runtime latency, then you may prefer leaky ReLU, or parametrized leaky ReLU for more complex tasks.
+    - For deep MLPs, give SELU a try, but make sure to follow the constrains listed earlier. 
+    - If you have spare time and computing power, you can use cross-validation to evaluate other activation functions as well.
+- Keras supports GELU adn Swish out of the box; just use `activation="gelu"` or `activation="swish"`.
+- However, it doesn't support Mish or generalized activation function yet (but we can implement our own, instruction in chapter 12).
