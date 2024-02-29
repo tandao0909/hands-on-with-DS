@@ -294,3 +294,15 @@ $$Swish(z) = z\sigma(z)$$
     - Then train the model again (effectively just training the new layer).
     - Repeat the last two steps until you satisfy with the result.
 - Nowadays, things are much simpler: people generally train the full unsupervised model in one shot and use autoencoders or GANs rather than RBMs.
+
+## Pretraining on an Auxiliary Task
+
+- If you do not have much labeled training data, one last option is to train a first neural network on an auxiliary task for which you can easily obtain or generate labeled training data, then reuse the lower layers of that network for your actual task.
+- The first neural network's lower layers will learn feature detectors that will likely be reusable by the second neural network.
+- For example, if you want to build a system to recognize faces, you may only have a few pictures of each individual - clearly not enough to train a good classifier.
+- But gathering hundreds of pictures of each person would not be practical. Instead, you could gather a lot of pictures of random people on the web and train a first neural network to detect whether or not two different pictures features the same person.
+- Such network would learn good feature detectors for faces, so reusing it lower layers would allow you to train a good face classifier that uses little training data.
+- For natural language processing (NLP) applications, you can download a corpus of millions of text documents and auto generate labeled data from it.
+- For example, you could randomly mask out some words and train a model to predict the missing words are (e.g., it should predict what the missing word in the sentence "What ___ you saying?" is probably "are" or "were").
+- If you can train a model to reach good performance on this task, then it will already quite a lot about language, and you can certainly reuse it for your actual task and fine-tune it on your labeled data.
+- *Self-supervised learning* is when you automatically generate the labels form the data itself, as in the text-masking example, then you train the model on the resulting "labeled" dataset using supervised learning technique.
