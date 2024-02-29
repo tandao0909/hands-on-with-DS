@@ -254,3 +254,26 @@ $$Swish(z) = z\sigma(z)$$
 - If you still cannot have good performance, and you have little training data, try dropping the top hidden layer(s) and freezing all the remaining hidden layers again.
 - You can iterate until you satisfy with your model's performance (i.e., find the right number of layers to reuse).
 - You have plenty of training data, you may try replacing the top hidden layers instead of dropping them, and even adding more hidden layers.
+
+### Transfer Learning with Keras
+
+- Let's have an example.
+- Suppose the Fashion MNIST dataset only contains eight classes - for example, all the classes expect for the sandal and the shirt. Someone trained a Keras model on this set and got a reasonably good performance (>90% accuracy). Let's call this model A.
+- You now want to tackle a different task: you have images of T-shirts and pullovers, and now you want to train a binary classifier: positive for T-shirts (and tops), negative for (sandals).
+- Your dataset is quite small; you only have 200 labeled images.
+- When you train a new model for this task (let's call it model B) with the same architecture as model A, you get 93.80% test accuracy. What if you use transfer learning?
+- First, you need to load model A and create a new model based on that model's layers. You decide to reuse all the layers expect for the output layer.
+- Note that in the learning notebook, at the earlier code cell, `model_A` and `model_B_on_A` share some layers. When you train `model_A`, it will also affect `model_B_on_A`.
+- If you want to avoid this , you need to *clone* `model_A` before reusing its layers. To do this, you clone model A's architecture with `clone_model()`, then copy its weights.
+- `tf.keras.models.clone_model()` only clones the architecture, not the weights. If you don't manually copy them by using `set_weights()`, they will be initialized randomly when the cloned model is first used.
+- Now you could train `model_B_on_A` for task B, but since the new output layer was initialized randomly, it will make large errors (at least during the first few epochs), so there will be large error gradients that may wreck the reused weights.
+- To avoid this, set every layer's `trainable` attribute to `False` and compile the model. 
+- You must always compile you model after you freeze or unfreeze layers.
+- Now you train the model for a few epochs, then unfreeze the reused layers (which requires compiling the model again) and continue training to fine-tune the reused layers for task B.
+- After unfreezing the reused layers, it is usually a good idea to reduce the learning rate, once again to avoid damaging the reused weights.
+- If you followed all these steps, you'll find a weird result: The performance drops!
+- According to the author, he tried many configurations and chose one that demonstrated a strong improvement. This is called "torturing the data until it confesses".
+- So here is his advice about reading papers: If a paper just looks too positive, be suspicious. Perhaps the flashy new technique does not actually help much (in fact, it may even degrade performance), but the authors tried many variants and reported only the bets results (which may be due to sheer luck), without mentioning how may failures they encountered along the path.
+- Most of the time, this is not malicious at all, but it's part of the reason why so many results in science can never be reproduced.
+- Back to our case study, it turns out that transfer learning does not work very well with small dense networks, presumably because small networks learn few patterns, and dense network lean very specific patterns, which are unlikely to be useful in other tasks.
+- Transfer learning works best with deep convolutional neural networks, which tends to lean features detectors that are much more general, especially with lower layers.
