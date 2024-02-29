@@ -232,3 +232,25 @@ $$Swish(z) = z\sigma(z)$$
 - If you want to ensure that gradient clipping does not change the direction of the gradient vector, you should clip by norm by setting `clipnorm` instead of `clipvalue`. This will clip the whole gradient if its $\ell_2$ norm is greater than the threshold you picked.
 - For example, if you set `clipnorm=1.0`, then the vector [0.9, 100.0] will be clipped to [0.00899964, 0.9999595], preserving its orientation but almost eliminating the first component.
 - If you observe that the gradients explode during training (you can track the size of the gradients using TensorBoard), you may want to try clipping by value and clipping by norm, with different thresholds, and see which option performs best on the validation set.
+
+## Reusing Pretrained Layers
+
+- It is generally not a good idea to train a very large DNN from scratch without first trying to fnd an existing neural network that accomplishes a similar task to the one you are trying to tackle (we will talk about how to find them in chapter 14).
+- If you can find such neural networks, then you can generally reuse most of its layers, expect for the top ones.
+- This technique is called *transfer learning*.
+- It will not only speed up training considerably, but also require significantly less training data.
+- Suppose you have access to a DNN that was trained to classify pictures into 100 different categories, including animals, plants, vehicles, and everyday objects, and you now want to train a DNN to classify specific types of vehicles. These tasks are very similar, even partly overlapping, so you should try to reuse parts of the first network.
+- If the input pictures for your new task don't have the same size as the one used in the original task, you will usually have to add a preprocessing step to resize them to the size expected by the original model.
+- More generally, transfer learning will work best if the inputs have similar low-level features.
+- The output layer of the original model should usually be replaced because it is most likely not useful at all for the new task, and probably will not have the right numbers of outputs.
+- Similarly, the upper hidden layers of the original model are less likely to be as useful as the lower layers, since the high-level features that are most useful for the new task may significantly differ from the ones that were used in the original task. 
+- You need to find the right number of layers to reuse.
+- The more similar the tasks are, the more layers you will want to reuse (starting with the lower layers).
+- For very similar tasks, you should try to keep all the hidden layers and just replace the output layer.
+- Try freezing all the reused layers first (i.e., make their weights non-trainable so that gradient descent won't modify them and they will remain fixed), then train your model and see how it performs.
+- Then try unfreezing one or two of the top frozen hidden layers to let backpropagation tweak them and see if performance improves.
+- The more training data you have, the more layers you can unfreeze.
+- It is also helpful to reduce learning rate after unfreezing pretrained layers: this will void wrecking teri fine-tuned weights.
+- If you still cannot have good performance, and you have little training data, try dropping the top hidden layer(s) and freezing all the remaining hidden layers again.
+- You can iterate until you satisfy with your model's performance (i.e., find the right number of layers to reuse).
+- You have plenty of training data, you may try replacing the top hidden layers instead of dropping them, and even adding more hidden layers.
