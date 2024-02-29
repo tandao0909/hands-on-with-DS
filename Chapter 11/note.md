@@ -277,3 +277,20 @@ $$Swish(z) = z\sigma(z)$$
 - Most of the time, this is not malicious at all, but it's part of the reason why so many results in science can never be reproduced.
 - Back to our case study, it turns out that transfer learning does not work very well with small dense networks, presumably because small networks learn few patterns, and dense network lean very specific patterns, which are unlikely to be useful in other tasks.
 - Transfer learning works best with deep convolutional neural networks, which tends to lean features detectors that are much more general, especially with lower layers.
+
+## Unsupervised Pretraining
+
+- Suppose you want to tackle a complex task for which you don’t have much labeled training data, but unfortunately you cannot find a model trained on a similar task.
+- First, you should try to gather more labeled training data, but if you can’t, you may still be able to perform unsupervised pretraining.
+- Indeed, it is often cheap to gather unlabeled training examples, but expensive to label them. 
+- If you can gather plenty of unlabeled training data, you can try to use it to train an unsupervised model, such as an autoencoder or a generative adversarial network (GAN; see Chapter 17).
+- Then you can reuse the lower layers of the autoencoder or the lower layers of the GAN’s discriminator, add the output layer for your task on top, and fine-tune the final network using supervised learning (i.e., with the labeled training examples).
+- Until 2010, unsupervised pretraining — typically with restricted Boltzmann machines (RBMs; see [Wikipedia](https://en.wikipedia.org/wiki/Restricted_Boltzmann_machine)) — was the norm for deep nets.
+- Only after the vanishing gradients problem was alleviated did it become much more common to train DNNs purely using supervised learning.
+- Unsupervised pretraining (today typically using autoencoders or GANs rather than RBMs) is still a good option when you have a complex task to solve, no similar model you can reuse, and little labeled training data but plenty of unlabeled training data.
+- In the early days of deep learning it was difficult to train deep models, so people would use a technique called greedy *layer-wise pretraining*:
+    - First train an unsupervised model with a single layer, typically an RBM.
+    - Then freeze that layer and add another one on top of it.
+    - Then train the model again (effectively just training the new layer).
+    - Repeat the last two steps until you satisfy with the result.
+- Nowadays, things are much simpler: people generally train the full unsupervised model in one shot and use autoencoders or GANs rather than RBMs.
