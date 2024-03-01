@@ -327,7 +327,7 @@ $$Swish(z) = z\sigma(z)$$
     $$\theta \leftarrow \theta - \eta \nabla_\theta J(\theta)$$
 - It does not care about what the earlier gradients were. If the local gradient is tiny, then it goes slowly.
 - Momentum optimization cares a great deal about what previous gradients were: at each iteration, it subtracts the local gradient from the *momentum vector* **m**  (multiplied by the learning rate $\eta$), and it updates by adding this momentum vector:
-    1. $m \leftarrow \beta \textbf{m} - \eta \nabla_\theta J(\theta)$
+    1. $\textbf{m} \leftarrow \beta \textbf{m} - \eta \nabla_\theta J(\theta)$
     2. $\theta \leftarrow \theta + \textbf{m}$
 - In other words, the gradient is used as an acceleration, not as a speed.
 - To stimulate some sort of friction mechanism and prevent the momentum from growing too large, the algorithm introduces a new hyperparameter $\beta$, called the *momentum*, which must be set between 0 (high friction) and 1 (no friction). A typical momentum value is 0.9.
@@ -342,3 +342,14 @@ $$Swish(z) = z\sigma(z)$$
 - Due to the momentum, the optimizer may overshoot a bit, then come back, overshoot again, and oscillate like this many times before stabilizing at the minimum. This is one of the reasons it's good to have a bit of friction on the system: it get rids of these oscillations and thus speeds up convergence.
 - Implementing momentum optimization in Keras is simple: just use the `SGD` optimizer and specify its `momentum` hyperparameter.
 - The one drawback of momentum optimization is that it adds yet another hyperparameter to tune. However, the default value of 0.9 is quite good in practice and almost always goes faster than regular gradient descent.
+
+## Nesterov Accelerated Gradient
+
+- One small variant to momentum optimization is proposed by [Yurii Nesterov in 1983](https://scholar.google.com/scholar?q=A+method+for+solving+the+convex+programming+problem+with+convergence+rate+author%3Anesterov), is almost always faster than the regular momentum optimization.
+- The *Nesterov acceleration gradient* (NAG) method, also known as *Nesterov momentum optimization*, measures the gradient of the cost function not at the local position $\theta$ but slightly ahead in the direction of the momentum, at $\theta + \beta \textbf{m}$:
+    1. $\textbf{m} \leftarrow \beta \textbf{m} - \eta \nabla_\theta J(\theta + \beta \textbf{m})$
+    2. $\theta \leftarrow \theta + \textbf{m}$
+- This small tweak works because in general, the momentum vector will be pointing in the right direction (i.e., toward the optimum), so it will be slightly more accurate to use the gradient measured a bit farther in that direction rather than the gradient at the original position.
+- As you can see in the book, the Nesterov update ends up closer to the minimum. After a while, these small improvements add up and NAG neds up being significantly faster than regular momentum optimization.
+- Moreover, note that when the momentum pushed the weights across a valley, $\nabla_1$ continues to push the weights across the valley, while $\nabla_2$ pushes back toward the bottom of the valley (where $\nabla_1$ represents the gradient of the cost function measured at the starting point $\theta$, and $\nabla_2$ represents the gradient at the point located at $\theta+ \beta \textbf{m}$).
+- This helps reduce oscillations and thus NAG converges faster.
