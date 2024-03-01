@@ -359,8 +359,7 @@ $$Swish(z) = z\sigma(z)$$
 - Consider the elongated bowl again: gradient descent starts by quickly going the steepest slope, which does not point straight toward the global optimum, then it very slowly goes down to the bottom of the valley.
 - It would be nice if the algorithm can correct its direction earlier to point a bit more toward the global optimum.
 
-- The [AdaGrad algorithm](https://jmlr.org/papers/v12/duchi11a.html) was created by Geoffrey Hinton and Tijmen Tieleman in 2012 and presented by Geoffrey Hinton in his Coursera class on neural networks ([slides](https://homl.info/57); [video](https://homl.info/58)). Amusingly, since the authors did not write a paper to describe the algorithm, researchers often cite “slide29 in lecture 6e” in their papers.
-- It achieves this correction by scaling down the gradient vector along the steepest dimensions:
+- The [AdaGrad algorithm](https://jmlr.org/papers/v12/duchi11a.html) achieves this correction by scaling down the gradient vector along the steepest dimensions:
     1. $s \leftarrow s + \nabla_\theta J(\theta) \otimes \nabla_\theta J(\theta)$
     2. $\theta \leftarrow \theta - \eta \nabla_\theta J(\theta) \oslash \sqrt{s + \varepsilon}$
 - The first step accumulates the square of the gradients into the vector $s$ (recall that the $\otimes$ represents the element-wise multiplication).
@@ -376,3 +375,16 @@ $$Swish(z) = z\sigma(z)$$
 - AdaGrad frequently performs well for simple quadratic problems, but it often stops too early when training neural networks: the learning rate gets scaled so much that the algorithm ends up stopping entirely before reaching the optimal optimum.
 - **Note**: Even though Keras does have an `AdaGrad` optimizer, you should not use it to train deep neural networks (it may be efficient for simpler tasks, such as linear regression, though).
 - However, understanding AdaGrad is helpful to comprehend the other adaptative learning rate algorithms.
+
+## RMSProp
+
+- As we've seen, AdaGrad runs the risk of slowing down a bit too fast and never converging to the global optimum.
+- The *RMSProp* algorithm was created by Geoffrey Hinton and Tijmen Tieleman in 2012 and presented by Geoffrey Hinton in his Coursera class on neural networks ([slides](https://homl.info/57); [video](https://homl.info/58)). Amusingly, since the authors did not write a paper to describe the algorithm, researchers often cite “slide29 in lecture 6e” in their papers.
+- It fixes this by accumulating only the gradients from the most recent iterations, as opposed to all the gradients since the beginning of training.
+- It does so by using exponential decay in the first step:
+    1. $s \leftarrow \rho s + (1-\rho)\nabla_\theta J(\theta) \otimes \nabla_\theta J(\theta)$
+    2. $\theta \leftarrow \theta - \eta \nabla_\theta J(\theta) \oslash \sqrt{s + \varepsilon}$
+- The decay rate $\rho$ is typically set to 0.9. Yes, it is once again a new hyperparameter, but this default value often works well, so you may not need to tune it at all.
+- As you expect, Keras has an `RMSProp` optimizer.
+- Expect on very simple problems, this optimizer almost always performs much better than AdaGrad. 
+- In fact, it was the preferred optimization algorithm of many researchers until Adam optimization showed up.
