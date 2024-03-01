@@ -306,3 +306,39 @@ $$Swish(z) = z\sigma(z)$$
 - For example, you could randomly mask out some words and train a model to predict the missing words are (e.g., it should predict what the missing word in the sentence "What ___ you saying?" is probably "are" or "were").
 - If you can train a model to reach good performance on this task, then it will already quite a lot about language, and you can certainly reuse it for your actual task and fine-tune it on your labeled data.
 - *Self-supervised learning* is when you automatically generate the labels form the data itself, as in the text-masking example, then you train the model on the resulting "labeled" dataset using supervised learning technique.
+
+# Faster Optimizers
+
+- Training a very deep neural network can be painfully slow.
+- So far, we have four ways of speed up training (and reach a better solution):
+    - Using a good activation function
+    - Applying a good initialization strategy for the connection weights.
+    - Using batch normalization.
+    - Reusing part of a pretrained network (possibly built for an auxiliary task or using unsupervised learning).
+- Another huge boost comes from using a faster optimizer than the regular gradient descent optimizer.
+
+## Momentum
+
+- Recall the ball analogy from the gradient descent section: Imagining the ball is now rolling on a smooth surface. It will start out slowly, but quickly gain momentum until eventually reaches terminal velocity (if there's friction or air resistance).
+- That's the core idea after *momentum optimization*, proposed by [Boris Polyak in 1964](https://www.researchgate.net/publication/243648538_Some_methods_of_speeding_up_the_convergence_of_iteration_methods).
+- In contrast, regular gradient descent will take small steps when the slope is gentle and big steps when the slope is steep, but it will never pick up speed.
+- As a result, regular gradient descent is generally much slower to reach the minimum than momentum optimization.
+- Recall that regular gradient descent updates the weight $\theta by directly subtracting the gradient of th cost function $J(\theta)$ with regard to the weights $(\nabla_\theta J(\theta))$ multiplied by the learning rate $\eta$:
+    $$\theta \leftarrow \theta - \eta \nabla_\theta J(\theta)$$
+- It does not care about what the earlier gradients were. If the local gradient is tiny, then it goes slowly.
+- Momentum optimization cares a great deal about what previous gradients were: at each iteration, it subtracts the local gradient from the *momentum vector* **m**  (multiplied by the learning rate $\eta$), and it updates by adding this momentum vector:
+    1. $m \leftarrow \beta \textbf{m} - \eta \nabla_\theta J(\theta)$
+    2. $\theta \leftarrow \theta + \textbf{m}$
+- In other words, the gradient is used as an acceleration, not as a speed.
+- To stimulate some sort of friction mechanism and prevent the momentum from growing too large, the algorithm introduces a new hyperparameter $\beta$, called the *momentum*, which must be set between 0 (high friction) and 1 (no friction). A typical momentum value is 0.9.
+- You can do the math to verify that if the gradient remains constant, the terminal velocity (i.e., the maximum size of the weight updates) is equal to that gradient multiplied by the learning rate $\eta$ multiplied by $1 / (1 - \beta)$ (ignoring the sign).
+- For example, if $\beta=0.9$, then the terminal velocity is equal to 10 times the learning rate times the gradients, so momentum gradient ends up 10 times faster than gradient descent in this case.
+- This allows momentum optimization to space from the plateau much faster than regular gradient descent.
+- We saw in chapter 4 that when the inputs have very different scales, the cost function will look like an elongated bowl.
+- Gradient descent goes down the steep slope quite fast, but then it takes a long time to travel down the valley. 
+- In contrast, momentum optimization will roll down the valley faster and faster until it reaches the the bottom (the optimum).
+- In deep neural networks that don't use batch normalization, the upper layers will often having inputs with very different scales, so using momentum optimization helps a lot.
+- In can also help roll past the local minima.
+- Due to the momentum, the optimizer may overshoot a bit, then come back, overshoot again, and oscillate like this many times before stabilizing at the minimum. This is one of the reasons it's good to have a bit of friction on the system: it get rids of these oscillations and thus speeds up convergence.
+- Implementing momentum optimization in Keras is simple: just use the `SGD` optimizer and specify its `momentum` hyperparameter.
+- The one drawback of momentum optimization is that it adds yet another hyperparameter to tune. However, the default value of 0.9 is quite good in practice and almost always goes faster than regular gradient descent.
