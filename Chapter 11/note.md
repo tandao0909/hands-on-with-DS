@@ -412,3 +412,15 @@ $$Swish(z) = z\sigma(z)$$
     - After some iterations, since $\beta_1$ $\beta_2$ are both smaller than 1, they will converge to 0, leaves the $m$ and $s$ nearly unchanged.
 - The momentum decay hyperparameter $\beta_1$ is typically initialized to 0.9, while the scaling decay hyperparameter is often initialized to 0.999. As earlier, the smoothing term $\varepsilon$ is usually initialized to a tiny number such as $10^{-7}$. These are default values for the $Adam$ class.
 - Since Adam is an adaptive learning rate algorithm, like AdaGrad and RMSProp, it requires less tuning of the learning rate hyperparameter. You can often use the default value $\eta = 0.001$, making Adam even easier to use than gradient descent.
+
+### AdaMax
+
+- The Adam paper also introduced AdaMax.
+- Notice that step 2 of the above process, Adam accumulates the squares of the gradients in $s$ (with a greater weight for more recent gradients).
+- In step 5, if we ignore $\varepsilon$ and steps 3 and 4 (which are technical detail anyway), Adam scales down the parameter by the square root of $s$.
+- In short, Adam scales down the parameter updates by the $\ell_2$ norm of the time-decayed gradients (recall that the $\ell_2$ is the square root of the sum of squares).
+- AdaMax replaces the $\ell_2$ norm with the $\ell_\infty$ norm (a fancy way of saying the max norm).
+- Specifically, it replaces step 2 with:
+    $$s \leftarrow \max(\beta_2 s, |\nabla_\theta J(\theta)|)$$
+    drops step 4, and in step 5 it scales down the gradients updates by a factor of $s$, which is the max of the absolute value of the time-decayed gradients.
+- In practice, this can make AdaMax more stable than Adam, but it really depends on the dataset, and in general Adam performs better.
