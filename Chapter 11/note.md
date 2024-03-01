@@ -353,3 +353,26 @@ $$Swish(z) = z\sigma(z)$$
 - As you can see in the book, the Nesterov update ends up closer to the minimum. After a while, these small improvements add up and NAG neds up being significantly faster than regular momentum optimization.
 - Moreover, note that when the momentum pushed the weights across a valley, $\nabla_1$ continues to push the weights across the valley, while $\nabla_2$ pushes back toward the bottom of the valley (where $\nabla_1$ represents the gradient of the cost function measured at the starting point $\theta$, and $\nabla_2$ represents the gradient at the point located at $\theta+ \beta \textbf{m}$).
 - This helps reduce oscillations and thus NAG converges faster.
+
+## AdaGrad
+
+- Consider the elongated bowl again: gradient descent starts by quickly going the steepest slope, which does not point straight toward the global optimum, then it very slowly goes down to the bottom of the valley.
+- It would be nice if the algorithm can correct its direction earlier to point a bit more toward the global optimum.
+
+- The [AdaGrad algorithm](https://jmlr.org/papers/v12/duchi11a.html) was created by Geoffrey Hinton and Tijmen Tieleman in 2012 and presented by Geoffrey Hinton in his Coursera class on neural networks ([slides](https://homl.info/57); [video](https://homl.info/58)). Amusingly, since the authors did not write a paper to describe the algorithm, researchers often cite “slide29 in lecture 6e” in their papers.
+- It achieves this correction by scaling down the gradient vector along the steepest dimensions:
+    1. $s \leftarrow s + \nabla_\theta J(\theta) \otimes \nabla_\theta J(\theta)$
+    2. $\theta \leftarrow \theta - \eta \nabla_\theta J(\theta) \oslash \sqrt{s + \varepsilon}$
+- The first step accumulates the square of the gradients into the vector $s$ (recall that the $\otimes$ represents the element-wise multiplication).
+- This vectorized form is equivalent to computing $s_i \leftarrow s_i + (\partial J(\theta) / \partial \theta_i)^2$ for each element $s_i$ of the vector $s$. In other words, each $s_i$ accumulates the squares of the partial derivate of the cost function, with regard to parameter $\theta_i$.
+- If the cost function is steep along the $i^{th}$ dimension, then $s_i$ will get larger and larger at each iteration.
+- The second step is almost identical to gradient descent, but with one important difference: the gradient vector is scaled down by a factor of $\sqrt{s + \varepsilon}$ (the $\oslash$ symbol represents the element-wise division, and $\varepsilon$ is a smoothing term to avoid division by zero, typically set to $10^{-10}$).
+- This vectorized form is equivalently to simultaneously computing 
+    $$\theta_i \leftarrow \theta_i - \eta \frac{\partial J(\theta)}{\partial \theta_i}.\frac{1}{\sqrt{s_i + \varepsilon}}$$
+     for all parameters $\theta_i$.
+- In short, this algorithm decays the learning rate, but it does so faster for steep dimensions than for dimensions with gentler slopes. This is called an *adaptive learning rate*.
+- It helps pointing the resulting updates more directly toward the global optimum.
+- One additional benefit is that it requires much less tuning of the learning rate hyperparameter $\eta$.
+- AdaGrad frequently performs well for simple quadratic problems, but it often stops too early when training neural networks: the learning rate gets scaled so much that the algorithm ends up stopping entirely before reaching the optimal optimum.
+- **Note**: Even though Keras does have an `AdaGrad` optimizer, you should not use it to train deep neural networks (it may be efficient for simpler tasks, such as linear regression, though).
+- However, understanding AdaGrad is helpful to comprehend the other adaptative learning rate algorithms.
