@@ -388,3 +388,27 @@ $$Swish(z) = z\sigma(z)$$
 - As you expect, Keras has an `RMSProp` optimizer.
 - Expect on very simple problems, this optimizer almost always performs much better than AdaGrad. 
 - In fact, it was the preferred optimization algorithm of many researchers until Adam optimization showed up.
+
+## Adam
+
+- [Adam](https://arxiv.org/pdf/1412.6980.pdf), which stands for *adaptive moment estimation*, combines the ideas of momentum optimization and RMSProp:
+    - Just like momentum optimization, it keeps track of an exponentially decaying average of past gradients.
+    - Just like RMSProp, it keeps track of an exponentially decaying average of past squared gradients.
+- These estimations of the mean and (unentered) variance of the gradients.
+- The mean is often called the *first moment*, while the variance is often called the *second moment*, hence the name of the algorithm.
+- Here are the equations describe the process of Adam:
+    1. $m \leftarrow \beta_1 m - (1-\beta_1)\nabla_\theta J(\theta)$
+    2. $s \leftarrow \beta_2 s + (1-\beta_2)\nabla_\theta J(\theta) \otimes \nabla_\theta J(\theta)$
+    3. $\hat{m} \leftarrow \displaystyle\frac{m}{1-\beta_1^t}$
+    4. $\hat{s} \leftarrow \displaystyle\frac{s}{1-\beta_2^t}$
+    5. $\theta \leftarrow \theta + \eta \hat{m} \oslash \sqrt{\hat{s} + \varepsilon}$
+- In this equation, $t$ represents the iteration number (starting at 1).
+- If you just look at steps 1, 2, and 5, you will notice Adam's close similarity to both momentum optimization and RMSProp: $\beta_1$ corresponds to $\beta$ in momentum optimization, and $\beta_2$ corresponds to $\rho$ in RMSProp.
+- The only difference is that step 1 computes an exponentially decaying average rather than an exponentially decaying sum, but these are actually equivalent expect for a constant factor (the decaying average is just $1-\beta_1$ times the decaying sum).
+- Steps 3 and 4 are somewhat of a technical detail: 
+    - Since $m$ and $s$ are initialized at 0, they will be biased toward 0 at the beginning of the training.
+    - But we want they to be more aggressive at the start of the training, where the optimization is trivial and should be done fast.
+    - Since $\beta_1$ $\beta_2$ are both closer than 1, $m$ and $s$ will be multiplied multiple times, which help boosting them at the beginning of training. 
+    - After some iterations, since $\beta_1$ $\beta_2$ are both smaller than 1, they will converge to 0, leaves the $m$ and $s$ nearly unchanged.
+- The momentum decay hyperparameter $\beta_1$ is typically initialized to 0.9, while the scaling decay hyperparameter is often initialized to 0.999. As earlier, the smoothing term $\varepsilon$ is usually initialized to a tiny number such as $10^{-7}$. These are default values for the $Adam$ class.
+- Since Adam is an adaptive learning rate algorithm, like AdaGrad and RMSProp, it requires less tuning of the learning rate hyperparameter. You can often use the default value $\eta = 0.001$, making Adam even easier to use than gradient descent.
