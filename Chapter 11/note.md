@@ -488,3 +488,10 @@ $$Swish(z) = z\sigma(z)$$
 - After s steps, the learning rate is down to $\eta_0 / 2$. After s more steps, it is down to $\eta_0/ 3$, then goes down to $\eta_0 / 4$, then $\eta_0 / 5$, and so on.
 - As you can see, this schedule first drops quickly, then ore and more slowly.
 - Of course, power scheduling requires tuning $\eta_0$ and $s$, and possibly $c$.
+
+### Exponential Scheduling
+
+- Set the learning rate to:
+    $$\eta(t) = \eta_0 0.1^{t/s}$$
+- The learning rate will gradually drops by a factor of 10 every s steps.
+- While power scheduling reduces the learning rate more and more slowly, exponential scheduling keeps slashing it by a factor of 10 every s steps.
