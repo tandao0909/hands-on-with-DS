@@ -466,3 +466,25 @@ $$Swish(z) = z\sigma(z)$$
 - However, this will typically not lead to a very sparse model, and it may degrade the model's performance.
 - A better option is to apply strong $\ell_1$ regularization during training (you'll se how later in this chapter), as it pushes the optimizer to zero out as many weights as possible (as discussed in Lasso Regression in chapter 4).
 - If these techniques remains insufficient, check out the [TensorFlow Model Optimization Toolkit (TF_MOT)](https://www.tensorflow.org/model_optimization/), which provides a pruning API capable of iteratively removing connections during training based on their magnitude.
+
+## Learning Rate Scheduling
+
+- Finding a good learning rate is important:
+    - If you set it too much high, training may diverge (as discussed in Gradient Descent chapter 4).
+    - If you set it too low, training will eventually converge to the optimum, but it will take a very long time.
+    - If you set it slightly too high, it will make progress very quickly at first, but it will end up dancing around the optimum and never really stelling down. If you have limited computing budget, you may have to interrupt training before it has converged properly, yielding a suboptimal solution.
+- As discussed in chapter 10, you can find a good learning rate by training the model for a few hundred iterations, exponentially increasing the learning rate from a very small value to a very large value, and then looking at the learning curve and picking a learning rate slightly lower than the one at which the learning curve starts shooting back up. You can then reinitialize your model and train it with that learning rate.
+- But you can do better than a constant learning rate: If you start with a large learning rate and then reduce it once training stops making fast progress, you can reach a good solution faster than the optimal learning rate.
+- There are many different strategies to reduce the learning rate during training.
+- It can also be beneficial to start with a low learning rate, increase it, then drop it again.
+- These strategies are called *learning schedules* (which were briefly introduced in chapter 4).
+- Here are we list some commonly used learning schedules.
+
+### Power scheduling
+- Set the learning rate to a function of the iteration number *t*: 
+    $$\eta(t) = \eta_0 / (1 + t / s)^c$$
+- The initial learning rate $\eta_0$, the power c (typically set to 1), and the steps s are hyperparameters.
+- The learning rate drops at each step.
+- After s steps, the learning rate is down to $\eta_0 / 2$. After s more steps, it is down to $\eta_0/ 3$, then goes down to $\eta_0 / 4$, then $\eta_0 / 5$, and so on.
+- As you can see, this schedule first drops quickly, then ore and more slowly.
+- Of course, power scheduling requires tuning $\eta_0$ and $s$, and possibly $c$.
