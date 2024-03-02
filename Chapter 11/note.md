@@ -458,3 +458,11 @@ $$Swish(z) = z\sigma(z)$$
 | `AdaMax`                             | ***              | ** or ***          |
 | `Nadam`                              | ***              | ** or ***          |
 | `AdamW`                              | ***              | ** or ***          |
+
+## Training Sparse Models
+
+- All the optimization algorithms we just discussed produce dense models, meaning that most parameters wil be nonzero. If you need a blazingly fast model at runtime, or if you need it to take up less memory, you may prefer to end up with a sparse model instead.
+- One way to achieve this is to train the model as usual, then get rid of the tiny weights (set them to zero).
+- However, this will typically not lead to a very sparse model, and it may degrade the model's performance.
+- A better option is to apply strong $\ell_1$ regularization during training (you'll se how later in this chapter), as it pushes the optimizer to zero out as many weights as possible (as discussed in Lasso Regression in chapter 4).
+- If these techniques remains insufficient, check out the [TensorFlow Model Optimization Toolkit (TF_MOT)](https://www.tensorflow.org/model_optimization/), which provides a pruning API capable of iteratively removing connections during training based on their magnitude.
