@@ -424,3 +424,8 @@ $$Swish(z) = z\sigma(z)$$
     $$s \leftarrow \max(\beta_2 s, |\nabla_\theta J(\theta)|)$$
     drops step 4, and in step 5 it scales down the gradients updates by a factor of $s$, which is the max of the absolute value of the time-decayed gradients.
 - In practice, this can make AdaMax more stable than Adam, but it really depends on the dataset, and in general Adam performs better.
+
+### Nadam
+
+- Nadam optimization is Adam optimization plus the Nesterov trick, so it will often converge slightly faster than Adam. 
+- [In his report introducing this technique](https://cs229.stanford.edu/proj2015/054_report.pdf), the researcher Timothy Dozat compares many different optimizers on various tasks and finds that Nadam generally outperforms Adam but is sometimes outperformed by RMSProp.
