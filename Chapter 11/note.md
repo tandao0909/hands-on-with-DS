@@ -500,3 +500,7 @@ $$Swish(z) = z\sigma(z)$$
 
 - Use a constant learning rate for a number of epochs (e.g., $\eta_0 = 0.1$ for 5 epochs), then a smaller learning rate for another number of epochs (e.g., $\eta_1 = 0.001$ for 50 epochs), and so on.
 - Although this solution can work really well, it requires fiddling around to find the optimal sequence of learning rates and how long to use each of them.
+
+### Performance Scheduling
+
+- Measure the validation error every N steps (just like for early stopping), and reduce the learning rate by a factor if $\gamma$ when the error stops dropping.
