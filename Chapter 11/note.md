@@ -429,3 +429,32 @@ $$Swish(z) = z\sigma(z)$$
 
 - Nadam optimization is Adam optimization plus the Nesterov trick, so it will often converge slightly faster than Adam. 
 - [In his report introducing this technique](https://cs229.stanford.edu/proj2015/054_report.pdf), the researcher Timothy Dozat compares many different optimizers on various tasks and finds that Nadam generally outperforms Adam but is sometimes outperformed by RMSProp.
+
+### AdamW 
+
+- [AdamW]() is a variant of Adam that integrates a regularization technique called *weight decay*.
+- Weigh decay reduces the size of the model's weights at each training iteration by multiplying them by a decay factor, such as 0.99.
+- This may remind you of $\ell_2$ regularization (introduced in chapter 4),which also aims to keep the weights small. In fact, it can be shown mathematically that $\ell_2$ regularization is equivalent to weight decay when using SGD.
+- However, when using Adam or its variants, $\ell_2$ regularization and weight decay are *not* equivalent: in practice, combining Adam with $\ell_2$ regularization results in models that often don't generalize as well as those produced by SGD.
+- AdamW fixes this issue by properly combining Adam with weight decay.
+- Adaptive optimization methods (including RMSProp, Adam, AdaMax, Nadam, and AdamW optimization) are often great, converging fast to a good solution.
+- However, [a 2017 paper](https://arxiv.org/abs/1705.08292) by Ashia C. Wilson et al. showed that they can lead to solutions that generalize poorly on some datasets.
+- So when are disappointed by your model's performance, try using NAG instead: your dataset may just not fitted for adaptive gradients.
+- Also check out the latest research, because it's moving fast.
+- All the optimization techniques discussed so far only rely on the *first-order partial derivates (Jacobians)*.
+- The optimization literature also contains amazing algorithms based on the *second-order partial derivates* (the *Hessian*, which are the partial derivates of the Jacobians).
+- Unfortunately, these algorithms are very hard to apply to deep neural networks because there are $n^2$ Hessian per output (where n is the number fo parameters), as opposed to just n Jacobians per output.
+- Since DNNs typically have tens of thousands of parameters or more, the second-order optimization algorithms often don't even fit in the memory, and even when they do, computing the Hessians matrix is just too slow.
+- The following table compares all the optimizers we discussed so far:
+
+| Class                              | Convergence speed | Convergence Quality |
+|------------------------------------|------------------|--------------------|
+| `SGD`                              | *                | ***                |
+| `SGD(momentum=...)`                | **               | ***                |
+| `SGD(momentum=..., nesterov=True)` | **               | ***                |
+| `Adagrad`                          | ***              | *(stops too early) |
+| `RMSProp`                            | ***              | ** or ***          |
+| `Adam`                               | ***              | ** or ***          |
+| `AdaMax`                             | ***              | ** or ***          |
+| `Nadam`                              | ***              | ** or ***          |
+| `AdamW`                              | ***              | ** or ***          |
