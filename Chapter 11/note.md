@@ -504,3 +504,17 @@ $$Swish(z) = z\sigma(z)$$
 ### Performance Scheduling
 
 - Measure the validation error every N steps (just like for early stopping), and reduce the learning rate by a factor if $\gamma$ when the error stops dropping.
+
+### 1cycle Scheduling
+
+- 1cycle was introduced in a [2018 paper]() by Leslie Smith.
+- Contrary to the other approaches, it starts by increasing the initial learning rate $\eta_0$, growing linearly up to $\eta_1$ halfway through training.
+- Then it decreases the learning rate linearly down to $\eta_0$ again during the second half of training, finishing the last few epochs by dropping the rate down by several orders of magnitude (still linearly).
+- The maximum learning rate $\eta_1$ is chosen using the same approach we used to find the optimal learning rate, and the initial learning rate $\eta_0$ is usually 10 times lower.
+- When using a momentum, we start with a high momentum first (e.g., 0.95), then drop it down to a lower momentum during the first half of training (e.g., down to 0.85, linearly), then bring it back up to the maximum value (e.g., 0.95) during the second half of training, finishing the last few epochs with that maximum value.
+- Smith did many experiments showing that this approach was often able to speed up training considerably and reach better performance.
+- A [2013 paper]() by Andrew Senior et al. compared the performance of some of the most popular learning schedules when using momentum optimization to train deep neural network for speech recognition.
+- The authors concluded that:
+    - In this setting, both performance scheduling and exponential scheduling performed well. 
+    - They favored exponential scheduling because it was easy to tune and it converged slightly faster to the optimal solution.
+    - That said, the 1cycle approach seems to performs even better.
