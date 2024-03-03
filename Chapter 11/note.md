@@ -558,3 +558,38 @@ $$Swish(z) = z\sigma(z)$$
 - Another option is to use Python's `functools.partial()` function, which let you create a thin wrapper for any callable, with some default argument values.
 - As we saw earlier, $\ell_2$ regularization is fine when using SGD, momentum optimization, and Nesterov momentum optimization, but not with Adam and its variants.
 - If you want to use Adam with weight decay, use AdamW instead.
+
+## Dropout
+
+- *Dropout* is one of the most popular regularization techniques for deep neural networks.
+- It was proposed in a [2012 paper](https://arxiv.org/abs/1207.0580) by Geoffrey Hinton et al. and further detailed in a [2014 paper](https://jmlr.org/papers/v15/srivastava14a.html) by Nitish Srivastava et al.
+- It has proven to be highly successful: many state-of-the-art neural networks use dropout, as it gives them a 1%-2% accuracy boost.
+- This may not sound like a lot, but when a model already has 95% accuracy, getting a 2% accuracy boost means dropping the error rate by almost 40% (going from 5% error to roughly 3%).
+- It is a fairly simple algorithm: at every training step, every neuron (including the input neurons, but always excluding the output neurons) has a probability *p* of being temporarily "dropped out", meaning it will be entirely ignored during this training step, but it may be active during the next step.
+- The hyperparameter *p* is called the *dropout rate*, and it is typically set between 10% and 50%: closer to 20%-30% in recurrent neural networks, and closer to 40%-50% in convolutional neural networks.
+- After training, neurons don't get dropped anymore.
+- Neurons trained with dropout cannot co-adapt on their neighboring neurons; they must be as useful as possible on their own.
+- They also cannot rely excessively just a few input neurons; they must pay attention to each of their input neurons. They end up being less sensitive to slight changes in the inputs.
+- In the end, you get a more robust network that generalizes better.
+- Another way to understand the power of dropout is to realize hat a unique neural network is generated at each training step. 
+- Since each neuron can be either present or absent, there are a total of $2^N$ possible neural network (where N is the number fo droppable neurons). This is such a huge number that it is virtually impossible for the same neural network to be sampled twice.
+- Once you have run 10,000 training steps, you have effectively trained 10,000 different neural networks, each with just one training instance.
+- These neural networks are obviously not independent, as they share many of their weights, but they are nevertheless all different.
+- The resulting neural network can be seen as an averaging ensemble of all these smaller neural networks.
+- In practice, you can usually apply dropout only to the neurons in the top one to three layers (excluding the output layer).
+- There is one small but important technical detail: Suppose $ p =75%$, then on average only 25% of all neurons are activate at each step during training.
+- This means after training, a neuron would be connected to four times as many inputs neurons as it would be during training.
+- To compensate for this fact, we need to multiply each neuron's input connections weights by four during training.
+- If we don't, the neural network will not perform as well, as it will see very different data during and after training.
+- More generally, we need to divide the connection weights by the *keep probability* (1 - *p*) during training.
+- To implement dropout using Keras, you can use the `tf.keras.layers.Dropout` layer.
+- During training, it randomly drops some inputs (setting them to 0), and divide the remaining inputs by the keep probability.
+- After training, it does nothing: it just pass the inputs to the next layer.
+- Since dropout is only active during training, comparing the training loss and the validation loss can be misleading.
+- In particular, a model may be overfitting the training set, yet have similar training and validation losses.
+- So, make sure to evaluate the training loss without dropout (e.g., after training).
+- If you observe that the model is overfitting, increase the dropout rate. Conversely, try decreasing the dropout rate if the model is underfitting the training set.
+- It can also help to increase the dropout rate for large layers, and reduce it for small ones.
+- Moreover, many state-of-the-art architectures only use dropout after the last hidden layer (the one next to the output layer), so you may want to try that as well if full dropout is too strong.
+- Dropout does tend to significantly slow down converge, but it often results in a better model when tuned properly. So, it is generally worth the extra time and effort, especially for large models.
+- If you want to regularize a self-normalizing network based on the SELU activation function (as discussed earlier), you should use *alpha dropout*: this is a variant of dropout that preserves the mean and standard deviation of its inputs. It was introduced in the same paper of SELU, as regular dropout would break self-normalization.
