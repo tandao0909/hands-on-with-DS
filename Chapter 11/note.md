@@ -525,7 +525,7 @@ $$Swish(z) = z\sigma(z)$$
 
 ### 1cycle Scheduling
 
-- 1cycle was introduced in a [2018 paper]() by Leslie Smith.
+- 1cycle was introduced in a [2018 paper](https://arxiv.org/abs/1803.09820) by Leslie Smith.
 - Contrary to the other approaches, it starts by increasing the initial learning rate $\eta_0$, growing linearly up to $\eta_1$ halfway through training.
 - Then it decreases the learning rate linearly down to $\eta_0$ again during the second half of training, finishing the last few epochs by dropping the rate down by several orders of magnitude (still linearly).
 - The maximum learning rate $\eta_1$ is chosen using the same approach we used to find the optimal learning rate, and the initial learning rate $\eta_0$ is usually 10 times lower.
@@ -537,3 +537,24 @@ $$Swish(z) = z\sigma(z)$$
     - They favored exponential scheduling because it was easy to tune and it converged slightly faster to the optimal solution.
     - That said, the 1cycle approach seems to performs even better.
 - As for 1cycle, Keras does not support it, but you can implement it yourself by creating a callback that modifies the learning rate at each iteration. See the learning notebook for an example.
+
+# Avoiding Overfitting Through Regularization
+
+- DNNs typically have tens of thousands of parameters, sometimes even millions. 
+- This give them an incredible amount of freedom and means that they can fit a huge a variety of complex datasets.
+- But this great flexibility comes at a cost: the networks is so prone to overfitting the training set.
+- Regularization is often needed to prevent this.
+- We already implemented one of the best regularization techniques in chapter 10: Early stopping.
+- Moreover, even though designed to solve the unstable gradients problems, batch normalization also acts like a pretty good regularizer.
+
+## $\ell_1$ and $\ell_2$ Regularization
+
+- Just like we did for in chapter 4 for simple linear models, you can use $\ell_2$ regularization to constrain a neural network's connection weights, and/or $\ell_1$ regularization if you want a sparse model (with many weights equal to 0).
+- You can pass `tf.keras.regularizers.l2()` function to the `kernel_regularizer` argument of a layer to apply $\ell_2$ regularization.
+- The `l2()` function returns a regularizer that will be called at each step during training to compute the regularization loss. This is then added to the total loss.
+- If you want to use $\ell_1$, use the `tf.keras.regularizers.l1()` function; if you want both, then use `tf.keras.regularizers.l1_l2()` (which specifying both regularization factors).
+- Since you will typically want to apply the same regularizer to all layers in your network, as well as using the same activation function and the same initialization strategy in all hidden layers, you may find yourself repeat the same arguments over and over again. This makes the code ugly and error-prone.
+- To avoid this, you can refactor using loops.
+- Another option is to use Python's `functools.partial()` function, which let you create a thin wrapper for any callable, with some default argument values.
+- As we saw earlier, $\ell_2$ regularization is fine when using SGD, momentum optimization, and Nesterov momentum optimization, but not with Adam and its variants.
+- If you want to use Adam with weight decay, use AdamW instead.
