@@ -512,10 +512,16 @@ $$Swish(z) = z\sigma(z)$$
 
 - Use a constant learning rate for a number of epochs (e.g., $\eta_0 = 0.1$ for 5 epochs), then a smaller learning rate for another number of epochs (e.g., $\eta_1 = 0.001$ for 50 epochs), and so on.
 - Although this solution can work really well, it requires fiddling around to find the optimal sequence of learning rates and how long to use each of them.
+- Similar to exponential scheduling, you can use a schedule function, then creates a `LearningRateScheduler` callback with this function and pass it to the `fit()` method.
 
 ### Performance Scheduling
 
 - Measure the validation error every N steps (just like for early stopping), and reduce the learning rate by a factor if $\gamma$ when the error stops dropping.
+- In Keras, you use the `ReduceLROnPlateau` callback.
+- For example, if you pass the following callback to the `fit()` method, it will multiply the learning rate by 0.5 whenever the best validation loss does not improve for five consecutive epochs:
+`lr_scheduler = tf.keras.callbacks.ReduceLROnPlateau(factor=0.5, patience=5)`
+- Alternatively, Keras offers another way to implement learning rate scheduling: You can defined a scheduled learning rate using one of the classes available in `tf.keras.optimizers.schedules`, then pass it to the `learning_rate` argument of any optimizer.
+- This approach updates the learning rate at each step instead of each epoch.
 
 ### 1cycle Scheduling
 
@@ -530,3 +536,4 @@ $$Swish(z) = z\sigma(z)$$
     - In this setting, both performance scheduling and exponential scheduling performed well. 
     - They favored exponential scheduling because it was easy to tune and it converged slightly faster to the optimal solution.
     - That said, the 1cycle approach seems to performs even better.
+- As for 1cycle, Keras does not support it, but you can implement it yourself by creating a callback that modifies the learning rate at each iteration. See the learning notebook for an example.
