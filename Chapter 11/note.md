@@ -488,6 +488,7 @@ $$Swish(z) = z\sigma(z)$$
 - After s steps, the learning rate is down to $\eta_0 / 2$. After s more steps, it is down to $\eta_0/ 3$, then goes down to $\eta_0 / 4$, then $\eta_0 / 5$, and so on.
 - As you can see, this schedule first drops quickly, then ore and more slowly.
 - Of course, power scheduling requires tuning $\eta_0$ and $s$, and possibly $c$.
+- In Keras, you should use the `InverseTimeDecay` scheduler to implement power scheduling. The way to use it can be seen in the learning notebook.
 
 ### Exponential Scheduling
 
@@ -495,6 +496,17 @@ $$Swish(z) = z\sigma(z)$$
     $$\eta(t) = \eta_0 0.1^{t/s}$$
 - The learning rate will gradually drops by a factor of 10 every s steps.
 - While power scheduling reduces the learning rate more and more slowly, exponential scheduling keeps slashing it by a factor of 10 every s steps.
+- In Keras, similar to power scheduling, you can use the `ExponentialDecay` scheduler to implement exponential scheduling.
+- This will update the optimizer's learning rate at the beginning of each epoch.
+-If you want to update the learning rate per step, then you need to define a function that takes the current epoch and returns the learning rate. 
+- Then you need to create a `LearningRateScheduler` callback, giving it the schedule function, and pass this callback to the `fit()` method. 
+- After training, `history.history["lr"]` give you access to the list of learning rates used during training.
+- The schedule function can optionally take the current learning rate as a second argument.
+- Then the function will rely on the optimizer's initial learning rate (contrary to the previous implementation), hence you need to set it properly.
+- When you save a model, the optimizer and its learning rate get saved along with it. This means that with this new schedule function, you could just load a trained model and continue training where it left off.
+- However, things are not so simple if you use the `epoch` argument: the epoch does not get saved, and it resets to 0 every time you call the `fit()` method.
+- If you were to continue training a model where it left off, this could lead to a very large learning rate,w which would likely destroy your model's weights.
+- One solution is to manually set the `fit()` method's `initial_epoch` argument so that the `epoch` starts at the right value.
 
 ### Piecewise constant scheduling
 
