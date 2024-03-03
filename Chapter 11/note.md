@@ -593,3 +593,34 @@ $$Swish(z) = z\sigma(z)$$
 - Moreover, many state-of-the-art architectures only use dropout after the last hidden layer (the one next to the output layer), so you may want to try that as well if full dropout is too strong.
 - Dropout does tend to significantly slow down converge, but it often results in a better model when tuned properly. So, it is generally worth the extra time and effort, especially for large models.
 - If you want to regularize a self-normalizing network based on the SELU activation function (as discussed earlier), you should use *alpha dropout*: this is a variant of dropout that preserves the mean and standard deviation of its inputs. It was introduced in the same paper of SELU, as regular dropout would break self-normalization.
+
+## Monte Carlo (MC) Dropout
+
+- In a [2016 paper]() by Yarin Gal and Zoubin Ghahramani added a few good reasons to use dropout:
+    - First, the paper established a profound connection between dropout networks (i.e., neural networks containing `Dropout` layers) and approximate Bayesian inference: they shows that training a dropout network is mathematically equivalent to approximate Bayesian inference in a specific type of probabilistic model called a *deep Gaussian process*. This gives dropout a solid mathematical justification.
+    - Second, the authors introduced a powerful technique called *MC dropout*, which can boost the performance of any trained dropout model without having to retrain it or even modify it at all. It also provides a much better measure of the model's uncertainty, and it can be implement in just a few lines of code.
+- The code in the learning notebook does the following:
+    - `model(X)` is similar to `model.predict(X)`, expect it returns a tensor rather than a NumPy array, and it supports the `training` argument.
+    - Setting `training=True` ensures that the `Dropout` layer remains active, so all predictions will be a bit different.
+    - We just make 100 predictions over the test set, and we compute their average.
+    - More specifically, each call to the model returns a matrix with one row per instance and one column per class.
+    - Because there are 10,000 instances in the test set and 10 classes, this is a matrix of shape [10000, 10].
+    - We stack 100 such matrices, and ends up with a 3D array of shape [100, 10000, 10].
+    - Once we average over the first dimension (`axis=0`), we get an array of shape [10000, 10], like we would get with a single prediction.
+- Averaging over multiple predictions with dropped out turned on gives us a Monte Carlo estimation that is generally more reliable than the result of a single prediction with dropout turned off.
+- MC dropout tends to improve the reliability of the model's probability estimates.
+- This means it's less likely to be confident but wrong, which can be dangerous: imagine a self-driving car confidently ignoring a pedestrian crossing the street.
+- It's also useful to know exactly which other classes are most likely. Additionally, you can have a look at the standard deviation of the probability estimates.
+- The number of Monte Carlo samples you use (100 in this example) is a hyperparameter you can tweak:
+    - The higher it is, the more accurate the predictions and their uncertainty estimates will be.
+    - However, if you double it, inference time will also be doubled.
+    - Moreover, above a certain number of samples, you'll notice little improvement.
+    - Your job is to find the right trade-off between latency and accuracy, depending on your application.
+- If your model contains other layers that behave in a special way during training (such as `BatchNormalization` layers), then you should not force training mode like we just did.
+- Instead, you should replace the `Dropout` layers with the `MCDropout` class (the detail is in the learning notebook).
+- We do that by subclass the `Dropout` layer and override the `call()` method to force it `training` argument to `True`.
+- Similarly, you could define an `MCAlphaDropout` class by subclassing `AlphaDropout` instead.
+- If you create a model from starch, it's just a matter of using `MCDropout` instead of `Dropout`.
+- But if you have a model that was already trained using `Dropout`, you need to create a new model that's identical to the existing model, expect with `MCDropout` instead of `Dropout`, then copy the existing model's weights to your new model.
+- In short, MC dropout is a great technique that boost dropout models and provides better uncertainty estimates.
+- Of course, since it is just regular dropout during training, it also acts like a regularizer.
