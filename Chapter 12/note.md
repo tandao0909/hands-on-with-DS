@@ -1,0 +1,45 @@
+- Up until now, we've used only TensorFlow's high-level API, Keras, but it already got us pretty far, as we have:
+    - built various neural network architecture, including regression and classification nets, Wide & Deep nets, and self-normalizing nets
+    - used all sort of techniques, such as batch normalization, dropout, and learning rate schedules.
+- In fact, 95% of the use cases you will encounter will not require anything other than Keras (tf.data, in chapter 13).
+- But here, we'll take a deep dive into TensorFlow and take a look at its lower-level [Python API](https://www.tensorflow.org/api_docs/python/tf).
+- This will be useful when you need extra control to write custom loss functions, custom metrics, layers, models, initializers, regularizers, weight constraints, and more.
+- You may even need to fully control the training loop itself; for example, to apply special transformations or constraints to the gradients (beyond just clipping them) or to use multiple optimizers for different parts of the network.
+- We will also look at how to boost your custom models and training algorithms using TensorFlow's automatic graph generation feature.
+
+## A Quick Tour of TensorFlow
+
+- As you know, TensorFlow is a powerful library for numerical computation, particularly well suited and fine-tuned for large-scale machine learning (but you can use it for anything else that requires heavy computations).
+- TensorFlow is used for all sort of machine learning tasks, such as image classification, natural language processing, recommender systems, and time series forecasting.
+- Here's a summary of what TensorFlow offers:
+    - Its core is very similar to NumPy, but with GPU support.
+    - It supports distributed computing (across multiple devices and servers).
+    - It included a kind of just-in-time (JIT) complier that allows it to optimize computations for speed and memory usages. It works by extracting the *computation graph* from a Python function, optimizing it (e.g., by pruning unused nodes), and running it efficiently (e.g., by automatically running independent operations in parallel).
+    - Computation graphs can be exported to a portable format, so you can train a TensorFlow model in one environment (e.g., using Python in Linux) and run it in another (e.g., using Java on an Android device).
+    - It implements reverse-mode autodiff (see chapter 10) and provides some excellent optimizers, such as RMSProp and Nadam (see chapter 11), so you can easily minimize all sorts of loss functions.
+- TensorFlow offers many more features built on top of these core features:
+    - The most important is of course Keras.
+    - Data loading and preprocessing operations (tf.data, tf.io, etc.)
+    - Signal processing operations (tf.signal)
+    - And more (see the book for a overview of TensorFlow's Python API).
+- We will cover many of the packages and functions of the TensorFlow API, but it's also impossible to cover them all, so you should really take some time to browse though the API, as it is quite rich and well documented.
+- At the lowest level, each TensorFlow operation is implemented using highly efficient C++ code.
+- Many operations have multiple implementations called *kernels*: each kernel is dedicated to a specific device type, such as CPUs, GPUs, or even TPUs (*tensor precessing units*).
+- As you may know, GPUs can dramatically speed up computations by splitting into many smaller chunks and running them in parallel across many GPU threads. TPUs are even faster: they are custom ASIC chips built specifically for deep learning operations.
+- You can find the TensorFlow's architecture in the book.
+- Most of the time, your code will use the high-level APIs (especially Keras and tf.data), but when you need more flexibility, you will use the lower-level Python API, handling tensors directly.
+- In any case, TensorFlow's execution engine will take care of running the operations efficiently, even across multiple devices and machines if you tell it to.
+- TensorFLow runs not only on Windows, Linux and macOS, bu also on mobile devices (using *TensorFlow Lite*), including both iOS and Android.
+- There are APIs for other languages as well: There are C++, Java, Swift APIs. There is even a JavaScript implementation called *TensorFlow.js* that makes it possible to run you models directly in your browser.
+- There's more to TensorFlow than the library itself. 
+- TensorFlow is at the center of an extensive ecosystem of libraries:
+    - First, there's TensorBoard for visualization (see chapter 10).
+    - Next, there's [TensorFlow Extended (TFX)](https://www.tensorflow.org/tfx), which is a set of libraries built by Google to productionize TensorFlow projects: it includes tool for data validation, preprocessing, model analysis, and serving (with TF Serving, see chapter 19).
+    - Google's *TensorFlow Hub* provides a way to easily download and reuse pretrained neural networks.
+    - TensorFlow's *model garden* offers many neural network architectures, some of them pretrained.
+    - Check out the [TensorFlow Resources] and [the awesome-tensorflow project](ttps://github.com/jtoy/awesome-tensorflow) for more TensorFLow-based projects.
+    - On GitHub, you can find hundreds of TensorFlow projects, so it's often easy to find existing code for whatever you are trying to do.
+- More and more ML papers are released along with their implementations, and sometimes even with pretrained models. Checkout [https://paperswithcode.com](https://paperswithcode.com) to easily find them.
+- Last but not least, TensorFlow has a core team, as well as a large community to improving it.
+- To ask technical questions, you should use [https://stackoverflow.com](https://stackoverflow.com) and tag your question with *tensorflow* and *python*.
+- For general discussions, join the [TensorFlow Forum](https://discuss.tensorflow.org).
