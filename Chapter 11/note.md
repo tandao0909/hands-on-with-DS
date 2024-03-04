@@ -639,3 +639,36 @@ $$Swish(z) = z\sigma(z)$$
 - The `max_norm()` function has an `axis` argument that defaults to 0.
 - A `Dense` layer usually has weights of shape [*number of inputs, number of neurons*], so using `axis=0` means that the max-norm constraint will apply independently to each neuron's weight vector.
 - If you want to use max-norm with convolutional layers (in chapter 14), make sure to set the `max_norm()` constraint's `axis` argument appropriately (usually `axis=[0, 1, 2]`).
+
+# Summary and Practical Guidelines
+
+- In this chapter, we have covered a wide range of techniques, and you may be wondering which ones you should use.
+- This highly depends on the task, and there is no-size-fits-all solution.
+- If you want a general (works just-fine) configuration in most case, then here's the author's suggestion:
+
+| Hyperparameter        | Default value        |
+|-----------------------|----------------------|
+| Kernel initializer    | He initialization    |
+| Activation function   | ReLU if shallow, Swish if deep |
+| Normalization         | None if shallow, batch norm if deep |
+| Regularization        | Early stopping, weight decay if needed |
+| Optimizer             | Nesterov accelerated gradients or AdamW |
+| Learning rate schedule| Performance scheduling or 1cycle |
+
+- If the network is a simple stack of dense layers, then it can self-normalize, and you can use this configuration instead:
+
+| Hyperparameter        | Default value              |
+|-----------------------|----------------------------|
+| Kernel initializer    | LeCun initialization       |
+| Activation function   | SELU                       |
+| Normalization         | None (self-normalization)  |
+| Regularization        | Alpha dropout if needed    |
+| Optimizer             | Nesterov accelerated gradients |
+| Learning rate schedule| Performance scheduling or 1cycle |
+
+- Don't forget to normalize the inputs features in this case!
+- You should also try to reuse parts of a pretrained neural network if you can find one that solves a similar problem, or use unsupervised pretraining if you have a lot of unlabeled data, or use pretraining on an auxiliary task if you can have a lot of labeled data for a similar task.
+- While the previous guidelines should cover most cases, here are some exceptions:
+    - If you need a sparse model, you can use $\ell_1$ regularization (and optionally zero out the tiny weights during training). If you need a even sparser model, you can use the TensorFlow Model Optimization Toolkit. This will break self-normalization, so you should use the default configuration in this case.
+    - If you need a low-latency model (one that performs lightning-fast predictions), you may need to use fewer layers, use a fast activation function such as ReLU or leaky ReLU, and fold the batch normalization layers into the previous layers after training. Having a sparse model will also help. Finally, you may want to reduce the float precision form 32 bits to 16 bits, or even 8 bits. Again, check out TF-MOT.
+    - If you are building a risk-sensitive application, or inference latency is not very important in your application, you can use MC dropout to boost performance and get more reliable probability estimates, along with uncertainty estimates.
