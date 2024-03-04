@@ -624,3 +624,18 @@ $$Swish(z) = z\sigma(z)$$
 - But if you have a model that was already trained using `Dropout`, you need to create a new model that's identical to the existing model, expect with `MCDropout` instead of `Dropout`, then copy the existing model's weights to your new model.
 - In short, MC dropout is a great technique that boost dropout models and provides better uncertainty estimates.
 - Of course, since it is just regular dropout during training, it also acts like a regularizer.
+
+## Max-Norm Regularization
+
+- Another powerful regularization technique for neural networks is called *max-norm regularization*: for each neuron, it constrains the weights $\textbf{w}$ of the incoming connections such that $\|\textbf{w}\|_2 \leq r$, where *r* is the max-norm hyperparameter and $\|.\|_2$ is the $\ell_2$ norm.
+- Max-norm regularization does not add a regularization loss term to the overall loss function. 
+- Indeed, it is typically implemented by computing $\|\textbf{w}\|_2$ after each training step and rescaling $\textbf{w}$ if needed ($\textbf{w} \leftarrow \textbf{w}\displaystyle\frac{r}{\|w\|_2}$).
+- Reducing *r* increases the amount of regularization and helps reduce overfitting.
+- Max-norm regularization can also help alleviate the unstable gradients problems (if you are not using batch normalization).
+- To implement max-norm regularization in Keras, set the `kernel_constraint` argument of each hidden layer to a `tf.keras.constraints.max_norm()` constraint function with the appropriate max value.
+- After each training iteration, the model's `fit()` method will call the object return by `max_norm()`, passing it the layer's weights and getting rescaled weights in return, which then replace the layer's weights.
+- As you'll see in chapter 12, you can define your own custom constraint function if necessary and use it as the `kernel_constraint`.
+- You can also constraint the bias term by setting the `bias_constraint` argument.
+- The `max_norm()` function has an `axis` argument that defaults to 0.
+- A `Dense` layer usually has weights of shape [*number of inputs, number of neurons*], so using `axis=0` means that the max-norm constraint will apply independently to each neuron's weight vector.
+- If you want to use max-norm with convolutional layers (in chapter 14), make sure to set the `max_norm()` constraint's `axis` argument appropriately (usually `axis=[0, 1, 2]`).
