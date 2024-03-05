@@ -84,3 +84,16 @@
 - To avoid this, TensorFlow does not perform any type conversions automatically: it just raises an exception if you try to execute if you try to execute an operation on tensors with incompatible types.
 - For example, you cannot add a float tensor and an integer tensor, and you cannot even add a 32-bit float and a 64-bit float.
 - Of course, you can use `tf.cast()` when you really need to convert types.
+
+### Variables
+
+- The `tf.Tensor` values we've seen so far are immutable: we cannot modify them.
+- This means we cannot use regular tensors to implement weights in a neural network, since they need to be tweaked by backpropagation.
+- Plus, other parameters may also need to change over time (e.g., a momentum optimizer keeps track of past gradients).
+- What we need is a `tf.Variable`.
+- A `tf.Variable` acts much like a `tf.Tensor`: you can perform the same operations with it, it plays nicely with NumPy, and is picky with types as well.
+- But, it can be modified in place using the `assign()` method (or `assign_add()` or `assign_sub()`, which increment or decrement the variable by the given value).
+- You can also modify individual cells (or slices), by using the cell's (or slice's) `assign()` method or by using the `scatter_update()` or `scatter_nd_update()` method.
+- Direct assignment will not work.
+- In practice, you will rarely have to create variables manually; Keras provides an `add_weight()` method that will take care of it for you, as you will see shortly.
+- Moreover, model parameters will generally be updated directly by the optimizers, so you will rarely need to update variables manually.
