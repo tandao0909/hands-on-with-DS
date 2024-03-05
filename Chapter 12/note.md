@@ -97,3 +97,12 @@
 - Direct assignment will not work.
 - In practice, you will rarely have to create variables manually; Keras provides an `add_weight()` method that will take care of it for you, as you will see shortly.
 - Moreover, model parameters will generally be updated directly by the optimizers, so you will rarely need to update variables manually.
+
+### Other Data Structures
+
+- TensorFlow supports several other data structures. Here I list all of them.
+- *String tensors*: Are regular tensors of type `tf.string`. These represents byte strings, not Unicode strings, so of you create a string tensor using a Unicode string (e.g., a regular Python 3 string like `"café"`), then it will get encoded to UTF-8 automatically (e.g., `b"af\xc3\xa9"`).
+- Alteratively, you represent Unicode strings using tensors of type `tf.int32`, where each item represents a Unicode point (e.g., `[99, 97, 102, 233]`).
+- It's important to note that a `tf.string` is atomic, meaning that its length odes not appear in the tensor's shape. Once you convert it to a Unicode tensor (i.e., a tensors of type `tf.int32` holding Unicode points), the length will appear in the shape.
+- The `tf.strings` package contains operations for byte strings and Unicode strings, such as `length()` to count the number of bits in a byte string (or the number of code points if you set `unit="UTF8_CHAR"`), `unicode_decode()` to convert a Unicode string tensor (i.e., int32 tensor) to a byte string tensor, and `unicode_decode()` to do the reverse.
+- You can also manipulate tensors containing multiple strings.
