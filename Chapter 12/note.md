@@ -153,3 +153,17 @@
 - Other available functions in `tf.sets` are `difference()`, `intersection()`, and `size()`, which are self-explanatory.
 - If you want to check whether a set contains some given values, you can compute the intersection of that set and the values. 
 - If you want to add some values to a set, you can compute the union of the set and the values.
+
+#### Queues
+
+- TensorFlow implements several types of queues in `tf.queue` package.
+- they used to be very important when implementing efficient data loading and preprocessing pipelines, but the tf.data API had essentially made them useless (expect perhaps in some rare cases) because it is much simpler to use and provides all the tools you need to build efficient pipelines. For the sake of completeness, we will also talk about them.
+- The simplest kind of queue is the first-in, first-out (FIFO) queue. To build it, you need to specify the maximum number of records it can contain.
+- Moreover, each record is a tuple of tensors, so you must specify the type of each tensor, and optionally their shapes.
+- It is also possible to enqueue and dequeue multiple records at once using `enqueue_many()` and `dequeue_many()` (to use `dequeue_many()`, you must specify the `shapes` argument when you create the queue).
+- Other queue types include:
+    - `PaddingFIFOQueue`: Same as `FIFOQueue`, but its `dequeue_many()` method supports dequeueing multiple records of different shapes. It automatically pads the shortest records to ensure all the records in the batch have the same shape.
+    - `PriorityQueue`: A queue that dequeues records in a prioritized order. The priority must be 64-bit integer included as the first element as the first element of each record. Surprisingly, records with lower priority will be dequeued first. Records with the same priority will be dequeued in FIFO order.
+    - `RandomShuffleQueue`: A queue whose records are dequeued in random order. This was useful to implement a shuffle buffer before tf.data existed.
+- If a queue is already full and you try enqueue another record, the `enqueue()` method will freeze until a record is dequeued by another thread.
+- Similarly, if a queue is empty and you try dequeue a record, the `dequeue()` method will freeze until a record is pushed to the queue by another thread.
