@@ -106,3 +106,11 @@
 - It's important to note that a `tf.string` is atomic, meaning that its length odes not appear in the tensor's shape. Once you convert it to a Unicode tensor (i.e., a tensors of type `tf.int32` holding Unicode points), the length will appear in the shape.
 - The `tf.strings` package contains operations for byte strings and Unicode strings, such as `length()` to count the number of bits in a byte string (or the number of code points if you set `unit="UTF8_CHAR"`), `unicode_decode()` to convert a Unicode string tensor (i.e., int32 tensor) to a byte string tensor, and `unicode_decode()` to do the reverse.
 - You can also manipulate tensors containing multiple strings.
+- *Ragged tensors* (`tf.RaggedTensor`): A special kind of tensors, represents lists of tensors, all of the same rank and data type, but varying sizes.
+- The dimensions along which the tensor sizes vary are called the *ragged dimensions*.
+- In all ragged tensors, the first dimensions is always a regular dimension (also called a *uniform dimension*).
+- A slice of a ragged tensor is also a ragged tensor.
+- The `tf'ragged` package contains operations for ragged tensors.
+- The way we concatenate two ragged tensors in unusual, check out the learning notebook.
+- If you call the `to_tensor()` method, the ragged tensor gets converted to a regular tensor by padding shorter tensors with zero values to get tensors of equal lengths. You can change the default value using the `default_value` argument.
+- Many TensorFlow operations support ragged tensors. Check out the documentation of `tf.RaggedTensor` class for the full list.
