@@ -128,3 +128,14 @@
 - If you're unsure, just use `tf.sparse.reorder()`.
 - You can convert a sparse tensor to a dense tensor (i.e., a regular tensor) using `tf.sparse_to_dense()`.
 - Note that sparse tensors do not support as much operations as dense tensors. For example, you can multiple a sparse tensor with a scalar to get a new sparse tensor, but you cannot add a scalar value to a sparse tensor, as this would not create a sparse tensor.
+
+#### Tensor Arrays
+
+- A `tf.TensorArray` represents a list of tensors. This can be handy in dynamic models containing loops, to accumulate results and later compute some statistics.
+- You can write or read tensors at any location in the array.
+- By default, reading an item also replaces it with a tensor of the same shape but full of zeros. You can set `clear_after_read` to `False` if you don't want this.
+- When you write to te array, you must assign the output back to the array as well, as shown in the learning notebook. If you don't, although your code will work in eager mode, it will break in graph mode.
+- By default, a `TensorArray` has a fixed size that is set upon creation. Alternatively, you can set `size=0` and `dynamic_size=True` to let the array grow automatically when needed.
+- However, this will hinder performance, so if you know the `size` in advance, better use a fixed-size array.
+- You must also specify the `dtype`, and all elements must have the same shape as the first one written to the array.
+- You can stack all the items into a regular tensor by calling the `stack()` method.
