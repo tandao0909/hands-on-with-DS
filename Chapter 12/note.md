@@ -70,3 +70,10 @@
 - When the name differs, there is usually a good reason for it.
 - For example, in TensorFlow, you must write `tf.transpose(t)`; you cannot just write `t.T` TensorFlow, a new tensor os created with its own copy of the transposed data, while in NumPy, `t.T` is just a transposed view on the same data.
 - Similarly, the `tf.reduce_sum()` operation is named this way because its GPU kernel (i.e., GPU implementation) uses a reduce algorithm that does not guarantee the order in which the elements are added: because 32-bit floats have limited precision, the result may change ever so slightly every time you call this operation. The same is true for `tf.reduce_mean()` (but of course `tf.reduce_max()` is deterministic).
+
+### Tensors and NumPy
+
+- Tensors play nice with NumPy: you can create a tensor from a NumPy array, and vice versa.
+- You can even apply TensorFlow operations to NumPy arrays and NumPy operations to tensors.
+- Notice that NumPy uses 64-bits precision by default, while TensorFlow uses 32-bit. This is because 32-bits precisions is generally more than enough for neural networks, plus it runs faster and uses less RAM.
+- So when you create a tensor from a NumPy array, make sure to set `dtype=tf.float32`.
