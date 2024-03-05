@@ -77,3 +77,10 @@
 - You can even apply TensorFlow operations to NumPy arrays and NumPy operations to tensors.
 - Notice that NumPy uses 64-bits precision by default, while TensorFlow uses 32-bit. This is because 32-bits precisions is generally more than enough for neural networks, plus it runs faster and uses less RAM.
 - So when you create a tensor from a NumPy array, make sure to set `dtype=tf.float32`.
+
+### Type Conversions
+
+- Type conversions can significantly hurt performance, and they can easily go unnoticed when they are done automatically.
+- To avoid this, TensorFlow does not perform any type conversions automatically: it just raises an exception if you try to execute if you try to execute an operation on tensors with incompatible types.
+- For example, you cannot add a float tensor and an integer tensor, and you cannot even add a 32-bit float and a 64-bit float.
+- Of course, you can use `tf.cast()` when you really need to convert types.
