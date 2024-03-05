@@ -43,3 +43,30 @@
 - Last but not least, TensorFlow has a core team, as well as a large community to improving it.
 - To ask technical questions, you should use [https://stackoverflow.com](https://stackoverflow.com) and tag your question with *tensorflow* and *python*.
 - For general discussions, join the [TensorFlow Forum](https://discuss.tensorflow.org).
+
+## Using TensorFlow like NumPy
+
+- TensorFlow's API revolves around *tensors*, which flows from operation to operation, hence the name *TensorFlow*.
+- A tensor is very similar to NumPy's `ndarray`: it is usually a multidimensional array, but it can hold a scalar (a single number).
+- These tensors will be important when we create custom functions, custom metrics, custom layers, and more.
+
+### Tensors and Operations
+
+- You can create a tensor using `tf.constant()`.
+- Just like a `ndarray`, a `tf.Tensor` has a shape and a data type (`dtype`).
+- Indexing works much like NumPy.
+- Most importantly, all kinds of tensor operations are available.
+- Note that writing `t + 10` is equivalent to calling `tf.add(t, 10)`. In fact, Python calls the magic method `t.__add__(10)`, which just calls `tf.add(t, 10)`.
+- Other operators, like - and *, are also supported.
+- The @ operator was added in Python 3.5, for matrix multiplication: it is equivalent to calling the *tf.matmul()* function.
+- Many functions and class have aliases. For example, `tf.add()` and `tf.math.add()` are the same function. This allows TensorFlow to have concise names for the most common operations while preserving well-organized packages.
+- Note that `tf.math.log()` is commonly used, but does not have a `tf.log()` alias, as it might be confused with logging.
+- A tensor can also hold a scalar value. IN this case, the shape is empty.
+- The Keras API has its own low-level API, located in `tf.keras.backend`.
+- This package is usually imported as `K`, for conciseness.
+- It used to include functions like `K.square()`, `K.exp()`, and `K.sqrt()`, which you may run across in already existing code: this was useful to write to portable code back when Keras supported multiple backends, but now Keras is TensorFlow-only, you should call TensorFlow's low-level API directly.
+- You can find all the basic math operations that you need (`tf.add()`, `tf.multiply()`, `tf.square()`, `tf.exp()`, `tf.sqrt()`, etc.) and most operations that you can find in NumPy (e.g., `tf.reshape()`, `tf.squeeze()`, `tf.tile()`).
+- Some functions have a different name than in NumPy; for instance, `tf.reduce_mean()`, `tf.reduce_sum()`,`tf.reduce_max()`, and `tf.math.log()` are the equivalent of `np.mean()`, `np.sum()`, `np.max()`, and `np.log()`.
+- When the name differs, there is usually a good reason for it.
+- For example, in TensorFlow, you must write `tf.transpose(t)`; you cannot just write `t.T` TensorFlow, a new tensor os created with its own copy of the transposed data, while in NumPy, `t.T` is just a transposed view on the same data.
+- Similarly, the `tf.reduce_sum()` operation is named this way because its GPU kernel (i.e., GPU implementation) uses a reduce algorithm that does not guarantee the order in which the elements are added: because 32-bit floats have limited precision, the result may change ever so slightly every time you call this operation. The same is true for `tf.reduce_mean()` (but of course `tf.reduce_max()` is deterministic).
