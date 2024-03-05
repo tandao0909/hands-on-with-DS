@@ -101,12 +101,18 @@
 ### Other Data Structures
 
 - TensorFlow supports several other data structures. Here I list all of them.
-- *String tensors*: Are regular tensors of type `tf.string`. These represents byte strings, not Unicode strings, so of you create a string tensor using a Unicode string (e.g., a regular Python 3 string like `"café"`), then it will get encoded to UTF-8 automatically (e.g., `b"af\xc3\xa9"`).
+
+#### String tensors
+
+- Are regular tensors of type `tf.string`. These represents byte strings, not Unicode strings, so of you create a string tensor using a Unicode string (e.g., a regular Python 3 string like `"café"`), then it will get encoded to UTF-8 automatically (e.g., `b"af\xc3\xa9"`).
 - Alteratively, you represent Unicode strings using tensors of type `tf.int32`, where each item represents a Unicode point (e.g., `[99, 97, 102, 233]`).
 - It's important to note that a `tf.string` is atomic, meaning that its length odes not appear in the tensor's shape. Once you convert it to a Unicode tensor (i.e., a tensors of type `tf.int32` holding Unicode points), the length will appear in the shape.
 - The `tf.strings` package contains operations for byte strings and Unicode strings, such as `length()` to count the number of bits in a byte string (or the number of code points if you set `unit="UTF8_CHAR"`), `unicode_decode()` to convert a Unicode string tensor (i.e., int32 tensor) to a byte string tensor, and `unicode_decode()` to do the reverse.
 - You can also manipulate tensors containing multiple strings.
-- *Ragged tensors* (`tf.RaggedTensor`): A special kind of tensors, represents lists of tensors, all of the same rank and data type, but varying sizes.
+
+#### Ragged tensors
+
+- A special kind of tensors, represents lists of tensors, all of the same rank and data type, but varying sizes.
 - The dimensions along which the tensor sizes vary are called the *ragged dimensions*.
 - In all ragged tensors, the first dimensions is always a regular dimension (also called a *uniform dimension*).
 - A slice of a ragged tensor is also a ragged tensor.
@@ -114,3 +120,11 @@
 - The way we concatenate two ragged tensors in unusual, check out the learning notebook.
 - If you call the `to_tensor()` method, the ragged tensor gets converted to a regular tensor by padding shorter tensors with zero values to get tensors of equal lengths. You can change the default value using the `default_value` argument.
 - Many TensorFlow operations support ragged tensors. Check out the documentation of `tf.RaggedTensor` class for the full list.
+
+#### Sparse Tensors
+
+- Tensor can also efficiently represent *sparse tensors* (i.e., tensors containing mostly zeros).
+- Just create a `tf.SparseTensor`, specifying the indices and values of the nonzero elements and the tensor's shape. The indices must be listed in "reading order" (from left ro right, top to bottom).
+- If you're unsure, just use `tf.sparse.reorder()`.
+- You can convert a sparse tensor to a dense tensor (i.e., a regular tensor) using `tf.sparse_to_dense()`.
+- Note that sparse tensors do not support as much operations as dense tensors. For example, you can multiple a sparse tensor with a scalar to get a new sparse tensor, but you cannot add a scalar value to a sparse tensor, as this would not create a sparse tensor.
