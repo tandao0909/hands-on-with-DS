@@ -139,3 +139,17 @@
 - However, this will hinder performance, so if you know the `size` in advance, better use a fixed-size array.
 - You must also specify the `dtype`, and all elements must have the same shape as the first one written to the array.
 - You can stack all the items into a regular tensor by calling the `stack()` method.
+
+#### Sets
+
+- TensorFlow supports sets of integers or strings (but not floats).
+- It represents sets using regular tensors.
+- Note that the tensor must have at least two dimensions, and the sets must be in the last dimension.
+- The `tf.sets` package contains several functions to manipulate sets. 
+- For example, we can create two sets and compute their union (the result is however a sparse tensor, so we call `to_dense()` to display it).
+- You can also compute the union of multiple pairs of sets simultaneously. If some sets are shorter than others, you must pad them with a padding value, such as 0.
+- If you prefer using a different padding value, such as -1, then you must set `default_value=-1` (or your preferred value) when calling `to_dense()`.
+- The default `default_value` is 0, so when dealing with string sets, you must set this parameter (e.g., to an empty string).
+- Other available functions in `tf.sets` are `difference()`, `intersection()`, and `size()`, which are self-explanatory.
+- If you want to check whether a set contains some given values, you can compute the intersection of that set and the values. 
+- If you want to add some values to a set, you can compute the union of the set and the values.
