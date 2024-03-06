@@ -205,3 +205,18 @@
 - You can then use any instance of this class when you compile the model.
 - When you save the model, the threshold will be saved along with it; and when you load the model, you just need to map the class itself.
 - when you save the model, Keras calls the loss instance's `get_config()` method and save the config in the SavedModel format. When you load the model, it calls the `from_config()` class method on the `HuberLoss` class: this method is implemented by the base class (`Loss`) and creates an instance of this class, passing `**config` to the constructor.
+
+## Custom Activation Functions, Initializers, Regularizers, and Constraints
+
+- Most Keras functionalities, such as losses, regularizers, constraints, initializers, metrics, activation functions, layers, and even full models, can be customized in very much the same way.
+- Most of the time, you will just need to write a simple function with the appropriate inputs and outputs.
+- You can see the implementation in the learning notebook, along with their equivalent in TensorFlow.
+- As you can see, the arguments depend on the type of custom function. 
+- These custom functions can be used normally, as shown in the learning notebook.
+- The activation function will be applied to the output of the `Dense` layer, and its result will be passed on to the next layer.
+- The layer's weight will be initialized using the value returned by the initializer.
+- At each training, the weights will be passed to the regularization function to compute the regularization loss, which will be added to the main loss to get the final loss used for training.
+- Finally, the constraint function will be called after each training step, and the layer's weights will be replaced by the constrained weights.
+- If a function has a hyperparameter that needs to be saved along with the model, then you will want to subclass the appropriate class, such as `tf.keras.regularizers.Regularizer`, `tf.keras.constraints.Constraint`, `tf.keras.initializers.Initializer` or `tf.keras.layers.Layer` (for any layer, including activation function).
+- Much as you did for the custom loss, there is a simple class for $\ell_1$ regularization that saves its `factor` hyperparameter you can find in the learning notebook. This time you do not need to call parent constructor or the `get_config()` method as they are not defined by the parent class.
+- Note that you must implement the `call()` method for losses, layers (including activation functions), and models, or the `__call__()` method for regularizers, initializers, and constraints.
