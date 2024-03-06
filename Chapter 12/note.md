@@ -220,3 +220,39 @@
 - If a function has a hyperparameter that needs to be saved along with the model, then you will want to subclass the appropriate class, such as `tf.keras.regularizers.Regularizer`, `tf.keras.constraints.Constraint`, `tf.keras.initializers.Initializer` or `tf.keras.layers.Layer` (for any layer, including activation function).
 - Much as you did for the custom loss, there is a simple class for $\ell_1$ regularization that saves its `factor` hyperparameter you can find in the learning notebook. This time you do not need to call parent constructor or the `get_config()` method as they are not defined by the parent class.
 - Note that you must implement the `call()` method for losses, layers (including activation functions), and models, or the `__call__()` method for regularizers, initializers, and constraints.
+
+## Custom Metrics
+
+- Losses and metrics are conceptually not the same thing:
+    - Losses (e.g., cross entropy) are used by gradient descent to *train* a model, so they must be differentiable (at least at the points where they evaluated), and their gradients should not be zero everywhere. Plus, it's OK if they are not easily interpretable by humans.
+    - In contrast, metrics (e.g., accuracy) are used to *evaluate* a model: they must be more easily interpretable, and they can be non-differentiable or have zero gradients everywhere.
+- That said, in most cases, defining a custom metric function is exactly the same as defining the custom cost function.
+- In fact, we could even use the Huber loss function we created earlier as a metric (though the Huber loss is seldom used as a metric, MSE and MAE is more preferred); it would work just fine (and saving would also work the same way, in this case only saving the name of the function, `"huber_fn"`, not the threshold).
+- For each batch during training, Keras will compute this metric and keep tracks of its mean since the beginning of the epoch. Most of the time, this is exactly what you want. But not always!
+- Suppose you train a binary classifier and want to measure its precision.
+- As you saw in chapter 3, precision is the number of true positives divided by the number of positive predictions (including both true positives and false positives).
+- Suppose the model made five positive predictions the first batch, four of which were correct: that's 80% precision.
+- Then, suppose the model made three positive predictions in the second batch, but they were all incorrect: that's 0% precision for the second batch.
+- If you compute the mean of these two precisions, you get 40%.
+- But that's not the model's precision over these two batches. In fact, there were a total of four true positives (4 + 0) out of eight positive predictions (5 + 3), so the overall precision is 50%, not 40%.
+- What we need is an object that keeps track of the number of true positives and the number of false positives and use them to compute the precision based on these numbers when requested. That is precisely what `tf.keras.metrics.Precision` class does.
+- In our example, we created a `Precision` object, then we used it like a function, passing it the labels and predictions for the first batch, then the second batch (you can optionally pass sample weights as well, if you want).
+- We used the same number of true and false positives as in the example we just discussed.
+- After the first batch, it returns a precision of 80%; then after the second batch, it returns 50% (which is the overall precision so far, not the second batch's precision).
+- This is called a *streaming metric* (or *stateful metric*), as it is gradually updated, batch after batch.
+- At any point, we can call the `result()` method to get the current value of the metric.
+- We can also look at its variables (tracking the number of true and false positives) by using the `variables` attribute using the `real_states()` method.
+- If you need to define your own custom streaming metric, create a subclass of the `tf.keras.metrics.Metric` class.
+- We implemented a basic example that keeps track of the total Huber loss and the number of instances seen so far.
+- When we asked for the result, it returns the ratio, which is just the mean Huber loss.
+- We will walk through the implementation in the learning notebook:
+    - The constructor used the `add_weight()` method to create the variables needed to keep track of the metric's state over multiple batches - in this case, the sum of all the Huber losses (`total`) and the number of instances seen so far (`count`). You could just create the variables manually if you preferred.
+    Keras keeps track of any `tf.Variable` that is set as an attribute (and more generally, any "trackable" object, such as layers or models).
+    - The `update_state()` method is called when you use an instance of this class as a function (as we did with the `Precision` object). It updates the variable, given the labels and predictions for one batch (and sample weights, but we ignore it for our case).
+    - The `result()` method computes and return the final result, in this case the mean Huber metric over all instances. When you use the metric as a function, the `update_state()` method gets called first, then the `result()` method is called, and the output is returned.
+    - The `get_config()` method is implemented to ensure the `threshold` gets saved along with the model.
+    - The default implementation of the `reset_state()` method resets all variables to 0.0 (but you can override it if needed).
+- Keras will take care of variable persistence seamlessly; we don't have to do anything.
+- When you define a metric using a simple function, Keras automatically calls it for each batch, and it keeps track of the mean during each epoch.
+- So the only benefit of our `HuberMetric` class is that the `threshold` will be saved.
+- But of course, some metrics, like precision, cannot simply be averaged over batches: in these cases, we have no other option than to implement a streaming metric.
