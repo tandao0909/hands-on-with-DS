@@ -185,3 +185,23 @@
 - You can now use you custom Huber loss function when you compile the Keras model, and train as usual.
 - For each batch, Keras will call the loss function to compute the loss, then it will use reverse-mode autodiff to compute the gradients of the loss with regard to all model's trainable parameters, and finally it will perform a gradient descent step.
 - Moreover, it will keep track of the total loss since the beginning of the epoch, and it will display the mean loss.
+
+## Saving and Loading Models that contain Custom Components
+
+- Saving a model containing a custom loss function works fine, but when you load it, you'll need to provide dictionary that maps the function name to the actual function.
+- More generally, if you load a model containing custom objects, you need to map the names to the objects using a dictionary.
+- If you decorate the `huber_fn()` function with `@tf.keras.utils.register_keras_serializable()`, it will automatically be available to the `load_model()` function: there's no need to include it in the `custom_object` dictionary.
+- If the object is a class, it must implement the `get_config()` method.
+- With our current implementation, any value in the threshold between -1 and 1 is considered "small". But what if you want a different threshold?
+- A solution is to create a function that create a configured loss function.
+- Unfortunately, when you save the model, the `threshold` will not be saved.
+- This means that you will have to specify the `threshold` value when loading the model. 
+- Note that we use `"huber_fn"`, which is the name of the loss function we want Keras to use. We don't have to give Keras the name of the function that created it.
+- You can solve this by creating a subclass of the `tf.keras.losses.Loss` class, and then implementing its `get_config()` method.
+- Let's walk through the implementation of this class:
+    - The constructor accepts `**kwargs` and passes them to the parent constructor, which handles standard hyperparameters: the `name` of the loss and the `reduction` algorithm to use to aggregate the individual instance losses. By default, this is `"AUTO"`, which is equivalent to `"SUM_OVER_BATCH_SIZE"`: the loss wil be the sum of the instances losses, weighted by the sample weights, if any, and divided by the batch size (not by the sum of the weights, so this is not the weighted mean). Other possible values are `"SUM"` and `"NONE"`.
+    - The `call()` method takes the labels and predictions, computes all the instance losses, and returns them.
+    - The `get_config()` method returns a dictionary mapping each hyperparameters name to its value. It first calls the parent class's `get_config()` method, then adds the new hyperparameters to this dictionary.
+- You can then use any instance of this class when you compile the model.
+- When you save the model, the threshold will be saved along with it; and when you load the model, you just need to map the class itself.
+- when you save the model, Keras calls the loss instance's `get_config()` method and save the config in the SavedModel format. When you load the model, it calls the `from_config()` class method on the `HuberLoss` class: this method is implemented by the base class (`Loss`) and creates an instance of this class, passing `**config` to the constructor.
