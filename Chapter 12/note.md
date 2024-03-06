@@ -167,3 +167,21 @@
     - `RandomShuffleQueue`: A queue whose records are dequeued in random order. This was useful to implement a shuffle buffer before tf.data existed.
 - If a queue is already full and you try enqueue another record, the `enqueue()` method will freeze until a record is dequeued by another thread.
 - Similarly, if a queue is empty and you try dequeue a record, the `dequeue()` method will freeze until a record is pushed to the queue by another thread.
+
+# Customizing Models and Training Algorithms
+
+## Custom Loss Functions
+
+- Suppose you want to train a regression model, but your training set is a bit noisy.
+- Of course, you start by trying to clean the dataset up by removing or fixing the outliers, but that turns out to be insufficient; the dataset is still noisy.
+- Which loss function should you use?
+    - The mean squared error might penalize large errors too much and make your model too pessimistic, make it imprecise.
+    - The mean absolute error would not penalize outliers as much, but training might take a long time to converge, and the trained model might not be ver precise.
+    - This is a good time to use Huber loss, instead of good old MSE.
+- The Huber loss is available in Keras (just use `tf.keras.losses.Huber`), but let's pretend it's not there.
+- To implement it, just create a function that takes the labels and the model's predictions as arguments, and uses TensorFlow operations to compute a tensor containing all the losses (one per sample).
+- For better performance, you should use a vectorized implementation, as in the learning notebook.
+- Moreover, if you want to benefit from TensorFlow's graph optimization features, you should use only TensorFlow operations.
+- You can now use you custom Huber loss function when you compile the Keras model, and train as usual.
+- For each batch, Keras will call the loss function to compute the loss, then it will use reverse-mode autodiff to compute the gradients of the loss with regard to all model's trainable parameters, and finally it will perform a gradient descent step.
+- Moreover, it will keep track of the total loss since the beginning of the epoch, and it will display the mean loss.
