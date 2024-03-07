@@ -277,5 +277,27 @@
 - Keras automatically infers the output shape, expect when the layer is dynamic (as you will see shortly). In this (rare) case, you need to implement the `compute_output_shape()` method, which must return a `TensorShape` object.
 - To create a layer with multiple inputs (e.g., `Concatenate`), the argument to the `call()` method should be a tuple containing all the inputs. To create a layer with multiple outputs, the `call()` method should return the list of outputs. An example can be found in the learning notebook.
 - This layer may now be used like nay other layers, but of course only using functional and subclassing APIs, not the sequential API (which only accepts layers with one input and one output).
-- If your layer needs to behave differently during training and during testing (e.g., if it uses `Dropout` or `BatchNormalization` layers), then you must add a `training` argument to the `call()` method and use this argument ot decide what to do.
+- If your layer needs to behave differently during training and during testing (e.g., if it uses `Dropout` or `BatchNormalization` layers), then you must add a `t.raining` argument to the `call()` method and use this argument ot decide what to do.
 - For instance, you see in the learning notebook an example of a layer that adds Gaussian noise during training, but does nothing during testing (Keras has a layer that does the same thing, `tf.keras.layers.GaussianNoise`).
+
+## Custom Models
+
+- We already looked at how to create a custom model class in chapter 10, when we discussed the subclassing API.
+- It's straightforward: subclass the `tf.keras.models.Model` class, create layers and variables in the constructor, and implement the `call()` method to do whatever you want the model to do.
+- Suppose we want to build a model which does the following:
+    - The inputs go through a first dense layer
+    - Then through a *residual block* composed of two dense layers and an addition operation (as you will se in chapter 14, a residual block adds its inputs to its outputs).
+    - Then through this same residual block three more times.
+    - Then through a second residual block.
+    - Finally, go through a dense output layer.
+- To implement this model, it is best to first define a `ResidualLayer` class, since we are going to create a couple of identical blocks (and you may want to reuse it in another model).
+- You can see the implementation in the learning notebook.
+- This layer is a bit special, as it contains other layers.
+- This is handled transparently by Keras: it automatically detects that the `hidden` attribute contains trackable objects (layers in this case), so their variables is automatically added to this layer's list of variables.
+- Next, we use the subclassing API to define the model: We create the layers in the constructor and use them in the `call()` method.
+- This model can then be used like any other model (compile, fit, evaluate, make predictions).
+- If you want to save the model using the `save()` method nd load it using the `tf.keras.models.load_model()` function, you must implement the `get_config` method (as we did earlier) in both the `ResidualBlock` and `ResidualRegressor`.
+- Alternatively, you can save and load the weights using the `save_weights()` and `load_weights()` methods.
+- The `Model` class is a subclass of the `Layer` class, so models can be defined and used exactly like layers.
+- A model has some extra functionalities, including its `compile()`, `fit()`, `evaluate()` and `predict()` methods (and a few variants), plus the `get_layer()` method (which can return any of the model's layers by name or by index) and the `save()` method (and support for `tf.keras.models.load_model()` and `tf.keras.models.clone_model()`).
+- If models provide more functionality than layers, why not just defines every layer a model? Well, technically you could, but it usually cleaner to distinguish the internal components of your model (i.e., layers or reusable blocks of layers) form the model itself (i.e., the object you will train).
