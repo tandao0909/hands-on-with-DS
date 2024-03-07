@@ -301,3 +301,23 @@
 - The `Model` class is a subclass of the `Layer` class, so models can be defined and used exactly like layers.
 - A model has some extra functionalities, including its `compile()`, `fit()`, `evaluate()` and `predict()` methods (and a few variants), plus the `get_layer()` method (which can return any of the model's layers by name or by index) and the `save()` method (and support for `tf.keras.models.load_model()` and `tf.keras.models.clone_model()`).
 - If models provide more functionality than layers, why not just defines every layer a model? Well, technically you could, but it usually cleaner to distinguish the internal components of your model (i.e., layers or reusable blocks of layers) form the model itself (i.e., the object you will train).
+
+## Losses and Metrics Based on Model Internals
+
+- The custom losses and metrics we defined earlier were all based on the labels and the predictions (and optionally sample weights).
+- You may want to define losses based on other parts of your model, such as the weights or activations of its hidden layers.
+- This may be useful if you want to have some regularization or monitor some internal aspects of your model.
+- To define a custom loss based on model internals, compute it based on any part the model you want, then pass the result to the `add_loss()` method.
+- For example, we'll build a custom regression MLP model composed of a stack of five hidden layers plus an output layer.
+- This custom model will also have an auxiliary output on top of the upper hidden layer.
+- The loss associated with this auxiliary output will be called the *reconstruction loss* (see chapter 17): it is the mean squared difference between the reconstructions and its inputs.
+- By adding this loss, we encourage the model to preserve as much information as possible through the hidden layers, even if that piece of informations is not directly useful for the regression task.
+- It is also possible to add a custom metric using the `add_metric()` method.
+- We go through the implementation of this custom model with a custom reconstruction loss and a corresponding metric:
+    - The constructor creates all five hidden layers and the output layer. It also implements a streaming metric that keep tracks of the reconstruction error.
+    - The `build()` method builds a layer that predicts the reconstructed result. Note that we have to implement it here, as the number of neurons in the reconstructed layer is the number of inputs, and we only know the number of inputs if the `build()` method are called.
+    - The `call()` method run the inputs through all the hidden layers and reconstruct using the reconstruction layer.
+    - It then calculates the mean of the reconstruction loss over the whole input batch, and adds it to the model's loss using the `add_loss()` method. Note that we multiply the reconstruction loss by 0.05, which is a hyperparameter we can tune. This ensures the reconstruction loss doesn't dominate the main loss.
+    - It also adds this error as a metric using the `add_metric()` method. These two lines in the `if` can be simplified to `self.add_metric(reconstruction_error)`: Keras will automatically keeps track of the mean for you.
+    - Finally, the `call()` method passes the output of the hidden layers to the output layer and return its output.
+- Both the total loss and the reconstruction loss will go down during training.
