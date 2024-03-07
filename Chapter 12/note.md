@@ -256,3 +256,26 @@
 - When you define a metric using a simple function, Keras automatically calls it for each batch, and it keeps track of the mean during each epoch.
 - So the only benefit of our `HuberMetric` class is that the `threshold` will be saved.
 - But of course, some metrics, like precision, cannot simply be averaged over batches: in these cases, we have no other option than to implement a streaming metric.
+
+## Custom Layers
+
+- You may occasionally want to build an architecture that contains an exotic layer for which TensorFlow does not provide a default implementation.
+- Or you may want to build a very repetitive architecture, in which a particular block of layers is repeated many times, and it would be convenient to treat each block as a single layer.
+- For such cases, you want to build a custom layer.
+- There are some layers that have no weights, such as `tf.keras.layers.Flatten` or `tf.keras.layers.ReLU`. If you want to create one, the simplest option is to write a function and wrap it in a `tf.keras.layers.Lambda` layer.
+- This custom layer can then be used like any other layer, using the Sequential API, the functional API, or the subclassing API.
+- You can also use it as an activation function, or you could use `activation=tf.exp`.
+- The exponential layer is sometimes used in the output layer of a regression model when the values to predict have very different scales (e.g., 0.0001, 10, 1000).
+- In fact, the exponential function is one of the standard activation functions in Keras, so you can just use `activation="exponential"`.
+- To build a custom stateful layer (i.e., a layer with weights), you need to create a subclass of the `tf.keras.layers.Layer` class.
+- We'll walk through the implementation of our custom (simplified) `Dense` layer in the learning notebook:
+    - The constructor takes all the hyperparameters as arguments (in this example, `units` and `activation`), and importantly, it also takes a `**kwargs` argument. It calls the parent constructor, passing it the `kwargs`: this takes care of standard arguments such as `input_shape`, `trainable` and `name`.Then it saves the hyperparameters as attributes, converting the `activation` argument to the appropriate activation function using `tf.keras.activations.get()` function (which accepts functions, standard strings like `"relu"` or `"swish"`, or simply `None`).
+    - The `build()` method creates the layer's variables by calling the `add_weight()` method for each weight. The `build()` method is called the first time the layer is used. At this point, Keras will know the shape of this layer's inputs, and it will pass it to the `build()` method, which is often necessary to create some of the weights. For example, we need to know the number of neurons in the previous layer in order to create the connection weights matrix (i.e., the `"kernel"`): this corresponds to the size of the last dimension of the inputs. At the end of the `build()` method (and only at the end), you must call the parent's `build()` method: this tells Keras that the layer is built (it just sets `self.built = True`).
+    - The `call()` method performs the desired operations. In this case, we compute the matrix multiplication of the inputs X and the layer's kernel, we add the bias vector, and we apply the activation function to the result, and this gives us the output of the layer.
+    - The `get_config()` method is just like in the previous custom classes. Note that we save the activation function's full configuration by calling `tf.keras.activations.serialize()`.
+- You can `MyDense` layer just like any other layer.
+- Keras automatically infers the output shape, expect when the layer is dynamic (as you will see shortly). In this (rare) case, you need to implement the `compute_output_shape()` method, which must return a `TensorShape` object.
+- To create a layer with multiple inputs (e.g., `Concatenate`), the argument to the `call()` method should be a tuple containing all the inputs. To create a layer with multiple outputs, the `call()` method should return the list of outputs. An example can be found in the learning notebook.
+- This layer may now be used like nay other layers, but of course only using functional and subclassing APIs, not the sequential API (which only accepts layers with one input and one output).
+- If your layer needs to behave differently during training and during testing (e.g., if it uses `Dropout` or `BatchNormalization` layers), then you must add a `training` argument to the `call()` method and use this argument ot decide what to do.
+- For instance, you see in the learning notebook an example of a layer that adds Gaussian noise during training, but does nothing during testing (Keras has a layer that does the same thing, `tf.keras.layers.GaussianNoise`).
