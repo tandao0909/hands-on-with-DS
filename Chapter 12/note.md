@@ -321,3 +321,57 @@
     - It also adds this error as a metric using the `add_metric()` method. These two lines in the `if` can be simplified to `self.add_metric(reconstruction_error)`: Keras will automatically keeps track of the mean for you.
     - Finally, the `call()` method passes the output of the hidden layers to the output layer and return its output.
 - Both the total loss and the reconstruction loss will go down during training.
+
+## Computing Gradients Using Autodiff
+
+- A separate notebook about the details of how TensorFlow implements autodiff can be found in the same directory.
+- To understand how to use auto diff to compute gradients automatically, let's consider a simple toy function:
+    $$f(w1, w2)=3 \times w1^2 + 2\times w1 \times w2$$
+- If you know calculus, you can analytically find that the partial derivate of this function with regard to $w1$ is $6 w1 + 2 w2$ and with regard to $w2$ is $2 w1$.
+- For example, at the point $(w1, w2) = (5, 3)$, these partial derivates are 36 and 10, respectively, so the gradient vector at this point is (36, 10).
+- But if this is a neural network, the function would be much more complex, typically with tens of thousands of parameters, and finding the partial derivates analytically by hand would be an impractical task.
+- One solution could be computing an approximation of each partial derivate by measuring how much the function changes if you tweak the corresponding parameter by a tiny amount.
+- This works well and easy to implement, but it's just an approximation, and importantly you need to call $f()$ at least once per hyperparameter (not twice, since we can cache $f(w1, w2)$).
+- Having to call $f()$ at least once for each parameter makes this approach intractable for large neural networks.
+- That's why we should use reverse-mode autodiff instead. TensorFlow makes this pretty simple with `tf.GradientTape()`
+- We first define two variables `w1` and `w2`, then we create a `tf.GradientTape` context that will automatically record every operation that involves a variable, and finally we ask this tape to compute the gradients of the result `z` with regard to both variables `[w1, w2]`.
+- Not only the results that Tensorflow computed is accurate (the precision is only limited by the floating-point errors), but the `gradient()`method only goes through the recorded computations once (in reverse order to the forward pass), no matter how many variables there are, so it is incredibly efficient.
+-   In order to save memory, only put the strict minimum inside the `tf.GradientTape()` block.
+- Alternatively, pause recording by creating a `with tape.stop_recording()` block inside the `tf.GradientTape()` block.
+- The tape is automatically erased immediately after after you call its `gradient()` method, so you will get exception if you try to call `gradient` twice.
+- If you need to call `gradient()` more than once, you must make the tape persistence and delete it each time you're done to free recourses. Python's garbage collector will delete the tape for you if the tape goes out of scope, for example when a function that used it returns.
+- By default, the tape only tracks operations involving variables, so if you try to compute the gradient of `z` with regard to anything other than a variable, the result will be `None`.
+- However, you can force the tape to watch any tensors you like, to record every operation involves them. You can then compute the gradients with regard to these tensors, as if they were variables.
+- This can be useful in some cases, like if you want to implement a regularization loss that penalties activations that vary a lot wen the inputs vary little: the loss will be based on the gradient of the activations with regard to the inputs. Since the inputs are not variables, you must tell the tape to watch them.
+- Most of the time, a gradient tape is used to compute the gradients of a single value (usually the loss) with regard to a set of values (usually the model parameters).
+- This is where reverse-mode autodiff shines: it just need to do one forward pass and one reverse pass to calculate all the gradients at once.
+- If you try to compute the gradients of a vector, for example, a vector of multiple losses, then TensorFlow will compute the gradients of the vector's sum.
+- If you want to get the individual gradients (e.g., the gradients of each loss with regard to the model parameters), you must the tape's `jacobian()` method: it will perform reverse-mode autodiff once for each loss in the vector (all in parallel by default).
+- You can also compute second-order partial derivate (the Hessians, i.e., the partial derivates of the partial derivates), but this is rarely need in practice.
+- In some cases, you may want to stop gradients from backpropagating through some parts of your neural network.
+- To do this, you must use the `tf.stop_gradient()` function.
+- This function return its inputs during the forward pass, but it does not let gradients through backpropagation (it acts like a constant).
+- Finally, you may occasionally run into some numerical issues when computing gradients.
+- For example, if you compute the gradients of the squared root function at $x=10^{-50}$, the result will be infinite. In reality, the slope at that point is not infinite, but it's more than what 32-bit floats can handle.
+- To solve this, it's recommended to add a tiny value to $x$ (such as $10^{-6}$) when computing its squared root.
+- The exponential function is also another problem, as it grows extremely fast.
+- For example, the softplus function we defined earlier is not numerically stable. If you compute it at 1000.0, you will get infinity instead of the true value (about 1000).
+- But we can rewrite it in a numerically stable form:
+    $$\begin{align*}
+    \text{softplus}(x) &= \log(1 + \exp(x)) \\
+                       &= \log(1 + \exp(x)) - \log(\exp(x)) + \log(\exp(x)) \\
+                       &= \log\left(\frac{1+\exp(x)}{\exp(x)}\right) + x \\
+                       &= \log\left(\frac{1}{\exp(x)} + 1\right) + x \\
+                       &= \log(\exp(-x) + 1) + x \\
+                       &= \text{softplus}(-x) + x \\
+                       &= \text{softplus}(-|x|) + \max(0, x) \\
+    \end{align*}$$
+- The last equal sign comes when you realize it is trivial when $x<0$ and is the second to last equal sign when $x \geq 0$.
+- In some rare cases, a numerically stable function may still have numerically unstable gradients.
+- In such cases, you will have to tell TensorFlow which equation to use for the gradients, instead of letting it use autodiff.
+- For this, you must use the `$tf.custom_gradient` decorator when defining the function, and return both the function's actual result and a function that compute the gradients.
+- Using differential calculus, you can find that the derivate of softplus is:
+    $$\frac{\exp(x)}{1+\exp(x)}$$
+- But this form is not stable: for large value of x, it ends up computing infinity / infinity, which returns NaN.
+- However, using a bit of algebra, you can verify that it's equal to $1-\displaystyle\frac{1}{1+\exp(x)}$, which is stable. The `my_softplus_gradients` function uses this equation to compute the gradients.
+- Note that this function will receive the gradients what was propagated as the inputs, and according to the chain rule (which is just $(f(g(x)))' = g'(x)f'(g(x))$), we have to multiply them to the function's gradients.
