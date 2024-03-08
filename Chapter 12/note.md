@@ -375,3 +375,31 @@
 - But this form is not stable: for large value of x, it ends up computing infinity / infinity, which returns NaN.
 - However, using a bit of algebra, you can verify that it's equal to $1-\displaystyle\frac{1}{1+\exp(x)}$, which is stable. The `my_softplus_gradients` function uses this equation to compute the gradients.
 - Note that this function will receive the gradients what was propagated as the inputs, and according to the chain rule (which is just $(f(g(x)))' = g'(x)f'(g(x))$), we have to multiply them to the function's gradients.
+
+
+## Custom Training Loops
+
+- In some cases, the `fit()` method may not be flexible enough for what you need to do.
+- For example, in the [Wide & Deep paper](https://arxiv.org/abs/1606.07792) we mentioned in chapter 10, the authors used two different optimizer: one for the wide path and the other for the deep path.
+- Since the `fit()` method only use one optimizer, which is specified when we compile the model, reimplementing this paper requires you to write your own custom training loop.
+- You may also want to write custom training loops simply to feel more confident that they do precisely what you intend them to do (perhaps you are unsure about some details of the `fit()` method).
+- It can sometimes feel safer to make everything explicit.
+- However, remember that writing a custom training loop will make your code longer, more error-prone, and harder to maintain.
+- Unless you're learning or really need that extra flexibility, you should prefer using the `fit()` method rather than implementing your own training loop, especially when you work in a team.
+- First, we build a simple model. We don't need to compile it, since we will handle the training loop manually.
+- Next, we create a function that randomly sample a batch of instances from the training set. We will discuss the tf.data API, which offers a much better alternative.
+- We also define a function to display the training status, including the number of steps, the total number of steps, the mean loss form the start of the epoch and other metrics.
+- Now, we define some hyperparameters: The numbers of epochs, the batch size, the optimizer, the loss function, and the metrics. We'll use the `Mean`metric to keep track of the mean loss.
+- Here, I will go through the implementation of the custom training loop in the learning notebook:
+    - We created two nested loops: One loops through the epochs and other through the batches within an epoch.
+    - In each batch, we use the function defined above to randomly sampled a batch from the training set.
+    - We find the gradients using `tf.GradientTape()`. Inside the tape, we make a prediction using the model as a function, and we compute the loss, which is the mean loss plus all the model's losses (which is only one regularization error each layer, in our case). Since `mean_squared_error()` returns one loss per instance, we need to perform a `reduce_mean` to have the mean loss of this batch. This is also where you apply sample weights, if you want to do it. The regularization losses are already reduced to a single scalar value each, so we just need to sum them up (we used `f.add_n()`, which multiple tensors of the same shape and same data type).
+    - Next, we ask the tape what the gradients of the loss with regard to all the trainable gradients are - not all variables - and perform a gradient descent step to all the trainable variables using the optimizer.
+    - We then update the mean loss and the metrics of the function in this current epoch so far. We also display a status bar to check the progress of training.
+    - At the end of each epoch, we reset the states of all the mean loss and metrics.
+- If you want to apply gradient clipping, set the optimizer's `clipnorm` or `clipvalue` hyperparameter.
+- If you want to apply any other transformation to the gradients, simply do so  before calling the `apply_gradients()` method.
+- If you want to add weight constraints to your model (e.g., by setting `kernel_constraints` or `bias_constraints` when creating a layer), you should update the training loop too apply these constraints juts after the `apply_gradients()` method.
+- Don't forget to set `training=True` when calling the model in the training loop, especially if your model behaves differently during training and testing (e.g., if you model uses `BatchNormalization` or `Dropout`).
+- If it's a custom model, make sure to propagate the `training` argument to all the layers that your model calls.
+- As you can see, lots of things you need to get right and it's easy to make a mistake. But the advantage is the full control you get.
