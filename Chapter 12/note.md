@@ -403,3 +403,29 @@
 - Don't forget to set `training=True` when calling the model in the training loop, especially if your model behaves differently during training and testing (e.g., if you model uses `BatchNormalization` or `Dropout`).
 - If it's a custom model, make sure to propagate the `training` argument to all the layers that your model calls.
 - As you can see, lots of things you need to get right and it's easy to make a mistake. But the advantage is the full control you get.
+
+## TensorFlow Functions and Graphs
+
+- back in TensorFlow 1, graphs were unavoidable (as well as the complexity came with them) because they were a central part of TensorFlow's API. 
+- Since TensorFlow 2 (released in 2019), graphs are still there, but not as central, and they are much simpler to use.
+- Let's start with a function that computes the cube of its input in Python. Obviously, you can use it with a Python value, such as an int or a float, or we can call it with a tensor.
+- We can use `tf.function()` to convert this Python function to a *TensorFlow function*.
+- This function can then be used exactly as before, and it will always return the same result (but always a tensors).
+- Under the hood, `tf.function()` analyzed the computation performed by the `cube()` function and generated an equivalent computation graph.
+- Alternatively, we can use `tf.function` as a decorator; which is actually more common.
+- The original Python function is still available via the `python_function` attribute, if you need it.
+- TensorFlow optimizes the computation graph, pruning unused nodes, simplifying expressions (e.g., 1 + 2 replaced with 3), and more.
+- Once the optimized graph is ready, the TF function efficiently executes the the operations in the graph, in the appropriate order, and parallelize the execution if it can.
+- As a result, a TF function will usually run much faster than the original Python function, especially when it has complex computations. In the cube function example though, the computation graph is so small that there is nothing to optimize, so the TF function ends up much slower than the Python function.
+- Most of the time, you don't need to know more than that: If you want to optimize a Python function, convert it to a TF function.
+- Moreover, if you set `jit_compile=True` when calling `tf.function()`, the TensorFlow will use `accelerated linear algebra` (XLA) to compile dedicated kernels for your graph, often fusing multiple operations.
+- For example, if your function calls `tf.reduce_sum(a * b + c)`, then without XLA the function first need to compute `a * b` and store the result in a temporary variable, then add `c` to that variable, and lastly call `tf.reduce_sum()` on the result.
+- With XLA, the whole computation gets complied into a single kernel, which will compute `tf.reduce_sum(a * b + c)` in one shot, without using any large temporary variable. Not only this will be much faster, it will also use dramatically less RAM.
+- When you write a custom loss function, a custom metric , a custom layer, or any other custom function and you use it in a Keras model (as we've done throughout this chapter), Keras will automatically convert your function into a TF function - no need to use `tf.function()`. So most of the time, you don't have to do anything to have this optimization benefit.
+- If you want Keras to use XLA, you just need to set `jit_compile=True` when calling the `compile()` method.
+- You can tell Keras to not convert your Python functions to TF functions by setting `dynamic=True` when creating a custom layer or a custom model. Alternatively, you can set `run_eagerly=True` when calling the model's `compile()` method.
+- By default, a TF function generates a new graph for every unique set of input of shapes and data types and caches it for subsequently calls.
+- For example, if you call `tf_cube(tf.constant(10))`, a graph will be generated for int32 tensor of shape []. Then if you call `tf_cube(tf.constant(20))`, the same graph will reused. But if then you call `tf_cube(tf.constant([10, 20]))`, a new graph will be generated for int32 tensors of shape [2]. This is how TF functions handle polymorphism (i.e., varying augments types and shapes).
+- However, this is only true for tensor arguments: if you pass numerical Python value instead, then a new graph will be generated for every distinct value. For example, calling `tf_cube(10)` and `tf_cube(20)` will generate two graphs.
+- If you call a TF function many times with different numerical Python values, then many graphs will be generated, slowing down your program and using up a lot of RAM (you must delete the TF function in order to free up it).
+- Python values should be reserved for arguments that will have few unique values, such as hyperparameters like the number of neurons per layer. This allows TensorFlow to better optimize each variant of your model.
