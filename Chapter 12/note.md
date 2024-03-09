@@ -464,3 +464,18 @@
 - Each tensor also has a unique name: it is always the name of the operation that outputs this tensor, plus `:0` if it is the operation's first output, or `:1` if it is the second output, and so on.
 - You can fetch an operation or a tensor by name using the graph's `get_operation_by_name()` or `get_tensor_by_name()` methods.
 - The concrete function also contains the function definition (represented as a protocol buffer), which includes the function's signature. This signature allows the concrete function to know which placeholders to feed with the input values, and which tensors to return.
+
+## A Closer Look at Tracing
+
+- We tweak the `tf_cube()` function to print its input before the computation.
+- Look at what it printed: `x` is a symbolic tensor. It has a shape and a data type, but no value. PLus, it has a name: `"x:0"`.
+- This is because the `print()` function is not a TensorFlow operation, so it will only run when the Python function is traced, which happens in graph mode, with arguments replaced with symbolic tensors (same type and shape, but no value).
+- Since the `print()` function was not captured into the graph, the next times we call `tf_cube()` with float32 scalar tensors, nothing will be printed.
+- But if we call `tf_cube()` with a tensor of a different type or shape, or with a new Python value, the function will be traced again, so the `print()` function will be called.
+- If your function has Python side effects (e.g., it saves some logs to disk), be aware that this code will only run when the function is traced (i.e., every time the TF function is called with a new input signature).
+- It's best to assume that the function may be traced (or not) anytime the TF function is called.
+- In some cases, you may want to restrict a TF function to a specific input signature.
+- For example, suppose you know that you will only ever call a TF function with batches of $28 \times 28$-pixel images, but the batches will have very different sizes. You may not want TensorFlow to generate a deferent concrete function for each batch size, or count on it to figure out on its own when to use `None`.
+- In this case, you can specify the input signature using `input_signature` argument in the `tf.function()`.
+- This TF function will accept any float32 tensor of shape [*, 28, 28], and it will reuse the same concrete function every time.
+- However, if you try to call this TF function with a Python value, or a tensor of an unexpected data type or shape, you will get an exception.
