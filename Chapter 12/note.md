@@ -512,3 +512,20 @@
 - To do this, simply pass `dynamic=True` when creating the model or any of its layers.
 - If your custom model or layer will always be dynamic, you can instead call the base class's constructor with `dynamic=True`.
 - Alternatively, you can pass `run_eagerly=True` when calling the `compile()` method.
+
+# Back to the book
+
+## AutoGraph and Tracing
+
+- How does TensorFlow generate graph? It starts by analyzing the Python function's source code to capture all the control flow statements, such as `for` loops, `while` loops, and `if` statements, as well as `break`, `continue`, and `return` statements. This first step is called *AutoGraph*.
+- The reason TensorFlow has to analyze the source code is that Python does not provide any other way to capture control flow statements: it offers magic methods like `__add__()` and `__mul__()` to capture operators like `+` and `*`, but there is no `__while__()` or `__if__()` magic methods.
+- After analyzing the source code, AutoGraph outputs an upgraded version of that function, in which all the control flow operations are replaced by the appropriate TensorFlow operations, such as `tf.while_loop()` for loops and `tf.cond()` for `if` statements.
+- For example, you can in the book a figure illustrates how AutoGraph analyzes the source code of the `sum_squares()` Python function, and it generates the `tf__sum_squares()` function.
+- In this function, the `for` loops is replaced by the definition of the `loop_body()` function (containing the body of the original `for` loop), followed by a call to the `for_stmt()` function.
+- This call will build the appropriate `tf.while_loop()` operation in the computation graph.
+- Next, TensorFlow called this "upgraded" function, but instead of passing the argument, it passes a *symbolic tensor*, which as tensor without any actual value, only a name, a data type and a shape.
+- For example, if you call `sum_squares(tf.constant(10))` then the `tf__sum_squares()` function will be called with a symbolic tensor of type int32 and shape [].
+- The function will run in *graph mode*, meaning that each TensorFlow operation will add a node in the graph to represent itself and its output tensor(s) (as opposed to regular mode, called *eager execution*, or *eager mode*).
+- In graph mode, TF operations do not perform any computation.
+- In the book, you can see the `tf__sum_squares()` function being called with a symbolic tensor as its argument (in this case, an int32 of shape []), and the final graph being generated during tracing.
+- In order to view the generated function's source code, you can call `tf.autograph.to_code(sum_squares.python_function)`. The code is not pretty, but in can help for debugging.
