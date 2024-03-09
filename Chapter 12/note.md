@@ -479,3 +479,17 @@
 - In this case, you can specify the input signature using `input_signature` argument in the `tf.function()`.
 - This TF function will accept any float32 tensor of shape [*, 28, 28], and it will reuse the same concrete function every time.
 - However, if you try to call this TF function with a Python value, or a tensor of an unexpected data type or shape, you will get an exception.
+
+## Using AutoGraph to Capture Control Flow
+
+- Suppose you write a for loop adding 10 to its input, by just adding 1 10 times and convert it to a TF function.
+- It works fine, but when we look at its graph, we find that it does not contain a loop: it just contains 10 addition operations.
+- This actually makes sense: when the function get traced, the loop ran 10 times, so the `x += 1` operation was run 10 times, and since it was in graph mode, it recorded this operation 10 times in the graph.
+- You can thinks of this `for` loop as a "static" loop that gets unrolled when the graph is created.
+- If you want the graph to contain a "dynamic" loop instead (i.e., one that runs when the graph is executed), you can create one manually using the `tf.while_loop()` operation, but this is not very intuitive.
+- Instead, it's much simpler to use TensorFlow's *AutoGraph* feature.
+- AutoGraph is actually activated by default. If you ever want to turn it off, you can pass `autograph=False` to `tf.function()`.
+- But if AutoGraph is on, why didn't it capture the `for` loop in the `add_10_times()` function? It only captures `for` loops that iterate over tensors of `tf.data.Dataset` objects, so you should use `tf.range()`, not `range()`:
+    - If you use `range()`,  the `for` loop will be static, meaning it will ony be executed when the function is traced. The loop will be "unrolled" into a set of operations for each iteration, as we saw earlier.
+    - If you use `tf.range()`, the loop wil be dynamic, meaning that it will be included in the graph itself, but it will not run during tracing.
+- If we look at the graph that was generated when we replaced `range()` with `tf.range()` in the `add_10_times()` function, it now contains a `While` loop operation, as if we had called the `tf.while_loop()` function.
