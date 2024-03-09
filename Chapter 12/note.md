@@ -453,4 +453,14 @@
 - If we call `tf_cube(tf.constant(5.0))`, the second concrete function will be called, the placeholder operation for `x` will output 5.0, then the power operation will compute `5.0 ** 3`, so the output will be 125.0.
 - The tensors in these graphs are *symbolic tensors*, meaning they don't have an actual value, just a data type, a shape, and a name.
 - They represent the future tensors that will flow through the graph once an actual value is fed to the placeholder `x` and the graph is executed.
-- Symbolic tensors make it possible to specify ahead of time how to connect operations, and they also allow TensorFlow to recursively infer the data types and shapes of all tensors, given the data types and shapes of their inputs. 
+- Symbolic tensors make it possible to specify ahead of time how to connect operations, and they also allow TensorFlow to recursively infer the data types and shapes of all tensors, given the data types and shapes of their inputs.
+
+## Exploring Function Definitions and Graphs
+
+- You can access a concrete function's computation graph using the `graph` attribute, and get the list of its operations by calling the graph's `get_operations()` method.
+- In this example, the first operation represents the input argument `x` (it is called a `placeholder`), the second "operation" represents the constant 3, the third operation represents the power operation (`**`), and the final operation represents the output of this function (it is an identity operation, meaning it will do nothing more than copy the output of the power operation).
+- Each operation has a list of input and output tensors that you can easily access using the operation's `inputs` and `outputs` attributes.
+- Note that each operation has a name. It defaults to the name of the operation (e.g., `"pow"`), but you can define it manually when calling the operation (e.g., `tf.pow(x, 3, name="other_name")`). If a name already exists, TensorFlow automatically adds a unique index (e.g., `"pow_1"`, `"pow_2"`, etc.)
+- Each tensor also has a unique name: it is always the name of the operation that outputs this tensor, plus `:0` if it is the operation's first output, or `:1` if it is the second output, and so on.
+- You can fetch an operation or a tensor by name using the graph's `get_operation_by_name()` or `get_tensor_by_name()` methods.
+- The concrete function also contains the function definition (represented as a protocol buffer), which includes the function's signature. This signature allows the concrete function to know which placeholders to feed with the input values, and which tensors to return.
