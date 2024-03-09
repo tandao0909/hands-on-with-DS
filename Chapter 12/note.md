@@ -504,3 +504,11 @@
 - The TF function will treat this as an implicit first argument, so it will actually end up with the same signature (expect for the name of the argument).
 - However, using global variables is a bad practice, so you should generally wrap variables (and other resources) inside classes. The good new is `@tf.function` works fine with methods too.
 - **Do not** use `=`, `+=`, `-=`, or any Python assignment operator with TF variables. Instead, you must use the `assign()`, `assign_add()`, or `assign_sub()` methods. If you try to use a Python assignment operator, you will get an exception when you call the method.
+
+## Using TF Functions with Keras (or Not):
+
+- By default, any custom function, layer, or model you use with Keras  will automatically be converted into a TF function.
+- However, in some cases, you may want to deactivate this automatic conversion. For example, if you custom code cannot be turned into a TF function, or if you just want to debug your code (which is much easier in eager mode). 
+- To do this, simply pass `dynamic=True` when creating the model or any of its layers.
+- If your custom model or layer will always be dynamic, you can instead call the base class's constructor with `dynamic=True`.
+- Alternatively, you can pass `run_eagerly=True` when calling the `compile()` method.
