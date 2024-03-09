@@ -493,3 +493,14 @@
     - If you use `range()`,  the `for` loop will be static, meaning it will ony be executed when the function is traced. The loop will be "unrolled" into a set of operations for each iteration, as we saw earlier.
     - If you use `tf.range()`, the loop wil be dynamic, meaning that it will be included in the graph itself, but it will not run during tracing.
 - If we look at the graph that was generated when we replaced `range()` with `tf.range()` in the `add_10_times()` function, it now contains a `While` loop operation, as if we had called the `tf.while_loop()` function.
+
+## Handling Variables and Other Resources in TF Functions
+
+- In TensorFlow, variables and other stateful objects, such as queues or datasets, are called *resources*.
+- TF functions treat them with special care: any operation that reads or updates a resource is considered stateful, and TF functions ensure that stateful operations are executed in the order they appear (as opposed to stateless operations, which may be run in parallel, so their order of execution is not guaranteed).
+- Moreover, when you pass a resource as an argument to a TF function, it get passed by reference, so the function may modify it.
+- If you look at the function definition of the `increment()` function, the first argument is marked as a resource.
+- It is also possible to use a `tf.Variable` defined outside of the function , without explicitly passing it as an argument. 
+- The TF function will treat this as an implicit first argument, so it will actually end up with the same signature (expect for the name of the argument).
+- However, using global variables is a bad practice, so you should generally wrap variables (and other resources) inside classes. The good new is `@tf.function` works fine with methods too.
+- **Do not** use `=`, `+=`, `-=`, or any Python assignment operator with TF variables. Instead, you must use the `assign()`, `assign_add()`, or `assign_sub()` methods. If you try to use a Python assignment operator, you will get an exception when you call the method.
