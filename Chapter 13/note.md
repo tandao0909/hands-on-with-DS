@@ -60,3 +60,23 @@
 - However, instances located in the same file will still end up close to each other.
 - To avoid this, you can pick multiple files randomly and read them simultaneously, interleaving their records.
 - Then on top of that, you can add a shuffling buffer using the `shuffle()` method.
+
+### Interleaving Lines from Multiple Files
+
+- First, suppose you've loaded the California housing dataset, shuffled it (unless it was already shuffled), and split it into a training set, a validation set, and a test set.
+- The you split each set into many CSV files that each look like this (each row contains eight input features plus the target median house value).
+- Let's also suppose that `train_filepaths` contains the list of training filepaths (and you also have `valid_filepaths` and `test_filepaths`).
+- Alternatively, you could use file patterns; for example `train_filepaths=housing/datasets/my_train_*.csv`
+- By default, the `list_files()` function return a dataset that shuffles the filepaths. In general, this is a good thing, but you can set `shuffle=False` if you don't want that happens for some reason.
+- Next, you can call the `interleave()` method to read from five files at a time and interleave their lines. You can skip the first line of each file - which is the header row - by using the `skip()` method.
+- The `interleave()` method will do the following:
+    - Create a dataset that will pull five filepaths from the `filepath_dataset`
+    - For each one, it will call the function you gave it (a lambda in this example) to create a new dataset (in this case, a `TextLineDataset`).
+    - At this stage, there are seven datasets at all: the filepath dataset, the interleave dataset and the five `TextLineDataset` created internally by the interleave dataset.
+    - When you iterate over the interleave dataset, it will cycle through these five `TextLineDataset`s and reading one line at a time form each of them. In other words, it reads one line, moves to the next file, reads one line, repeat. This will continue until one dataset is out of item.
+    - Then it will fetch the next five filepaths from the `filepath_dataset` and interleave them the same way, and so on until it runs out of filepaths.
+- For interleaving to work the best, it is preferable to have files of identical lengths; otherwise the ends of all the longer files will not be interleave.
+- By default, `interleave()` method does not use parallelism; it just reads one line at a time from each file, sequentially.
+- If you want it to actually read files in parallel, you can set the `interleave()` method's `num_parallel_calls` argument to the number of threads you want (recall that the `map()` method also has this argument). You can even set it to `tf.data.AUTOTUNE` to make TensorFlow choose the number fo threads dynamically based on the number available CPUs.
+- It is possible to pass a list of filepaths to the `TextLineDataset` constructor: it will go through each file in order, line by line.
+- If you also set the `num_parallel_reads` argument to a number greater than one, then the dataset will read that exact number of files in parallel and interleave their lines (without having to call the `interleave()` method). However, it will not shuffle the files, nor it will skip the header rows.
