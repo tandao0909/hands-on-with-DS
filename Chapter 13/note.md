@@ -39,3 +39,24 @@
 - Note that the function passed to the `map()` method must be convertible to TF functions.
 - You can simply filter the dataset using the `filter()` method.
 - If you want to look at a few first items from the dataset, you can use the `take()` method.
+
+## Shuffling the Data
+
+- As we discussed in chapter 4, gradient descent works best when the instances in the training set are independent and identically distributed (IID).
+- A simple way to ensure this is to shuffle the instances, using the `shuffle()` method.
+- It will create a new dataset start by filling up a buffer with the first items from the original dataset.
+- Then, whenever be asked for a new item, the buffer return aa instance randomly and replace it with a new instance from the dataset, until the source dataset is exhausted.
+- At that point, it will just return instances randomly until it is empty.
+- You must specify the size fo the buffer, or else shuffling will not be so effective.  
+    > Just imagine you have a sorted deck of cards on your left. Now take the top three and shuffle them in your hand, pick one randomly and put it to the right, keep two in your hand. Now take another card from the left, shuffle the three cards in your hand and pick one of them randomly, put it to the right. When you are done going through the whole deck like this, you will have a deck of card on your right. Do you think it would be perfectly shuffled?
+- Just don't go exceed the amount of RAM you have, even though if you have plenty of them, there's no point to go beyond the dataset's size.
+- You can provide a random seed if you want the same random order every time you rerun the program.
+- If you call `repeat()` on a shuffled dataset, by default it will generate a new order at every iteration.
+- This is generally a good idea, but if you prefer to reuse the same order at each iteration (e.g., for tests or debugging), you can set `reshuffle_each_iteration=False` when calling `shuffle()`.
+- For a large dataset, this simple shuffling-buffer approach may not be sufficient, since te buffer will be small compared to the dataset.
+- One solution is to shuffle the source data itself (for example, run the `shuf` command on Linux to shuffle text files). This will improve shuffling a lot.
+- Even if the source data is shuffled, you will usually want to shuffle it some more, or else the same order will be repeated at each epoch, and the model may end up being biased (e.g., due to some incorrect patterns showed up by chance in the source data's order).
+- To shuffle the instances some more, one solution is to split the source data into multiple files, then read them in a random order during training.
+- However, instances located in the same file will still end up close to each other.
+- To avoid this, you can pick multiple files randomly and read them simultaneously, interleaving their records.
+- Then on top of that, you can add a shuffling buffer using the `shuffle()` method.
