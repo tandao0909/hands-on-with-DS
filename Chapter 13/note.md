@@ -22,3 +22,20 @@
 - In this case, we could use `tf.data.Dataset.range()`, expect the datatype is 64-bit integer instead of 32-bit integer.
 - The tf.data API is a streaming API: you can very efficiently iterate through a dataset's items, but the API is not designed for indexing or slicing.
 - A dataset may also contain tuples of tensors, or dictionaries of name/tensor pairs, or even nested tuples and dictionaries of tensors. When slicing a tuple, a dictionary, or a nested structure, the dataset will only slice the tensor it contains, while preserving the tuple/dictionary structure.
+
+## Chaining Transforms
+
+- Once you have a dataset, you can apply all sorts of transformations to it by calling its transformation methods.
+- Each method returns a new dataset, so you can chain transforms.
+- In the learning notebook, we first call the `repeat()` method in the original dataset, and it returns a new dataset that repeats the items of the original dataset three times. Of course, this will copy all the data in memory three times.
+- If you call this method with no argument, the new dataset will repeat the source dataset forever, so the code that iterates over the dataset will have to decide when to stop.
+- Then we call the `batch()` method on this new dataset, and again, this creates a new dataset. This one will group the items of the previous dataset in batches of seven items.
+- Finally, we iterate over the final dataset using a manual for loop.
+- The `batch()` method had to output a final batch of size 2 instead of 7, but you can call `batch()` with `drop_remainder=True` if you want it to drop this final batch, such that all batches have the exact same size.
+- The dataset method do not modify datasets - they crate new ones. So make sure to keep a reference to these new datasets (e.g., with `dataset=...`) or else nothing will happen.
+- You can also transform the items using the `map()` method.
+- This `map()` method is the one you will call to apply any preprocessing to your data.
+- Sometimes this process can include extensive computations, such as reshaping or rotating an image, so it's better to divide the work to multiple threads. This can be done by setting the `num_parallel_calls` argument to the number of threads to run, or to `tf.data.AUTOTUNE`. 
+- Note that the function passed to the `map()` method must be convertible to TF functions.
+- You can simply filter the dataset using the `filter()` method.
+- If you want to look at a few first items from the dataset, you can use the `take()` method.
