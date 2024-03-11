@@ -181,7 +181,7 @@ message Features {map<string, Feature> feature = 1; };
 message Example { Features feature = 1; };
 ```
 - The definitions of `BytesList`, `FloatList` and `Int64List` are straightforward. Note that `[packed = true]` is used for repeated numerical fields, for a more efficient encoding.
-- A `Feature` contains either a `ByteList`, a `FloatList` or an `Int64List`.
+- A `Feature` contains either a `BytesList`, a `FloatList` or an `Int64List`.
 - A `Features` (with an `s`) contains a dictionary that map a feature name to its corresponding features value.
 - Finally, an `Example` contains exactly one `Features`.
 - You can find the implementation in TensorFlow representing the same person as earlier in the learning notebook.
@@ -197,3 +197,11 @@ message Example { Features feature = 1; };
 - The code in the learning notebook defines a description dictionary, then creates a `TFRecordDataset` and applies a custom preprocessing function to parse each serialized `Example` protobuf that this dataset contains.
 - The fixed-length features are parsed as regular tensors, but the variable-length features are parsed as sparse tensors. You can convert a sparse tensor by using `tf.sparse.to_dense()`, but it is simpler to just access its values in this case.
 - Instead of parsing examples one by one using `tf.io.parse_single_example()`, you may want to parse them batch by batch using `tf.io.parse_example()`.
+
+## Extra Material - Storing Images and Tensors in TFRecords
+
+- A `BytesList` can contain any binary data you want, including any serialized object.
+- For example, you can use `tf.io.encode_jpeg()` to encode an image using the JPEG format and this binary data in a `BytesList`
+- Later, when your code reads the TFRecord, it wil start by parsing the `Example`, then it will need to call `tf.io.decode_jpeg()` to parse the data and get the original image (or you can use `tf.io.decode_image()`, which can decode any BMP, GIF, JPEG or PNG image).
+- You can also store any tensor you want in a `BytesList` by serializing the tensor using `tf.io.serialize_tensor()` then putting the resulting byte string in a `BytesList` feature.
+- Later, when you parse the `TFRecord`, you can parse this data using `tf.io.parse_tensor()`. 
