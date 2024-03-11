@@ -188,3 +188,12 @@ message Example { Features feature = 1; };
 - Now we have an `Example` protobuf, we can serialize it by calling its `SerializeToString()` method, then write the resulting data to a TFRecord file.
 - In the learning notebook, we pretend we have five contacts. In real life, you typically would create a convention script to read from your current format (such as CSV files), create an `Example` protobuf for each instance, serialize them, and save them to several TFRecord files, ideally shuffling them in the process.
 - This requires a bit of work, so again make sure it is really necessary (i.e., your pipeline really needs reduce that extra I/O time).
+
+## Loading and Parsing Examples
+
+- To load the serialized `Example` protobufs, we will use a `tf.data.TFRecordDataset` once again, and we will parse each `Example` using `tf.io.parse_string_example()`.
+- It requires at least two arguments: a string scalar tensor containing the serialized data, and a description of each feature.
+- The description is a dictionary that maps each feature name to either a `tf.io.FixedLenFeature` descriptor indicating the feature's shape, type, and default value, or a `tf.io.VarLenFeature` descriptor indicating only the type if the length of the list may vary (such as for the `"emails"` feature).
+- The code in the learning notebook defines a description dictionary, then creates a `TFRecordDataset` and applies a custom preprocessing function to parse each serialized `Example` protobuf that this dataset contains.
+- The fixed-length features are parsed as regular tensors, but the variable-length features are parsed as sparse tensors. You can convert a sparse tensor by using `tf.sparse.to_dense()`, but it is simpler to just access its values in this case.
+- Instead of parsing examples one by one using `tf.io.parse_single_example()`, you may want to parse them batch by batch using `tf.io.parse_example()`.
