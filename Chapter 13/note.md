@@ -119,3 +119,12 @@
 - So far, we've been using CSV files, which are common, simple and convenient but not really efficient, and do not support large or complex data structures (such as images or audio) very well. The next part will look at TFRecords.
 - If you're fine with CSV files (or whatever formats you are using), you do not have to use TFRecords. As the saying goes, if it ain't broke, don't fix it! 
 - That said, TFRecords are useful hwn the bottleneck during training is loading and parsing data.
+
+# The TFRecord Format
+
+- The TFRecord format is the TensorFlow's preferred format for storing large amounts of data and reading it efficiently.
+- It is a very simple binary file format that just contains a sequence of binary records of varying sizes. Each record is comprised of a length, a RCR checksum to verify that the length was not corrupted, then the actual data, and finally a CRC checksum for the data.
+- You can create a TFRecord file using the `tf.io.TFRecordWriter` class.
+- You can then use a `tf.data.TFRecordDataset` to read one or more TFRecord files.
+- By default, a `TFRecordDataset` will read one file at a time, but you can make it read multiple files in parallel and interleave their records by passing the constructor a list of filepaths and setting `num_parallel_reads` to a number greater than one.
+- Alternatively, you can obtain the same result by using `lits_files()` and `interleave()` as we did earlier to read multiple CSV files.
