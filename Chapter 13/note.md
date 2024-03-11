@@ -103,3 +103,19 @@
 - We have discussed the most common dataset methods, but there a few more you may want to look at, such as `concatenate()`, `zip()`, `window()`, `reduce()`, `shard()`, `flat_map()`, `apply()`, `unbatch()` and `padded_batch()`.
 - There are also a few more class methods, such as `from_generator()` and `from_tensors()`, which create a new dataset from a Python generator or a list of tensors, respectively.
 - Also note that there are experimental features available in `tf.data.experimental`, many of which will likely make it to the core API in future releases (e.g., check out the `CsvDataset` class, as well as the `make_csv_dataset()` method which takes care of inferring the data type of each column).
+
+## Using the Dataset with Keras
+
+- Now, we can use the custom `csv_reader_dataset()` function we wrote earlier to create dataset for the training set, also for the validation set and the test set. The training set will be shuffled at each epoch (note that the validation set and the test set will also be shuffled, though we don't really need that).
+- Now you can simply build and train a Keras model using these datasets. When you call the `fit()` method, you pass `train_set` instead of `X_train, y_train` and pass `validation_data=valid_set` instead of `validation_data=(X_valid, y_valid)`.
+- The `fit()` method will take care of repeating the training dataset once per epoch, using a different random order at each epoch.
+- Similarly, you can pass a dataset to the `evaluate()` and `predict()` methods.
+- Note that the set we pass to the `predict()` method will typically doesn't have labels. If it does, as in our case, Keras will ignore them. 
+- Note that in all of these cases, you can still use NumPy arrays instead of datasets if you prefer (but of course they must be loaded and preprocessed first).
+- You can build your own custom training loop (as we did in chapter 12) by iterate over the whole training set.
+- You can even create a separate TF function that trains the model for the whole epoch. This can really speed up training.
+- In Keras, the `steps_per_execution` argument of the `compile()` method lets you define the number of batches that the `fit()` method will process during each call to the `tf.function` it uses for training.
+- The default is just 1, so if you set it to 50, you will often see a significant improvement in performance. However, the `on_batch_*()` method of Keras callbacks will only be called every 50 batches.
+- So far, we've been using CSV files, which are common, simple and convenient but not really efficient, and do not support large or complex data structures (such as images or audio) very well. The next part will look at TFRecords.
+- If you're fine with CSV files (or whatever formats you are using), you do not have to use TFRecords. As the saying goes, if it ain't broke, don't fix it! 
+- That said, TFRecords are useful hwn the bottleneck during training is loading and parsing data.
