@@ -140,7 +140,7 @@
 - Even though each record can use any binary format you want, TFRecord files usually contain serialized protocol buffers (also called *protobufs*).
 - This is a portable, extensible, and efficient binary format developed at Google back in 2001 and mode open source in 2008; protobufs are now widely used, in particular in gRPC, Google's remote procedure call system.
 - They are defined using a simple language that looks like this:
-```python
+```proto
 syntax = "proto3";
 message Person {
     string name = 1;
@@ -159,3 +159,32 @@ message Person {
 - However, `ParseFromString()` is not a TensorFlow operation, so you couldn't use it in a preprocessing function in a tf.data pipeline (expect by wrapping it in a `tf.py_function()` operation, which make the code slower and less portable).
 - However, you could use the `tf.io.decode_proto()` function, which can parse any protobuf you want, provided you gave it the protobuf definition.
 - That said, in practical, you will generally want to use the predefined protobufs for which TensorFlow provides dedicated parsing operations.
+
+## TensorFlow Protobufs
+
+- The main protobuf typically used in a TFRecord file is the `Example` protobuf, which presents one instance in a dataset.
+- It contains a list of named features, where each feature can either be a list of byte strings, a list of floats, or a list of integers.
+- Here is the protobuf definition (from TensorFlow's source code):
+```proto
+syntax="proto3";
+message BytesList { repeated bytes value = 1; }
+message FloatList { repeated float value = 1 [packed = true]; }
+message Int64List { repeated int64 value = 1 [packed = true]; }
+message Feature {
+    oneof kind {
+        BytesList bytes_list = 1;
+        FloatList float_list = 2;
+        Int64List int64_list = 3;
+    }
+};
+message Features {map<string, Feature> feature = 1; };
+message Example { Features feature = 1; };
+```
+- The definitions of `BytesList`, `FloatList` and `Int64List` are straightforward. Note that `[packed = true]` is used for repeated numerical fields, for a more efficient encoding.
+- A `Feature` contains either a `ByteList`, a `FloatList` or an `Int64List`.
+- A `Features` (with an `s`) contains a dictionary that map a feature name to its corresponding features value.
+- Finally, an `Example` contains exactly one `Features`.
+- You can find the implementation in TensorFlow representing the same person as earlier in the learning notebook.
+- Now we have an `Example` protobuf, we can serialize it by calling its `SerializeToString()` method, then write the resulting data to a TFRecord file.
+- In the learning notebook, we pretend we have five contacts. In real life, you typically would create a convention script to read from your current format (such as CSV files), create an `Example` protobuf for each instance, serialize them, and save them to several TFRecord files, ideally shuffling them in the process.
+- This requires a bit of work, so again make sure it is really necessary (i.e., your pipeline really needs reduce that extra I/O time).
