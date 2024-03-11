@@ -128,3 +128,9 @@
 - You can then use a `tf.data.TFRecordDataset` to read one or more TFRecord files.
 - By default, a `TFRecordDataset` will read one file at a time, but you can make it read multiple files in parallel and interleave their records by passing the constructor a list of filepaths and setting `num_parallel_reads` to a number greater than one.
 - Alternatively, you can obtain the same result by using `lits_files()` and `interleave()` as we did earlier to read multiple CSV files.
+
+## Compressed TFRecord Files
+
+- It can sometimes be useful to compress your TFRecord files, especially if they need to be loaded via a network connection.
+- You can create a compressed TFRecord file by setting the `options` argument to a `tf.io.TFRecordOptions` object.
+- When reading a compressed TFRecord file, you need to specify the compression type.
