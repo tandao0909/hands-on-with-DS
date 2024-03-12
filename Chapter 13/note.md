@@ -228,3 +228,24 @@ message SequenceExample {
 - Building a `SequenceExample`, serializing it and parsing it is similar to building, serializing, and parsing an `Example`, but you must use `tf.io.parse_single_sequence_example()` to parse a single `SequenceExample` or `tf.io.parse_sequence_example()` to parse a batch.
 - Both functions return a tuple containing the context features (as a dictionary) and the feature lists (also as a dictionary).
 - If the feature lists contain sequences of varying sizes, you may want to convert them to a ragged tensor using `tf.RaggedTensor.from_parse()`.
+
+## The Normalization Layer
+
+- As we saw in chapter 10, Keras provides a `Normalization` layer that we can use to standardize the input features.
+- We can either specify the mean and the variance of each input feature or - more simply - passing the training set to the layer's `adapt()` method before fitting the model, so the layer can measure the means and the variances of the input features on its own before training.
+- The data sample passed to the `adapt()` method must be big enough to be representative of your dataset, but it does not have to be the full training set: for the `Normalization` layer, a few hundred instances randomly sampled from the training set is sufficient to have a good estimation about the future means and variances.
+- Since we included the `Normalization` layer inside the model, we can now deploy our model to production without having to worry about normalization again: the model will just handle it for you.
+- This approach completely eliminates the risk of preprocessing mismatch, which happens when people try to maintain different preprocessing code for training and production but update one and forget the other. The production models then ends up getting data preprocessed in way it doesn't expect. If you're lucky, they scream out to you. If you're not, then the model's accuracy just silently degrades.
+- Including the preprocessing layer directly in the model is nice and straightforward, but it will slow down training (only very slightly in the case of the `Normalization` layer).
+- This is because preprocessing happened on the fly during training, it happens once per epoch.
+- We can do better by only normalizing the whole training set just once before training.
+- We do this by treating the `Normalization` layer as a separate layer (like we did with Scikit-learn's `StandardScaler`).
+- Then we trained the model one the scaled data, without a `Normalization` layer this time.
+- This would speed up training quite a bit. But now the model won't preprocess its input in production.
+- To fix this, we create a new model that wraps both the adapted `Normalization` layer and the model we just trained can deploy this model to the production instead.
+- This new model can then preprocess its inputs and making predictions.
+- Now we have the bets of both worlds: training is fast as we just preprocess once before training, and the final model can preprocess its inputs on the fly without risking any of preprocessing mismatch.
+- Moreover, the Keras preprocessing layers play nice with the tf.data API.
+- For example, you could apply an adapted `Normalization` layer to the input features of each batch batch in a dataset.
+- Lastly, if you ever need more features than what the Keras preprocessing layers offer, you can write your own custom layer, like we did in chapter 12.
+- Fr example, you can look at the learning notebook for an example of a custom `Normalization` layer, if we pretend it doesn't exist.
