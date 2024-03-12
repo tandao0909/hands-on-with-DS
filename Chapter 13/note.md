@@ -259,3 +259,17 @@ message SequenceExample {
 - For example, if we set `num_bins=3`, then the bin boundaries will be located a the values just below the 33rd and 66th percentiles.
 - Categorical identifiers such as these should generally not be passed directly to a neural network, as their values cannot be meaningfully compared (if we set red = 1, green = 2, it does not mean green is two times more than red!).
 - Instead, they should be encoded, for example using one-hot encoding.
+
+## The CategoryEncoding Layer
+
+- When there are only a few categories (e.g., less than a dozen or two), then one-hot encoding if often a good option.
+- To do this, Keras provides the `CategoryEncoding` layer. The usage can be seen in the learning notebook.
+- If you try to encode more than one categorical feature at a time (which only makes sense if they all use the same categories), the `CategoryEncoding` class will perform *multi-hot encoding* by default: the output tensor will contain a 1 for each category present in any input feature.
+- You want to count how many times each category occurred instead of if it occurred or not, you can set `output_mode="count"` when creating the `CategoryEncoding` layer, in which case the output tensor will contain contain the number of occurrences of each category.
+- In our example, the output would be the same expect for the second row, which would become `[0., 0., 2.]`.
+- Note that both multi-hot encoding and count encoding lose information, since it's not possible to know which feature each active category came from.
+- For example, both `[1., 0.]` and `[0., 1.]` are encoded as `[1., 1., 0.]`.
+- If you want to avoid this, then you need to one-hot encode each feature separately and concatenate the outputs. This way, `[1., 0.]` get encoded as `[0., 1., 0., 0., 0., 0.]` and `[0., 1.]` get encoded as `[0., 0., 0., 0., 1., 0.,]`. The learning notebook shows three ways to do this.
+- In our examples, the first three columns correspond to the first feature, and the last three correspond to the second feature. This allows the model to distinguish the two features.
+- However, it also increases the number of features fed to the model, and thereby requires more model parameters.
+- There's not a clear win between a single multi-hot encoding or a per-feature one-hot encoding will work best: it depends on the task, and you may need to test both options.
