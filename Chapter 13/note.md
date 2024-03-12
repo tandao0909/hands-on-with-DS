@@ -291,3 +291,12 @@ message SequenceExample {
 - Since there are five OOV buckets, the first known category's ID is now 5 (`"Paris"`). But `"Foo"`, `"Bar"`, and `"Baz"` are unknown, so they each get mapped to one of the OOV buckets.
 - `"Bar"` gets its own dedicated bucket (with ID 3), but sadly `"Foo"` and `"Baz"` happen to be mapped to the same bucket (with ID 4), so they remain indistinguishable by the model. This is called a *hashing collision*.
 - The only way to reduce the risk of collision is to increase the number of OOV buckets. However, this will also increase the total number of categories, which will require more RAM and extra model parameters once the categories are one-hot encoded. So, don't increase this number too much.
+
+## The Hashing Layer
+
+- The ideas of mapping categories pseudorandomly to buckets is called the *hashing trick*. Keras provides a dedicated layer which does just that: the `Hashing` layer.
+- For each category, this layer computes a hash, modulo the number of buckets (or "bins").
+- The mapping is entirely pseudorandom, but stable across runs and platforms (i.e., the same category will always be mapped to the same integer, as long as the number of bins is unchanged).
+- The benefit of this layer is that it does not need to be adapted at all, which may sometimes be useful, especially in an out-of-core setting (when the dataset is too large to fit in the memory).
+- However, we once again get a hashing collision: "Tokyo" and "Montreal" are mapped to the same ID, making them indistinguishable by the model.
+- That's why it's usually preferable to stick to the `StringLookup` layer.
