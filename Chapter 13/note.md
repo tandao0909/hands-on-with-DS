@@ -204,4 +204,27 @@ message Example { Features feature = 1; };
 - For example, you can use `tf.io.encode_jpeg()` to encode an image using the JPEG format and this binary data in a `BytesList`
 - Later, when your code reads the TFRecord, it wil start by parsing the `Example`, then it will need to call `tf.io.decode_jpeg()` to parse the data and get the original image (or you can use `tf.io.decode_image()`, which can decode any BMP, GIF, JPEG or PNG image).
 - You can also store any tensor you want in a `BytesList` by serializing the tensor using `tf.io.serialize_tensor()` then putting the resulting byte string in a `BytesList` feature.
-- Later, when you parse the `TFRecord`, you can parse this data using `tf.io.parse_tensor()`. 
+- Later, when you parse the `TFRecord`, you can parse this data using `tf.io.parse_tensor()`.
+
+## Handling Lists of Lists Using the SequenceExample Protobuf
+
+- As you have seen, the `Example` protobuf is quite flexible, so it would be sufficient for most use cases.
+- However, it's a big problem when you try to deal with lists of lists.
+- For example, assume you want to deal with text documents.
+- Each document can be represented as a list of sentences, where each sentence is represented as a list of words.
+- Perhaps each document may has a list of comments, where each comment is also represented as a list of words.
+- There may be some contextual data too, such as the document's author, title, and publication date.
+- These use cases is more suited for `SequenceExample` protobuf. Here is its definition:
+```proto
+message FeatureList { repeated Feature feature = 1; };
+message FeatureLists { map<string, FeatureList> feature_list = 1; };
+message SequenceExample {
+    Features context = 1;
+    FeatureLists feature_lists = 2;
+};
+```
+- A `SequenceExample` contains a `Features` object for the contextual data and a `FeatureLists` object that contains one or more named `FeatureList` objects (e.g., a `FeatureList` named `"content"` and another named `"comments"`).
+- Each `FeatureList` contains a list of `Feature` objects, each of which may be a list of byte strings, a list of 64-bit integers or a list of floats.
+- Building a `SequenceExample`, serializing it and parsing it is similar to building, serializing, and parsing an `Example`, but you must use `tf.io.parse_single_sequence_example()` to parse a single `SequenceExample` or `tf.io.parse_sequence_example()` to parse a batch.
+- Both functions return a tuple containing the context features (as a dictionary) and the feature lists (also as a dictionary).
+- If the feature lists contain sequences of varying sizes, you may want to convert them to a ragged tensor using `tf.RaggedTensor.from_parse()`.
