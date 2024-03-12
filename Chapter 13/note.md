@@ -249,3 +249,13 @@ message SequenceExample {
 - For example, you could apply an adapted `Normalization` layer to the input features of each batch batch in a dataset.
 - Lastly, if you ever need more features than what the Keras preprocessing layers offer, you can write your own custom layer, like we did in chapter 12.
 - Fr example, you can look at the learning notebook for an example of a custom `Normalization` layer, if we pretend it doesn't exist.
+
+## The Discretization Layer
+
+- This layer's goal is to transform a numerical feature into a categorical feature by mapping value ranges (called bins) to categories.
+- This is sometimes useful for features with multimodal distributions, or with features that have a highly nonlinear relationships with the target.
+- For example, you can see in the learning notebook the code maps a numerical `age` feature ot three categories, less than 18, 18 to less than 50, and 50 or more.
+- In this code, we provided the desired bin boundaries. If you prefer, you can instead provide the number of bins you want, then call the layer's `adapt()` method to let it find the appropriate boundaries based on the value percentiles.
+- For example, if we set `num_bins=3`, then the bin boundaries will be located a the values just below the 33rd and 66th percentiles.
+- Categorical identifiers such as these should generally not be passed directly to a neural network, as their values cannot be meaningfully compared (if we set red = 1, green = 2, it does not mean green is two times more than red!).
+- Instead, they should be encoded, for example using one-hot encoding.
