@@ -273,3 +273,21 @@ message SequenceExample {
 - In our examples, the first three columns correspond to the first feature, and the last three correspond to the second feature. This allows the model to distinguish the two features.
 - However, it also increases the number of features fed to the model, and thereby requires more model parameters.
 - There's not a clear win between a single multi-hot encoding or a per-feature one-hot encoding will work best: it depends on the task, and you may need to test both options.
+
+## The StringLookup Layer
+
+- We create a `StringLookup` layer, then we adapt it to the data: it finds that there are three distinct categories.
+- Then we use the layer to encode a few cities.
+- They are encoded as integers by default.
+- Unknown categories get mapped to 0, as is the case for "Montreal" in our example.
+- The known categories are numbered starting at 1, from the most frequent category to the least frequent.
+- Conveniently, if you set `output_mode="one_hot"` when creating the `StringLookup` layer, it will output a one-hot vector for each category, instead of an integer.
+- Keras also includes an `IntegerLookup` layer that acts very much like the `StringLookup` layer but take integers as input, rather than strings.
+- If the training set is very large, it helps to adapt the layer to just a small subset of the training set.
+- In this case, the layer's `adapt()` method may miss some of the rarer categories.
+- By default, it would map them all to the category 0, make them indistinguishable by the model.
+- A solution (while still adapting the layer only to a subset of the training set) is setting `num_oov_indices` to an integer greater than 1.
+- This is the number of out-of vocabulary (OOV) buckets to use: each unknown category will get mapped pseudorandomly to one of the OOV buckets. This allows the model to distinguish at least some of the rare categories.
+- Since there are five OOV buckets, the first known category's ID is now 5 (`"Paris"`). But `"Foo"`, `"Bar"`, and `"Baz"` are unknown, so they each get mapped to one of the OOV buckets.
+- `"Bar"` gets its own dedicated bucket (with ID 3), but sadly `"Foo"` and `"Baz"` happen to be mapped to the same bucket (with ID 4), so they remain indistinguishable by the model. This is called a *hashing collision*.
+- The only way to reduce the risk of collision is to increase the number of OOV buckets. However, this will also increase the total number of categories, which will require more RAM and extra model parameters once the categories are one-hot encoded. So, don't increase this number too much.
