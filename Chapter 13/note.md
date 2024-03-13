@@ -383,3 +383,20 @@ message SequenceExample {
 - And if you use multi-hot, count, or TF-IDF encoding, then the order of the words is lost.
 - One other option is to use the [TensorFlow Text library](https://tensorflow.org/text), which provides more advanced text preprocessing features than the `TextVectorization` layer.
 - For example, it includes several subword tokenizers capable of splitting the text into tokens smaller than words, which makes it possible for the model to more easily detect that "evolution" and "evolutionary" have something in common.
+
+# Using Pretrained Language Model Components
+
+- The [TensorFlow Hub library](https://tensorflow.org/hub) make it easy to reuse pretrained model components in your own models, for text, image, audio and more. These model components are called *modules*.
+- You can browse [TF Hub repository](https://tfhub.dev), find the one you need, and copy the code example into your project, and the module will be atomically downloaded and bundled into a Keras layer that you can directly include in your model.
+- Modules typically contain both preprocessing code and pretrained weights, and they generally require no extra training. Of course, the rest of your model will certainly require training.
+- For example, some powerful pretrained language models are available.
+- The most powerful one are quite large (several gigabytes), so for a quick example, we'll use the `nnlm-en-dim50` module, version 2, which is a fairly basic module that takes raw text as input and outputs 50-dimensional sentence embeddings.
+- You can look at the code in the learning notebook:
+    - The `hub.KerasLayer` layer downloads the module form the given URL.
+    - This particular module is a *sentence encoder*: it takes strings as input and encodes each one as a single vector (in this case, a 50-dimensional vector).
+    - Internally, it parses the string (splitting words on spaces) and embeds each word using an embedding matrix that was pretrained on a huge corpus: the Google News 7B corpus (seven billion words long).
+    - The in computes the mean of every word embeddings, results in the sentence embedding.
+- You just need to include this `hub_layer` in your model, and you're ready to go.
+- Note that this particular language model was trained on the English language, but many other languages are available, as well as multilingual models.
+- Last but not least, the excellent open source [Transformers library by Hugging Face](https://huggingface.co/docs/transformers) also makes it easy to include powerful language model components inside your own models.
+- You can browse the [Hugging Face Hub](https://huggingface.co/models), choose the model you want, and use the provided code example to get started. It used to contain only language models, but it has now expanded to include image models and more.
