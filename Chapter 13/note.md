@@ -229,6 +229,15 @@ message SequenceExample {
 - Both functions return a tuple containing the context features (as a dictionary) and the feature lists (also as a dictionary).
 - If the feature lists contain sequences of varying sizes, you may want to convert them to a ragged tensor using `tf.RaggedTensor.from_parse()`.
 
+# Keras Preprocessing Layers
+
+- Preparing your data for a neural network typically requires normalizing the numerical features, encoding the categorical features and text, copping and resizing images, and more.
+- There are several ways to do this:
+    - The preprocessing can be done ahead of time when preparing your training data files, using any tools you like, such as NumPy , Pandas, or Scikit-learn. You will need to apply the exact same preprocessing steps in production, to ensure your production model receives preprocessed inputs similar to the ones it saw in training.
+    - Alternatively, you can preprocess your data on the fly while loading it with tf.data, by applying a preprocessing function to every element of a dataset using that dataset's `map()` method, as we did earlier in this chapter. Again, you will need to apply the same preprocessing steps in production.
+    - One last approach is to include preprocessing layers directly in your model so it can preprocess all the input data on the fly during training, then use these same preprocessing layers in production. The rest of this chapter looks at this approach.
+- Keras offers amy preprocessing layers that you can include in your models: they can be applied to numerical features, categorical features, images and text.
+
 ## The Normalization Layer
 
 - As we saw in chapter 10, Keras provides a `Normalization` layer that we can use to standardize the input features.
