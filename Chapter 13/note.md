@@ -333,3 +333,17 @@ message SequenceExample {
 - The `Dense` layer's weight matrix plays the role of the embedding matrix.
 - For example, using one-hot vectors of size 20 and a `Dense` layer with 10 units is equivalent to using an `Embedding` layer with `input_dim=10` and `output_dim=20`.
 - As a result, it'd be wasteful to use more embedding dimensions than the number of units in the layer that follows the `Embedding` layer.
+
+### Word Embeddings
+
+- Not only will embeddings generally be useful representations for the task at hand, but quite often these same embeddings can be reused for other tasks.
+- The most common examples in real world is *text embeddings* (e.e., embeddings of individual words): when you are working on a natural language precessing task, you are often better off reusing pretrained word embeddings than training your own.
+- The idea of using vectors to represent words is born back to the 1960s, and many sophisticated techniques have been used to generate useful vectors, including using neural networks. But things really took off in 2013, when Tomáš Mikolov and other Google researchers published a [paper](https://arxiv.org/abs/1310.4546) describing an efficient technique to learn word embeddings using neural networks, significantly outperforming pervious attempts.
+- This allowed them to learn embedding on a very large corpus of text: they trained a neural network to predict the words ner any given word and received outstanding word embeddings.
+- For example, synonyms had very close embeddings, and semantically related words such as *France*, *Spain*, and *Italy* ended up clustered together.
+- It's not just about proximity, word embeddings were also organized along meaningful axes in the embedding space.
+- Here is a famous example: if you compute *King - Man + Woman* (adding and subtracting the embedding vectors of these words), then the result will be very close to the embedding vector of the word *Queen*. In other words, the word embeddings encode the concept of gender!
+- Similarly, you can compute *Madrid - Spain + France*, and the result is close to *Paris*, which seems to show that the notion of capital city was also encoded in the embeddings.
+- Unfortunately, word embeddings sometimes capture our worst biases.
+- For example, even though they correctly learn that *Man is to King as Woman is to Queen*, they also seem to learn that *Man is to Doctor as Woman is to Nurse*, which is a sexist bias! To be fair , this particular is probably exaggerated, as was pointed out in a [2019 paper](https://arxiv.org/abs/1905.09866) by Malvina Nissim et al.
+- Nevertheless, ensuing fairness in deep learning algorithms is an important and active research area.
