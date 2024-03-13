@@ -347,3 +347,30 @@ message SequenceExample {
 - Unfortunately, word embeddings sometimes capture our worst biases.
 - For example, even though they correctly learn that *Man is to King as Woman is to Queen*, they also seem to learn that *Man is to Doctor as Woman is to Nurse*, which is a sexist bias! To be fair , this particular is probably exaggerated, as was pointed out in a [2019 paper](https://arxiv.org/abs/1905.09866) by Malvina Nissim et al.
 - Nevertheless, ensuing fairness in deep learning algorithms is an important and active research area.
+
+## Text Preprocessing
+
+- Keras provides a `TextVectorization` layer for basic text preprocessing.
+- Much like the `StringLookup` layer, you must either pass it a vocabulary upon creation, or let it learn the vocabulary from some training data using the `adapt()` method.
+- The two sentences "Be good!" and "Question: be or be?" were encoded as `[2, 1, 0, 0]` and `[6, 2, 1, 2]`, respectively.
+- The vocabulary was learned from the four sentences in the training data: "be" = 2, "to" = 3, etc. To construct the vocabulary, the `adapt()` method first converted the training sentences to lowercase and removed punctuation, which is why "Be", "be", and "be?" are all get encoded as "be" = 2.
+- Next, the sentences were split on whitespace, and the resulting words were sorted by descending frequency, producing the final vocabulary. When encoding sentences, unknown words get encoded as 0s.
+- Lastly, since the first sentence is shorter than the second, it was padded with 0s.
+- The `TextVectorization` layer has many options:
+    - For example, you can preserve the case and punctuation if you want, by setting `standardize=None`, or you can pass any standardize function you want to the `standardize` argument.
+    - You can prevent splitting by setting `splitting=None`, or you can pass your own splitting function.
+    - You can set the `output_sequence_length` argument to ensure that the output sequences all get cropped or padded to the desired length, or you can set `ragged=True` to get a ragged tensor instead of a regular one.
+    - Please check out the documentation for more options.
+- The word IDs must be encoded, typically using an `Embedding` layer: we will do this in chapter 16.
+- Alternatively, you can set the `TextVectorization` layer's `output_mode` argument to `"multi_hot"` or `"count"` to get the corresponding encodings.
+- However, simply counting words is usually not ideal: words like "to" and "the" are so frequent that they hardly matter at all, whereas, rarer words such as "computer" are much more informative.
+- So, rather than setting `output_mode` to `"multi_hot"` or `"count"`, it is usually preferable to set it to `"tf_idf"`, which stands for *term-frequency $\times inverse-document-frequency$* (TF-IDF).
+- This is similar to the count encoding, but words that occur frequently in the training data are down-weighted, and conversely, rare words get up-weighted.
+- There are many TF-IDF variants, but the way the `TextVectorization` layer implements it is by multiplying each word count by a weight equal to 
+    $$\log\left(1 + \frac{d}{f+1}\right)$$
+    where $d$ is the total number of sentences (a.k.a., documents) in the training data and $f$ counts how many of these training sentences contain the given word.
+- For example, there are $d = 4$ sentences in the training data, and the word "be" appears in $f = 3$ of these. Since the word "be" occurs twice in the sentence "Question: be or be?", it gets encoded as $2\times \log(1+4/(1+3))\approx 1.3862944$. The word "question" appears only once, but since it's a less common word, its encoding is nearly as high, at $1 \times \log(1+4/(1+1))\approx 1.0986123$. Note that the average weight is used for unknown words.
+- This approach to text encoding is straightforward to use and can yield pretty good result for basic natural language processing tasks, but it has several important limitations: it only works with languages that separates words with spaces, it doesn't distinguish between homonyms (e.g., "to bear" versus "the bear"), it gives no hint to your model that words like "interest" and "interested" are related, etc.
+- And if you use multi-hot, count, or TF-IDF encoding, then the order of the words is lost.
+- One other option is to use the [TensorFlow Text library](https://tensorflow.org/text), which provides more advanced text preprocessing features than the `TextVectorization` layer.
+- For example, it includes several subword tokenizers capable of splitting the text into tokens smaller than words, which makes it possible for the model to more easily detect that "evolution" and "evolutionary" have something in common.
