@@ -300,3 +300,36 @@ message SequenceExample {
 - The benefit of this layer is that it does not need to be adapted at all, which may sometimes be useful, especially in an out-of-core setting (when the dataset is too large to fit in the memory).
 - However, we once again get a hashing collision: "Tokyo" and "Montreal" are mapped to the same ID, making them indistinguishable by the model.
 - That's why it's usually preferable to stick to the `StringLookup` layer.
+
+## Encoding Categorical Features Using Embeddings
+
+- An embedding is a dense representation of some higher-dimensional data, such as a category, or a word in a vocabulary.
+- If there are 50,000 possible categories, then one-hot encoding would produce a 50,000-dimensional sparse vector (i.e., containing mostly zeros).
+- In contrast, an embedding would be a comparatively small dense vector; for example, with just 100 dimensions.
+- In deep learning, embeddings are usually initialized randomly, and then they are trained using gradient descent, along with the other model parameters.
+- For example, the `"NEAR BAY"` category in the California housing dataset could be represented initially by a random vector such as `[0.131, 0.890]`, while the `"NEAR OCEAN"` category might be presented by another random vector such as `[0.632, 0.791]`.
+- In this example, we use 2D embeddings, but the number of dimensions is a hyperparameter you can tweak.
+- Since these embeddings are trainable, they will gradually improve during training; and as they represent fairly similar categories in this case, gradient descent will certainly end up pushing them close together, while it tends to move them away from the `"INLAND"` category's embedding.
+- In fact, the better the representation, the easier it will be for the neural network ti make accurate predictions, so training tends to make embeddings useful representations of the categories.
+- This is called *representation learning*, which will be discussed in chapter 17.
+- Keras provides an `Embedding` layer, which wraps an `embedding matrix`: this matrix has one row per category and one column per embedding dimension.
+- By default, it is initialized randomly.
+- To convert a category 1D to an embedding, the `Embedding` layer just looks up and returns the row that corresponds to that category. You can find an example in the learning notebook.
+- An `Embedding` layer is initialized randomly, so it doesn't make sense to sue it outside of a model as  a standalone preprocessing layer, unless you initialize with pretrained weights.
+- If you want to embed a categorical text attribute, you can simply chain a `StringLookup` layer and an `Embedding` layer.
+- Note that the number of rows in the embedding matrix needs to be equal to the vocabulary size: that's the total number of categories, including the known categories plus the OOV buckets (just one by default). The `vocabulary_size()` method of the `StringLookup` class conveniently returns this number.
+- In this example, we use 2D embeddings, but as a rule of thumb embeddings typically have 10 to 300 dimensions, depending on the task, the vocabulary size, and the size of training set. This is a hyperparameter you need to tune.
+- Putting everything together, we can now a Keras model that can process a categorical text feature along with regular numerical features and learn an embedding for each category (as well for each OOV bucket).
+- You can find the model's implementation in the learning notebook:
+    - The model takes two inputs: `num_input`, which contains eight numerical features per instance, plus `cat_input`, which contains a single categorical text input per instance.
+    - The model uses the `lookup_and_embed` we created earlier to encode each ocean-proximity category as the corresponding trainable embedding.
+    - Next, it concatenates the the numerical inputs and the embeddings using the `concatenate()` function to produce the complete encoded inputs, which are fed to a neural network.
+    - We could add any kind of neural network at this point, but for simplicity, we just use a single dense output layer, and then we create the Keras `Model` with the inputs and output we've just defined.
+    - Finally, we compile the model and train it by passing both the numerical and categorical inputs.
+- Since the `Input` layers are named `"num"` and `"cat"`, we could also have passed the training data to the `fit()` method using a dictionary instead of a tuple: `{"num": X_train_num, "cat": X_train_cat}`.
+- Alternatively, we could have pass a `tf.data.Dataset` containing batches, each represented as `((X_batch_num, X_batch_cat), y_train)` or as `({"num": X_batch_num, "cat": X_batch_cat}, y_batch)`. The same goes for validation data.
+- One-hot encoding followed by a `Dense` layer (with no activation function and no biases) is equivalent to an `Embedding` layer.
+- However, the `Embedding` layer uses way fewer computations, as it avoids many multiplications by zero - the performance difference becomes clear once the size of the embedding matrix grows big.
+- The `Dense` layer's weight matrix plays the role of the embedding matrix.
+- For example, using one-hot vectors of size 20 and a `Dense` layer with 10 units is equivalent to using an `Embedding` layer with `input_dim=10` and `output_dim=20`.
+- As a result, it'd be wasteful to use more embedding dimensions than the number of units in the layer that follows the `Embedding` layer.
