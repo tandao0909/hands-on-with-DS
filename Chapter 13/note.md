@@ -400,3 +400,22 @@ message SequenceExample {
 - Note that this particular language model was trained on the English language, but many other languages are available, as well as multilingual models.
 - Last but not least, the excellent open source [Transformers library by Hugging Face](https://huggingface.co/docs/transformers) also makes it easy to include powerful language model components inside your own models.
 - You can browse the [Hugging Face Hub](https://huggingface.co/models), choose the model you want, and use the provided code example to get started. It used to contain only language models, but it has now expanded to include image models and more.
+
+## Image Preprocessing Layers
+
+- The Keras preprocessing API includes three image preprocessing layers:
+    - `tf.keras.layers.Resizing` resizes the input images to the desired size. For example, `Resizing(height=100, width=200)` resizes each image to $100 \times 200$, possibly distorting the image. If you set `crop_to_aspect_ratio=True`, then the image will be get cropped to the target image ratio, to avoid distortion.
+    - `tf.keras.layers.Rescaling` rescales the pixel values. For example, `Rescaling(scale=2/255, offset=-1)` scales the values from $0 \rightarrow 255$ to $-1 \rightarrow 1$.
+    - `tf.keras.layers.CenterCrop` crops the image, keeping only a center patch of the desired height and width.
+- For example, let's load a couple of sample images anf center-crop them. For this, we will use Scikit-learn's `load_sample_images()` function; this loads two color images, one of a Chinese temple and other of a flower.
+- Keras also includes several layers for data augmentation, such as `RandomCrop`, `RandomFlip`, `RandomTranslation`, `RandomRotation`, `RandomZoom`, `RandomHeight`, `RandomWidth` and `RandomContrast`. These layers are only active during training, and they randomly apply some transformations to the input images (their names are self-explanatory).
+- Data augmentation will artificially increase the size of the training set, which often leads to improved performance, as long as the transformed images look like realistic (non-augmented) images.
+- Under the hood, the Keras preprocessing layers are based on TensorFlow's low-level API. For example:
+    - the `Normalization` layer uses `tf.nn.moment()` to compute both the mean and variance
+    - the `Discretization` layer uses `tf.raw_ops.Bucketize()`
+    - `CategoricalEncoding` uses `tf.math.bincount()`.
+    - `IntegerLookup` and `StringLookup` use the `tf.lookup` package
+    - `Hashing` and `TextVectorization` use several operations from the `tf.string` package
+    - `Embedding` uses `tf.nn.embedding_lookup()`
+    - the image preprocessing layers use the operations from the `tf.image` package.
+- If the Keras preprocessing API isn't sufficient for your needs, you may occasionally need to use TensorFlow's low-level API directly.
