@@ -419,3 +419,19 @@ message SequenceExample {
     - `Embedding` uses `tf.nn.embedding_lookup()`
     - the image preprocessing layers use the operations from the `tf.image` package.
 - If the Keras preprocessing API isn't sufficient for your needs, you may occasionally need to use TensorFlow's low-level API directly.
+
+## The TensorFlow Datasets Project
+
+- The [TensorFlow Datasets (TFDS)](https://tensorflow.org/datasets) project make it very easy to load common datasets, from small ones MNIST and or Fashion MNIST to huge datasets like ImageNet.
+- The list includes image datasets, text datasets (including translation datasets), audio and video datasets, time series and much more. You can visit [this link](https://www.tensorflow.org/datasets/catalog/overview#all_datasets) to see the full list, as well as a description for each dataset.
+- You can also checkout [Know Your Data](https://knowyourdata.withgoogle.com), which is a tool to explore and understand many of the datasets provided by TFDS.
+- TFDS is not bundled with TensorFlow, but you can install it using
+```bash
+
+```
+- You can them import `tensorflow_datasets` usually as `tfds`, then call the `tfds.load()` function, which will download the data you want (unless it was downloaded already) and return the data as a dictionary of datasets (typically one for training ad one for testing, but that depends on the dataset you choose).
+- The `load()` function can shuffle the files it downloads by setting `shuffle_files=True`. However, this may be insufficient, so you should shuffle your training data some more.
+- Note that each item in the dataset is a dictionary continuing both the features and the labels. But Keras expects each item to be a tuple containing two elements (again, the features and the labels).
+- You can transform the dataset using the `map()` method. Or just simply ask the `load()` function to do this for you by setting `as_supervised=True` (of course this only works for labeled dataset).
+- Lastly, TFDS provides a convenient way to split the dataset using the `split` argument.
+- For example, if you want to use the first 90% of the training set for training, the remaining 10% for validation, and the whole test set for testing, then you can set `split=["train[:90%]", "train[90%:]", "test"]`. The `load()` function  will return all three sets.
