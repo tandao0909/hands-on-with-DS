@@ -48,6 +48,34 @@
     - The second filter is a black square with a horizontal white line in the middle. Neurons using these weights will ignore everything in their receptive field except for the central horizontal line.
     - Now, if all neurons in a layer use the same vertical line filter (and the same bias term), and you feed the network th input image shown below, the layer will output the top-left image. Notice how the vertical white lines get enhanced while the rest gets blurred.
     - Similarly, the upper-right image is what you get if all neurons use the same horizontal line filter; notice that the horizontal white lines get enhanced while the rest is blurred out.
-![](image-2.png)
+![Applying two different filters to get two feature maps](image-2.png)
 - Thus, a layer full of neurons using the same filter outputs a *feature map*, which highlights the areas in an image that activate the filter the most.
 - You don't have to find the appropriate feature maps yourself: instead, during training the convolutional layer will automatically learn the most useful filters for its task, and the layers above will learn to combine them into more complex patterns.
+
+## Stacking Multiple Feature Maps
+
+- Up until now, for simplicity we have seen the output of each convolutional layer as a 2D layer, but in reality, a convolutional layer has multiple filters (you decide how many) and outputs one feature map per filter, so it's more accurately represented in 3D.
+- It has one neuron per pixel in each feature map, and all neurons within a given feature share the same parameter (i.e., the same kernels and bias term). Neurons in different feature maps use different parameters.
+- A neuron's receptive field is the same as described earlier, but it extends across all the features maps of the previous layer.
+- In short, a convolutional layer simultaneously applies multiple trainable filters of its inputs, making it capable of detecting multiple features anywhere in its inputs.
+![Two convolutional layers with multiple filters each (kernels), processing a color image with three color channels; each convolutional layer outputs one feature map per filter](image-3.png)
+- The fact that all neurons in a feature map share the same parameters dramatically reduces the number fo parameters in the model. Once the CNN has learned to recognize a pattern in one location, it can recognize that pattern in any other location.
+- In contrast, once a fully connected neural network has learned to recognize a pattern in one location, it can only recognize it in that particular location.
+- Input images are also composed of multiple sub-layers: one per *color channel*.
+- As mentioned in chapter 9, there are typically three: red, green, blue (RGB). Grayscale image have just one channel, but some images may have many more - for example, satellite images that capture extra light frequencies (such as infrared).
+- Specifically, a neuron located in row $i$, column $j$ of the feature map $k$ in a given convolutional layer $l$ is connected to the outputs of the neurons in the previous layer $l-1$, located in rows $i \times s_h - f_h$ to $i \times s_h + f_h$ and columns $j \times s_w - f_w$ to $j \times s_w + f_w$, across all feature maps (in layer $l-1$).
+- Note that, within a layer, all neurons located in the same row i and column j but in different feature maps are connected to the outputs of the exact same neurons in the previous layer.
+- The following equation explains how to compute the output of a give neuron in a convolutional layer:
+    $$z_{i,j,k}=b_k+\sum_{k'=0}^{f_{n'}-1}\sum_{u=0}^{2f_w-1}\sum_{v=0}^{2f_h-1} x_{i', j', k'} \times w_{u,v,k'k,k} \text{ with } 
+    \begin{cases}
+    i' = i \times s_h - f_h + u \\
+    j' = j \times s_w - f_w + v \\
+    \end{cases}$$
+- In this equation:
+    - $z_{i,j,k}$ is the output of the neuron located at row $i$, column $j$, in the feature map $k$ of the convolutional layer (layer $l$).
+    - $f_{n'}$ is the number of feature in the $l-1$ layer, $2f_w-1$ and $2f_h-1$ is the height and width of the receptive field.
+    - $s_h$ and $s_w$ are the vertical and the horizontal stride.
+    - $x_{i', j', k'}$ is the value of the neuron at the i' row, j' column, k' feature map of the convolutional layer (layer $l-1$).
+    - $w_{u, v, k', k}$ is the connection weight between any neuron in the feature map $k$ and its input located at $u$ row, $v$ column (relative to the receptive field), and the feature map $k'$.
+    - $b_k$ is the bias term of the feature map $k$ in layer $l$. You can think of is as a knob tweak the overall brightness of the feature map $k$.
+- The indices make it ugly, but everything this equation does is calculate the weighted sum of all inputs, plus the bias term.
