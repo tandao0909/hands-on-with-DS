@@ -154,4 +154,28 @@
 - However, max pooling has some downsides, too:
     - It's obviously very destructive: even with a tiny $2 \times 2$ kernel and a stride of 2, the output image would end up being two time smaller in both directions (its ares will be four times smaller), simply dropping 75% of the input values.
     - And in some application, invariance is not desirable. Take semantic segmentation (the task of classifying each pixel in an image according to the object that pixel belongs to) for example, obviously, if the input image is translated by one pixel to the right, the output should also be translated by one pixel to the right. The goal in this is *equivariance*, not variance: a small change to the input should correspond to a small change in the output.
-    
+
+## Implementing Pooling Layers with Keras
+
+- The code in the learning notebook creates a `MaxPooling2D` layer, alias `MaxPool2D`, using a $2 \times 2$ kernel.
+- The strides default to the kernel size, so this layer uses a stride of 2 (horizontally and vertically).
+- By default, it use `"valid"` padding (i.e., no padding at all).
+- To create an *average pooling layer*, just use `AveragePooling2D`, alias `AvgPool2D`, instead of `MaxPool2D`.
+- This layer works exactly like a max pooling layer, except it computes the mean rather than the max.
+- Average pooling layers used ti be very popular, but people mostly use max pooling layers now, as they generally perform better. This may come as a surprise, as computing the mean generally loses less information than computing the max.
+- But on the other hand, max pooling preserves only the strongest features, getting rid of all the meaningless ones, so the next layers get a cleaner signal to work with.
+- Moreover, max pooling offers stronger translation invariance than average pooling, and it requires slightly less compute.
+- Note that max pooling and average pooling can be performed along the depth dimension instead of the spatial dimensions, although it's not as common. This can allow the CNN to learn to be invariant to various features.
+- For example, it could learn multiple filters each detecting a different rotation of the same pattern, and the depth-wise max pooing layer would ensure that the output is the same, regardless of the rotation.
+- The CNN could similarly learn to be invariant to anything: brightness, skew, color, and so on.
+- Keras doesn't include a depth-wise max pooling layer, but you can find a custom layer do just this in the learning notebook.
+- This layer reshapes its inputs to split the channels into groups of the desired size (`pool_size`), then it uses `tf.reduce_max()` to compute the max of each group.
+- This implementation assumes that the stride is equal to the pool size, which is generally what you want.
+- Alternatively, you could use TensorFLow's `tf.nn.max_pool()` operation, and wrap it in a `Lambda` layer to use it inside a Keras model, but sadly, this operation does not implement depth-wise pooling for the GPU, only the CPU.
+- One last type of pooling layer that you will often see in modern architecture is the *global average pooling layer*.
+- It works very differently: it computes the mean of each entire feature map (it's like an average pooling layer using a pooling kernel the same spatial dimensions as the inputs).
+- This means it just outputs a single number per feature map and per instance.
+- Although it is of course very destructive (most of the information in the feature map is lost), it can be useful just before the output layer, as you'll see later in this chapter.
+- To use this layer, simply define a `GlobalAveragePooling2D`, alias `GlobalAvgPool2D`, instance.
+- We can define a `Lambda` layer equivalently to this layer, which computes the mean over the spatial dimensions (height and width).
+- For example, if you apply this layer to the input images, we get the mean intensity of red, green and blue of each image.
