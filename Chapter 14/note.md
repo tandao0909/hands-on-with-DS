@@ -130,3 +130,28 @@
 - During inference (i.e., when making a prediction for a new instance), the RAM occupied by one layer can be released as soon as the next layer has been computed, so you only need as much RAM as required by two consecutive layers.
 - But during training, everything computed during the forward pass needs to be preserved for the reserve pass, so the amount of RAM is (at least) the total amount of RAM required by all layers.
 - If training crashes because of an out-of-memory error, you can try reducing the mini-batch size. Alternatively, you can try reducing dimensionality using a stride, removing a few layers, using 16-bit floats instead of 32-bit floats, or distributing the CNN across multiple devices (you'll see how to do this in chapter 19).
+
+# Pooling Layers
+
+- Pooling layers are quite similar to convolutional layers.
+- Their goal is to *subsample* (i.e., shrink) the input image in order to reduce the computational load, the memory usage, and the number of parameters (thereby limiting the risk of overfitting).
+- Just like in convolutional layers, each neuron in a pooling layer is connected to the outputs of a limited number of neurons in the previous layer, located within a small rectangular receptive field.
+- You must define its size, the stride, and the padding type, just like before.
+- However, a pooling neuron has no weights; all it does is aggregate the input using an aggregation function such as the max or mean.
+- For example, let's consider the *max pooling layer*, which is the most common type of pooling layer.
+- In this case, we use a $2 \times 2$ *pooling kernel*, with a stride of 2 and no padding.
+- Only the max input value in each receptive field makes it to the next layer, while the other inputs are dropped.
+- For example, in the lower-left receptive field, the input values are 1, 5, 3, 2, so only the max value, 5, is propagated to the next layer.
+- Because of the stride of 2, the output images has half the height and half the width of the input image (rounded down since we use no padding).
+![Max pooling layer (2 × 2 pooling kernel, stride 2, no padding)](image-6.png)
+- A pooling layer typically works on every input channel independently, so the output depth (i.e., the number of channels) is the same as the input depth.
+- Other than reducing computations, memory usage, and the number of parameters, a max pooling layer also introduces some level of *invariance* to small translations, as shown below:
+![Invariance to small translations](image-7.png)
+- Here we assume that the bright pixels have lower values than dark pixels, and we consider three images (A, B, C) going through a max pooling layer with $2 \times 2$ kernel and stride 2. Images B and C are the same as image A, but shifted by one and two pixels to the right.
+- As you can see, the outputs of the max pooling layer for images A and B are identical. This is what translation invariance means. For image C, the output is different: it is shifted one pixel to the right (but there is still 50% invariance).
+- By inserting a max pooling layer every few layers in a CNN, it is possible to get some level of translation invariance at a larger scale.
+- Moreover, max pooling offers a small amount of rotational invariance and a slight scale invariance. Such invariance (even if it is limited) can be useful in case where the prediction should not depend on these details, such as in classification tasks.
+- However, max pooling has some downsides, too:
+    - It's obviously very destructive: even with a tiny $2 \times 2$ kernel and a stride of 2, the output image would end up being two time smaller in both directions (its ares will be four times smaller), simply dropping 75% of the input values.
+    - And in some application, invariance is not desirable. Take semantic segmentation (the task of classifying each pixel in an image according to the object that pixel belongs to) for example, obviously, if the input image is translated by one pixel to the right, the output should also be translated by one pixel to the right. The goal in this is *equivariance*, not variance: a small change to the input should correspond to a small change in the output.
+    
