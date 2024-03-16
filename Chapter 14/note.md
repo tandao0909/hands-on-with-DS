@@ -119,3 +119,14 @@
 - As you can see, convolutional layers have quite a few hyperparameters: `filters`, `kernel_sizes`, `padding`, `strides`, `activation`, `kernel_initializer`, etc. You can check the documentation for the full list of them.
 - As always, you can use cross-validation ot find the best hyperparameter values, but this is very resource-consuming.
 - We will discuss common CNN architectures later in this chapter, to give you some ideas of which hyperparameter values work best in practice.
+
+## Memory Requirements
+
+- Another challenges with CNNs is that the convolutional layers require a huge amount of RAM.
+- This is especially true during training, because the reserve pass of backpropagation requires all the intermediate values computes during the forward pass.
+- For example, consider a convolutional layer with 200 $5 \times 5$ filters, with stride 1 and `"same"` padding. If the input is a $150 \times 100$ RGB images (three channels), then the number of parameters is $(5 \times 5 \times 3 + 1) \times 200 = 15,200$ (the + 1 corresponds to the bias terms), which is fairly small compared to a fully connected layer (to produce the same size outputs, a fully connected layer would need $200 \times 150 \times 100$ neurons, each connected to all $150 \times 100 \times 3$ inputs, which results in $200 \times 150 \times 100 \times (150 \times 100 \times 3 + 1) \approx 135$ billion parameters).
+- However, each of the 200 feature maps contains $150 \times 100$ neurons, and each of these neurons needs to compute a weighted sum of its $5 \times 5 \times 3 = 75$ inputs: that's a total of 225 million float multiplications. Not as bad as fully connected layer, but still quite computationally intensive.
+- Moreover, if the feature maps are represented using 32-bit floats, then the convolutional layer's output will occupy $200 \times 150 \times 200 \times 32 = 96$ million bits (12 MB) of RAM. And that's one instance - if a training batch contains 100 instances, then this layer will use up 1.2 GB of RAM!
+- During inference (i.e., when making a prediction for a new instance), the RAM occupied by one layer can be released as soon as the next layer has been computed, so you only need as much RAM as required by two consecutive layers.
+- But during training, everything computed during the forward pass needs to be preserved for the reserve pass, so the amount of RAM is (at least) the total amount of RAM required by all layers.
+- If training crashes because of an out-of-memory error, you can try reducing the mini-batch size. Alternatively, you can try reducing dimensionality using a stride, removing a few layers, using 16-bit floats instead of 32-bit floats, or distributing the CNN across multiple devices (you'll see how to do this in chapter 19).
