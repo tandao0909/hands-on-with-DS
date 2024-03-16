@@ -207,15 +207,57 @@
 
 Layer  | Type            | Maps | Size     | Kernel size | Stride | Activation
 -------|-----------------|------|----------|-------------|--------|-----------
- Out   | Fully connected | –    | 10       | –           | –      | RBF
- F6    | Fully connected | –    | 84       | –           | –      | tanh
+ Out   | Fully connected | -    | 10       | -           | -      | RBF
+ F6    | Fully connected | -    | 84       | -           | -      | tanh
  C5    | Convolution     | 120  | 1 × 1    | 5 × 5       | 1      | tanh
  S4    | Avg pooling     | 16   | 5 × 5    | 2 × 2       | 2      | tanh
  C3    | Convolution     | 16   | 10 × 10  | 5 × 5       | 1      | tanh
  S2    | Avg pooling     | 6    | 14 × 14  | 2 × 2       | 2      | tanh
  C1    | Convolution     | 6    | 28 × 28  | 5 × 5       | 1      | tanh
- In    | Input           | 1    | 32 × 32  | –           | –      | –   
+ In    | Input           | 1    | 32 × 32  | -           | -      | -   
 
 - As you can see, this look pretty similar to out Fashion MNIST model: a stack of convolutional layers. and pooling layers, followed by a dense network.
 - The main difference with more modern classification CNNs is, perhaps, the activation functions: today, we would use ReLU instead of tanh and softmax instead of RBF.
 - There are some other minor differences that don't really matter very much, but in case you are interested, they are listed in this [chapter's notebook](https://colab.research.google.com/github/ageron/handson-ml3/blob/main/14_deep_computer_vision_with_cnns.ipynb) written by the author.
+
+## AlexNet
+
+- The [AlexNet CNN architecture](https://papers.nips.cc/paper_files/paper/2012/hash/c399862d3b9d6b76c8436e924a68c45b-Abstract.html) won the 2012 ILSVRC challenge by a large margin: it achieved a top-five error rate of 17%, while the second best competitor achieved only 26%.
+- AlexNet was developed by Alex Krizhevsky, Ilya Sutskever, and Geoffrey Hinton.
+- It is similar to LeNet, only much larger and much deeper, and it was the first to stack convolutional layers directly on top of one another, instead of stacking a pooling layer on top of each convolutional layer.
+
+| Layer | Type             | Maps | Size       | Kernel size | Stride | Padding | Activation |
+|-------|------------------|------|------------|-------------|--------|---------|------------|
+| Out   | Fully connected | -    | 1,000      | -           | -      | -       | Softmax    |
+| F10   | Fully connected | -    | 4,096      | -           | -      | -       | ReLU       |
+| F9    | Fully connected | -    | 4,096      | -           | -      | -       | ReLU       |
+| S8    | Max pooling     | 256  | 6 × 6      | 3 × 3       | 2      | valid   | -          |
+| C7    | Convolution     | 256  | 13 × 13    | 3 × 3       | 1      | same    | ReLU       |
+| C6    | Convolution     | 384  | 13 × 13    | 3 × 3       | 1      | same    | ReLU       |
+| C5    | Convolution     | 384  | 13 × 13    | 3 × 3       | 1      | same    | ReLU       |
+| S4    | Max pooling     | 256  | 13 × 13    | 3 × 3       | 2      | valid   | -          |
+| C3    | Convolution     | 256  | 27 × 27    | 5 × 5       | 1      | same    | ReLU       |
+| S2    | Max pooling     | 96   | 27 × 27    | 3 × 3       | 2      | valid   | -          |
+| C1    | Convolution     | 96   | 55 × 55    | 11 × 11     | 4      | valid   | ReLU       |
+| In    | Input           | 3 (RGB) | 227 × 227 | -           | -      | -       | -          |
+
+- To reduce overfitting, the authors used two regularization techniques:
+    - First, they applied dropout (introduced in chapter 11) with a 50% dropout rate during training to the outputs of layers F9 and F10.
+    - Second, they performed data augmentation by randomly shifting the training images by various offset, flipping them horizontally, and changing the lighting conditions.
+- AlexNet also uses a competitive normalization step immediately after the ReLU step of layers C1 and C3, called *local response normalization* (LRN): the most strongly activated neurons inhibit other neurons located at the same position in neighboring feature maps. Such competitive activation has been observed in biological neurons.
+- This encourages different feature maps to specialize, pushing them apart and forcing them to explore a wider range of features, ultimately improving generalization.
+- The following equation shows how to apply LRN:
+$$b_i = a_i \left(k + \alpha\sum_{j=j-low}^{j-high}a_j^2\right)^{-\beta} \text{ with } 
+\begin{cases}
+\text{j-high} = \min(i + \frac{r}{2}, f_n - 1) \\
+\text{j-low} = \max(0, i - \frac{r}{2})
+\end{cases}
+$$
+- In this equation:
+    - $b_i$ is the normalized output of the neuron located in feature map $i$, at some row $u$ and column $v$ (note that in this equation we only consider neurons located at this row and column, so $u$ and $v$ are not shown).
+    - $a_i$ is the activation of that neuron after the ReLU step, but before normalization.
+    - $k, \alpha, \beta$ and $r$ are hyperparameters. $k$ is called the *bias*, and $r$ is called the *depth radius*.
+    - $f_n$ is the number of feature maps.
+- For example, if $r=2$ and a neuron has as strong activation, it will dominate the activation of the neurons located in the feature maps immediately below and above it.
+- In AlexNet, the hyperparameters are set as: $r=5, \alpha=0.0001, \beta=0.75$ and $k=2$. You can implement this step by using the `tf.nn.local_response_normalization()` function (which you can wrap in a `Lambda` layer if you want to use it a model).
+- A variant of AlexNet called the [ZF Net]() was developed by Matthew Zeiler and Rob Fergus nd won the 2013 ILSVRC challenge. It is just AlexNet with a few tweaked hyperparameters (number of feature maps, kernel sides, stride, etc.).
