@@ -199,3 +199,23 @@
 - In this competition, the top-five error-rate for image classification - that is, the number of test images for which the system's top five predictions did not include the correct answer - fell form over 26% to less than 2.3% in just six years.
 - The images are fairly large (e.g., 256 pixels high) and there are 1,000 classes, some of which are really subtle (try distinguish 120 dog breeds).
 - We first look at the classical LeNet-5 architecture (1998), then several winners of the ILSVRC challenge: AlexNet (2012), GoogLeNet (2014), ResNet(2015), and SENet (2017). Along the way, we will also look at a few more architectures including Xception, ResNeXt, DenseNet, MobileNet, CSPNet, and EfficientNet.
+
+## LeNet-5
+
+- The LeNet-5 architecture is perhaps the most widely known CNN architecture.
+- As mentioned earlier, it was created by Yann LeCun in 1998 and has been widely used for hand written digit recognition (MNIST)
+
+Layer  | Type            | Maps | Size     | Kernel size | Stride | Activation
+-------|-----------------|------|----------|-------------|--------|-----------
+ Out   | Fully connected | –    | 10       | –           | –      | RBF
+ F6    | Fully connected | –    | 84       | –           | –      | tanh
+ C5    | Convolution     | 120  | 1 × 1    | 5 × 5       | 1      | tanh
+ S4    | Avg pooling     | 16   | 5 × 5    | 2 × 2       | 2      | tanh
+ C3    | Convolution     | 16   | 10 × 10  | 5 × 5       | 1      | tanh
+ S2    | Avg pooling     | 6    | 14 × 14  | 2 × 2       | 2      | tanh
+ C1    | Convolution     | 6    | 28 × 28  | 5 × 5       | 1      | tanh
+ In    | Input           | 1    | 32 × 32  | –           | –      | –   
+
+- As you can see, this look pretty similar to out Fashion MNIST model: a stack of convolutional layers. and pooling layers, followed by a dense network.
+- The main difference with more modern classification CNNs is, perhaps, the activation functions: today, we would use ReLU instead of tanh and softmax instead of RBF.
+- There are some other minor differences that don't really matter very much, but in case you are interested, they are listed in this [chapter's notebook](https://colab.research.google.com/github/ageron/handson-ml3/blob/main/14_deep_computer_vision_with_cnns.ipynb) written by the author.
