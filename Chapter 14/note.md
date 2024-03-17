@@ -275,3 +275,43 @@ $$
 - In general, you can also flip the image horizontally, (expect for text, and other asymmetrical objects).
 - By combining these transformations, you can greatly increase your training set size.
 - Data augmentation is also useful when you have unbalanced dataset: you can use it to generate more samples of the less frequent classes. This is called *synthetic minority oversampling technique* or SMOTE for short.
+
+## GoogLeNet
+
+- The [GoogLeNet architecture](https://www.cv-foundation.org/openaccess/content_cvpr_2015/html/Szegedy_Going_Deeper_With_2015_CVPR_paper.html) was developed by Christian Szegedy et al. from Google Research, nad it won the ILSVRC 2014 challenge by pushing the top-five error rate below 7%.
+- This great performance came in large part from the fact that the network was much deeper than previous CNNs.
+- This was made possible by sub-networks called *inception modules*, which allow GoogLeNet to use parameters much more efficiently than previous architectures: GoogLeNet actually has 10 times fewer parameters than AlexNet (roughly 6 million instead of 60 million).
+- This figure shows the architecture of an inception module.
+![alt text](image-9.png)
+- The notation "$3 \times 3 + 1$(S)" means that the layer uses a $3\times 3$ kernel, stride 1, and `"same"` padding.
+- The input signal is first fed to four different layers in parallel.
+- All convolutional layers use the ReLU activation function.
+- Note that the top convolutional layers use different kernel sizes ($1\times 1$, $3 \times 3$, and $5 \times 5$), allowing them to capture patterns at different scales.
+- Also note that every single layer uses a stride of 1 and `"same"` padding (even the max pooling layer), so their outputs all have the same height and width as their inputs.
+- This make it possible to concatenate all the outputs along the depth dimension in the final *depth concatenation layer* (i.e., to stack the feature map from all four top convolutional layers).
+- It can be implemented using Keras's `Concatenate` layer, using the default `axis=-1`.
+- The reason why inception modules have convolutional layers with $1\times 1$ kernel are:
+    - They are configured to output fewer feature maps than their inputs, so they serve as *bottleneck layers*, meaning they reduce dimensionality. This cuts the computational cost and the number of parameters, speeding up training and improving generalization.
+    - Although they cannot capture spatial patterns, they capture patterns along the depth dimension (i.e., across channels).
+    - Each pair of convolutional layers ([$1\times 1$, $3\times 3$] and [$1\times 1$, $5\times 5$]) acts like a single powerful convolutional layer. A single convolutional layer is equivalent to sweeping a dense layer across the image (at each location, it only looks at a small receptive field), and these pairs of convolutional layers are equivalent to sweeping two-layer neural networks across the images.
+- In short, you can think of the whole inception module as a convolutional layer on steroids, able to output feature maps that capture complex patterns at various scales.
+- Now you can look at the architecture of the GoogLeNet CNN:
+![GoogLeNet architecture](image-10.png)
+- The number of feature maps output by each convolutional layer and each pooling layer is shown before the kernel size.
+- The architecture is so deep that it has to be represented in three columns, but GoogLeNet is actually one tall stack, including nine inception modules (the boxes with the spinning tops).
+- The six numbers in the inception modules represent the number of feature maps output by each convolutional layer in the module (in the same other as in the figure described the inception module).
+- Note that all the convolutional layers use the ReLU activation function.
+- Let's go through this network:
+    - The first two layers divide the image's height and width by 4 (so its area is divided by 16), to reduce the computational load. The first layer uses a large kernel size, $7 \times 7$, so that much of the information is preserved.
+    - Then the local response normalization layer ensures that the previous layers learn a wide variety of features (as discussed earlier).
+    - Two convolutional layer follow, where the first acts as a bottleneck layer. As mentioned, you can think of this pair as a single smarter convolutional layer.
+    - Again, a local response normalization layer ensures that the previous layers capture a wide variety of patterns.
+    - Next, a max pooling layer reduces the image height and width by 2, again to speed up computations.
+    - Then comes the CNN's backbone: a tall stack of nine inception modules, interleaved with a couple of max pooling layers to reduce dimensionality and speed up the net.
+    - Next, the global average pooling layer outputs the mean of each feature map: this drops any remaining spatial information, which is fine because there is not much spatial information left at that point. Indeed, GoogLeNet input images are typically expected to be $224 \times 224$ pixels, so after 5 max pooling layers, each dividing the height and width by 2, the feature maps are down to $7 \times 7$. Moreover, this is a classification task, not localization, so it doesn't matter where the object is. Thanks to the dimensionality reduction brought to this layer, there is no need to have several fully connected layers at the top of the CNN (like in AlexNet), and this considerably reduces the number of parameters in the network and limits the ris of overfitting.
+    - The last layers are self-explanatory: dropout for regularization, then a fully connected layer with 1,000 units (since there are 1,000 classes) and a softmax activation function to output estimated class probabilities.
+- The original GoogLeNet architecture included two auxiliary classifiers plugged on top of the third and sixth inception modules.
+- They were both composed of one averaging pooling layer, one convolutional layer, two fully connected layers, and a softmax activation layer.
+- During training, their loss (scaled down by 70%) was added ot the overall loss.
+- The goal was to fight the vanishing gradient problem and regularize the network, bu tit was later shown that their effects was relatively minor.
+- Several variants of the GoogLeNet architecture were later proposed by Google researchers, including Inception-v3 and Inception-v4, using slightly different inception modules to reach even better performance.
