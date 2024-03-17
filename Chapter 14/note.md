@@ -315,3 +315,13 @@ $$
 - During training, their loss (scaled down by 70%) was added ot the overall loss.
 - The goal was to fight the vanishing gradient problem and regularize the network, bu tit was later shown that their effects was relatively minor.
 - Several variants of the GoogLeNet architecture were later proposed by Google researchers, including Inception-v3 and Inception-v4, using slightly different inception modules to reach even better performance.
+
+## VGGNet
+
+- The runner-up in the ILSVRC 2014 challenge was [VGGNet](https://arxiv.org/abs/1409.1556).
+- Karen Simonyan and Andrew Zisserman, from the Visual Geometry Group (VGG) research lab at Oxford University, developed a very simple and classical architecture:
+    - it had 2 or 3 convolutional layers and a pooling layer
+    - then again 2 or 3 convolutional layers and a pooling layer
+    - so on, reaching a total of 16 or 19 convolutional layers, depending on the VGG variant.
+    - plus a final dense network with 2 hidden layers and the output layer.
+- It used small $3\times filters$, but it had many of them.
