@@ -261,3 +261,17 @@ $$
 - For example, if $r=2$ and a neuron has as strong activation, it will dominate the activation of the neurons located in the feature maps immediately below and above it.
 - In AlexNet, the hyperparameters are set as: $r=5, \alpha=0.0001, \beta=0.75$ and $k=2$. You can implement this step by using the `tf.nn.local_response_normalization()` function (which you can wrap in a `Lambda` layer if you want to use it a model).
 - A variant of AlexNet called the [ZF Net]() was developed by Matthew Zeiler and Rob Fergus nd won the 2013 ILSVRC challenge. It is just AlexNet with a few tweaked hyperparameters (number of feature maps, kernel sides, stride, etc.).
+
+### Data Augmentation
+
+- Data augmentation artificially increases the size of the training set by generating many realistic variants of each training instance. This reduces overfitting, makes it a regularization technique.
+- The generated instances should be as realistic as possible: ideally, given an image from the augmented training, a human should be be able to tell whether it was augmented or not.
+- Simply adding white noises does not help; the modifications should be learnable (while white noises are not).
+- For example, you can slightly shift, rotate, and resize every picture in the training set by various amounts and add the resulting pictures to the training set.
+![Generating new training instances from existing ones](image-8.png)
+- To do this, you can use Keras's data augmentation layers, introduced in chapter 13 (e.g., `RandomCrop`, `RandomRotation`, etc.).
+- This forces the model to be more tolerant of variations in the position orientation, and size of the objects in the pictures.
+- To produce a model that's more tolerant of different lighting conditions you can similarly generate many images with various contrasts.
+- In general, you can also flip the image horizontally, (expect for text, and other asymmetrical objects).
+- By combining these transformations, you can greatly increase your training set size.
+- Data augmentation is also useful when you have unbalanced dataset: you can use it to generate more samples of the less frequent classes. This is called *synthetic minority oversampling technique* or SMOTE for short.
