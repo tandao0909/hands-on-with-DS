@@ -166,12 +166,12 @@
 - But on the other hand, max pooling preserves only the strongest features, getting rid of all the meaningless ones, so the next layers get a cleaner signal to work with.
 - Moreover, max pooling offers stronger translation invariance than average pooling, and it requires slightly less compute.
 - Note that max pooling and average pooling can be performed along the depth dimension instead of the spatial dimensions, although it's not as common. This can allow the CNN to learn to be invariant to various features.
-- For example, it could learn multiple filters each detecting a different rotation of the same pattern, and the depth-wise max pooing layer would ensure that the output is the same, regardless of the rotation.
+- For example, it could learn multiple filters each detecting a different rotation of the same pattern, and the depthwise max pooing layer would ensure that the output is the same, regardless of the rotation.
 - The CNN could similarly learn to be invariant to anything: brightness, skew, color, and so on.
-- Keras doesn't include a depth-wise max pooling layer, but you can find a custom layer do just this in the learning notebook.
+- Keras doesn't include a depthwise max pooling layer, but you can find a custom layer do just this in the learning notebook.
 - This layer reshapes its inputs to split the channels into groups of the desired size (`pool_size`), then it uses `tf.reduce_max()` to compute the max of each group.
 - This implementation assumes that the stride is equal to the pool size, which is generally what you want.
-- Alternatively, you could use TensorFLow's `tf.nn.max_pool()` operation, and wrap it in a `Lambda` layer to use it inside a Keras model, but sadly, this operation does not implement depth-wise pooling for the GPU, only the CPU.
+- Alternatively, you could use TensorFLow's `tf.nn.max_pool()` operation, and wrap it in a `Lambda` layer to use it inside a Keras model, but sadly, this operation does not implement depthwise pooling for the GPU, only the CPU.
 - One last type of pooling layer that you will often see in modern architecture is the *global average pooling layer*.
 - It works very differently: it computes the mean of each entire feature map (it's like an average pooling layer using a pooling kernel the same spatial dimensions as the inputs).
 - This means it just outputs a single number per feature map and per instance.
@@ -357,3 +357,23 @@ $$
 - ResNet deeper than that, such as ResNet-152, use slightly different residual units.
 - Instead of two $3 \times 3$ convolutional layers with, say, 256 feature maps, they use three convolutional layers: first a $1\times 1$ convolutional layer with just 64 feature maps (4 times less), which acts a bottleneck layer, then a $3 \times 3$ layer with 64 feature maps and finally another $1\times 1$ convolutional layer with 256 features maps that restores the original depth.
 - ResNet-152 contains 3 such RUs that outputs 256 maps, then 8 RUs with 512 maps, then a whopping 36 RUs with 1,024 maps, and finally 3 RUs with 2,048 maps.
+
+## Xception
+
+- Another variant of the GoogLeNet architecture is worth noting: [Xception](https://arxiv.org/abs/1610.02357), which stands for *Extreme Inception*, was proposed in 2016 by François Chollet (the author of Keras).
+- It significantly outperformed Inception-v3 on a huge vision task (350 million images and 17,000 classes).
+- Just like Inception-v4, it merges the ideas of GoogLeNet and ResNet, but it replaces the inception modules with a special type of layer named a *depthwise separable convolution layer* (or *separable convolution layer* for short).
+- These layers had been used before in some CNN architectures, but they were not as central as in the Xception architecture.
+- While a regular convolutional layer uses filters that try to simultaneously capture spatial patterns (e.g., an oval) and cross-channel patterns (e.g., mouth + nose + eyes = face), a separable convolutional layer makes the strong assumption that spatial patterns and cross-channel patterns can be modeled separably.
+![Depthwise separable convolutional layer](image-15.png)
+- Thus, it's composed of two parts: the first part applies a single spatial filter to each input feature map, then the second part looks exclusively for cross-channel patterns - it is just a regular convolutional layer with $1\times 1$ filters.
+- Since separable convolutional layers only have one spatial filter per input channel, you should avoid using them after layers that have too few channels, such as the input layer (well, that's what the above figure represents, but it's just for illustration purposes).
+- For this reason, Xception architecture starts with 2 regular convolutional layers, but then the rest of the architecture uses only separable convolutions (34 in all), plus a few max pooling layers and the usual final layers (a global average pooling layer and a dense output layer).
+- You might wonder why Xception is considered a variant of GoogLeNet, since it has no inception module at all.
+- Well, as discussed earlier, an inception module contains convolutional layers with $1\times 1$ filters: they look exclusively for cross-channel patterns. However, the convolutional layers that look both for spatial and cross-channel patterns jointly.
+- So you can think of an inception module as an intermediate between a regular convolutional layer (which considers spatial patterns and cross-channel jointly) and a separable convolutional layer (which considers them separately).
+- In practice, it seems that separable convolutional layers often perform better.
+- Separable convolutional layers use fewer parameters, less memory, and fewer computations than regular convolutional layers, and they often perform better.
+- Consider using them, except after layers with few channels (such as the input layer).
+- In Keras, just use `SeparableConv2D` instead of `Conv2D`: it's a drop-in replacement.
+- Keras also offers a `DepthwiseConv2D` layer that implements the first part of a depthwise separable convolutional layer (i.e., applying one spatial filter per input feature map).
