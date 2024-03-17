@@ -377,3 +377,27 @@ $$
 - Consider using them, except after layers with few channels (such as the input layer).
 - In Keras, just use `SeparableConv2D` instead of `Conv2D`: it's a drop-in replacement.
 - Keras also offers a `DepthwiseConv2D` layer that implements the first part of a depthwise separable convolutional layer (i.e., applying one spatial filter per input feature map).
+
+## SENet
+
+- The winning architecture in the ILSVRC 2017 challenge was the [Squeeze-and-Excitation (SENet)]().
+- This architecture extends existing architectures such as inception networks and ResNets, and boosts their performance.
+- This allows SENet to win the competition with an astonishing 2.25% top-five error rate!
+- The extended versions of inceptions networks and ResNets are called *SE-inception* and *SE-ResNet*, respectively.
+- The boost comes from the fact that a SENet adds a small neural network, called an *SE block*, to every inception module or residual unit in the original architecture, as shown below:
+![SE-Inception module (left) and SE-ResNet unit (right)](image-16.png)
+- An SE block analyzes the output of the unit it is attached to, focusing exclusively on the depth dimension (it does not look for any spatial patterns), and it learns which features are usually most active together.
+- It then uses this information to recalibrate the feature maps, as shown below:
+![An SE block performs feature map recalibration](image-17.png)
+- For example, an SE block may learn that mouths, noses, and eyes usually appear together in pictures: if you see a mouth and a nose, you should expect to see eyes as well.
+- So, if the block sees a strong activation in the mouth and nose feature maps, but only mild activation in the eye feature map, it will boost the eye feature map (more accurately, it will reduce irrelevant feature maps).
+- If the eyes was somewhat confused with something else, this feature map recalibration will help solve the ambiguity.
+- An SE block is composed of just three layers: a global average pooling layer, a hidden layer using the ReLU activation function, and a dense output layer using the sigmoid activation function.
+![SE block architecture](image-18.png)
+- As earlier, the global average pooling layer computes the mean activation for each feature map.
+- For example, if it inputs contains 256 feature maps, it will output 256 number representing the overall level fo responses for each filter.
+- The next layer is where the "squeeze" happens: this layer has significantly fewer than 256 neurons - typically 16 times fewer than the number of feature maps (e.g., 16 neurons) - so the 256 numbers got compressed into a small vector (e.g., 16 dimensions).
+- This is low-dimensional vector representation (i.e., an embedding) of the distribution of the feature responses.
+- This bottleneck step forces the SE block to learn a general representation of the feature combinations (we will see this principle in action again when we discuss autoencoders in chapter 17).
+- Finally, the output layer takes the embedding and outputs a recalibration vector containing one number per feature map (e.g., 256), each between 0 and 1.
+- The feature maps are then multiplied by this recalibration vector, so irrelevant features (with a low recalibration weight) get scaled down, while relevant features (with a recalibration weight closes to 1) are left alone.
