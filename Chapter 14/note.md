@@ -325,3 +325,35 @@ $$
     - so on, reaching a total of 16 or 19 convolutional layers, depending on the VGG variant.
     - plus a final dense network with 2 hidden layers and the output layer.
 - It used small $3\times filters$, but it had many of them.
+
+## ResNet
+
+- Kaiming He et al. won the ILSVRC 2015 challenge using a [Residual Network (ResNet)](https://arxiv.org/abs/1512.03385) aht delivered an astounding top-five error rate under 3.6%.
+- The wining variant used an extremely deep CNN composed of 152 layers (other variants had 34, 50, and 101 layers).
+- It confirmed the general trend: computer vision models were getting deeper and deeper, with fewer and fewer parameters.
+- The key of being able to train such a deep network is to use *skip connections* (also called *shortcut connections*): the signal feeding to a layer is also added to the output of a a layer located higher up the stack.
+- When training a neural network, the goal is to make it model a target function $h(\textbf{x})$.
+- If you add the input $\textbf{x}$ to the output of the network (i.e., you add a skip connection), then the network will be forced to model $f(\textbf{x}) = h(\textbf{x}) - \textbf{x}$ rather than $h(\textbf{x})$. This is called *residual learning*.
+![Residual learning](image-11.png)
+- When you initialize a regular neural network, its weights are close to zero, so the network just outputs values close to zero.
+- If you add a skip connection, the resulting network just outputs a copy of its inputs; in other words, it initially models the identity function
+- If the target function is close to the identity function (which is often the case), this will speed up training considerably.
+- Moreover, if you add many skip connections, the network can start making progress even if several layers have not started learning yet.
+![Regular deep neural network (left) and deep residual network (right)](image-12.png)
+- Thanks to skip connections, the gradients now flow in 2 main ways, instead of 1, hence the signal can make its way across the whole network.
+- The deep residual network can be seen as a stack of *residual units* (RUs), where each residual unit is a small neural network with a skip connection.
+- Now, we look at ResNet's architecture, notice how simple it is:
+    - It starts and ends exactly like GoogLeNet (except without a dropout layer).
+    - In between is a very deeps stack of residual units.
+    - Each residual units is composed of two convolutional layers (and no pooling layer!), with batch normalization (BN) and ReLU activation, using $3 \times 3$ kernel nad preserving spatial dimensions (stride 1, padding `"same"`).
+![ResNet architecture](image-13.png)
+- Note that the number of feature map is doubled once after a few residual units, at the same time as their height and width are halved (using a convolutional layer with stride 2).
+- When this happens, the inputs cannot be added directly to the outputs of the residual units because they don't have the same shape (for example, see the figure below).
+![Skip connection when changing feature map size and depth](image-14.png)
+- To solve this problem, the inputs are passed through a $1 \times 1$ convolutional layer with stride 2 and the right number of feature maps.
+- Different variations of the architecture exist, with different number of layers.
+- ResNet34 is a ResNet with 34 layers (only counting the convolutional layers and the fully connected layer) containing 3 RUs that output 64 features maps, 4 RUs with 128 feature maps, 6 RUs with 256 feature maps, and 3 RUs with 512 maps. We will implement this architecture later in this chapter.
+- Google's [Inception-v4](https://arxiv.org/abs/1602.07261) architecture merged the ideas of GoogLeNet and ResNet and achieve a top-five error rate of close to 3% on ImageNet classification.
+- ResNet deeper than that, such as ResNet-152, use slightly different residual units.
+- Instead of two $3 \times 3$ convolutional layers with, say, 256 feature maps, they use three convolutional layers: first a $1\times 1$ convolutional layer with just 64 feature maps (4 times less), which acts a bottleneck layer, then a $3 \times 3$ layer with 64 feature maps and finally another $1\times 1$ convolutional layer with 256 features maps that restores the original depth.
+- ResNet-152 contains 3 such RUs that outputs 256 maps, then 8 RUs with 512 maps, then a whopping 36 RUs with 1,024 maps, and finally 3 RUs with 2,048 maps.
