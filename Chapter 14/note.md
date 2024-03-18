@@ -434,3 +434,15 @@ $$
 - You can find the list of pretrained models available Keras [here](https://keras.io/api/applications/)
 ![Pretrained models available in Keras](image-19.png)
 - For each model, the table shows the Keras class name to use (in the `tf.keras.applications` package), the model's size in MB, the top-1 and top-5 validation accuracy on the ImageNet dataset, the number of parameters (millions), depth, and the inference times on CPU and GPU in ms, using batches of 32 images on reasonably powerful hardware.
+
+# Implementing a ResNet-34 CNN Using Keras
+
+- Most CNN architectures described so far can be implemented pretty naturally using Keras (although generally you would load a pretrained network instead, as you will see later).
+- To illustrate this process, let's implement a ResNet-34 from scratch with Keras.
+- First, we create a `ResidualUnit` class:  
+    - In the constructor, we create all the layers we need: the main layers on the right, and the skip layers on the left (only needed if the strides is greater than 1).
+    - In the `call()` method, we let the inputs go through the main layers and the skip layers (if any), and we add both outputs and apply the activation function.
+- Now we can build a ResNet-34 using the `Sequential` model, since it's just a really long sequence of layers - we can treat each residual units as a single layer since we have the `ResidualUnit` class.
+- The only tricky part in the implementation is the loop that adds the `ResidualUnit` layers to the model: as explained earlier, the first 3 RUs have 64 filters, then the next 4 RUs have 128 filters, and so on. At each iteration, we must set the stride to 1, or else we set it to 2; then we add the `ResidualUnit`, and finally we update `prev_filters`.
+- Isn't it amazing that in about 40 lines of code, we can build the model that won the ILSVRC 2015 challenge? This demonstrates both the elegance of the ResNet model and the expressiveness of Keras API.
+- Implementing the other CNN architectures is a bit longer, but not much harder.
