@@ -446,3 +446,20 @@ $$
 - The only tricky part in the implementation is the loop that adds the `ResidualUnit` layers to the model: as explained earlier, the first 3 RUs have 64 filters, then the next 4 RUs have 128 filters, and so on. At each iteration, we must set the stride to 1, or else we set it to 2; then we add the `ResidualUnit`, and finally we update `prev_filters`.
 - Isn't it amazing that in about 40 lines of code, we can build the model that won the ILSVRC 2015 challenge? This demonstrates both the elegance of the ResNet model and the expressiveness of Keras API.
 - Implementing the other CNN architectures is a bit longer, but not much harder.
+
+# Using Pretrained Models from Keras
+
+- In general, you won't have to implement standard models like GoogLeNet or ResNet manually, since pretrained networks are readily available with a single line of code in the `tf.keras.applications` package.
+- For example, you can load the ResNet-50 model, pretrained on ImageNet, with the following line of code: <br>
+`model = tf.keras.applications.ResNet50(weights="imagenet")`
+- This will create a ResNet-50 model and download weights pretrained on the ImageNet dataset.
+- To use it, you first ensure that the images have the right size. A ResNet-50 model expects $224 times 224$-pixel images (other models may expect other sizes, such as $299 \times 299$), so you should use Keras's `Resizing` layer (introduced in chapter 13) to resize two sample images (after cropping them to the target aspect ratio).
+- The pretrained model assumes that the images are preprocessed in a specific way. In some cases, they may expect that the inputs to be scaled from 0 to 1, or from -1 to 1, and so on.
+- Each model provides a `preprocess_input()` function that you can use to preprocess your images.
+- These functions assumes that the original pixel values range from 0 to 255, which is the case here.
+- You can use the pretrained model to make predictions, just like a regular one.
+- As usual, the prediction result is a matrix with one row per image and one column per class (in this case, there are 1,000 classes).
+- If you want to display the top K predictions, including the class name and the estimated probability of each predicted class, use the `decode_predictions()` function.
+- For each image, it returns an array containing the top K predictions, where each prediction is represented as an array containing the class identifier, its name, and the corresponding confidence score.
+- The correct class are palace and dahlia, so the model is correct for the first image but wrong for the second. However, that's because dahlia is nto one of the 1,000 ImageNet classes.
+- As you can see, it is very easy to create a pretty good image classifier using a pretrained model.
