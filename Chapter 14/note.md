@@ -426,3 +426,11 @@ $$
 - Your CNN architecture's depth, width, and resolution should scale as $\alpha^\phi$, $\beta^\phi$, and $\gamma^\phi$.
 - The factors $\alpha$, $\beta$, and $\gamma$ must be greater than 1, and $\alpha + \beta^2 + \gamma^2$ should be close to 2. The optimal values for these factors depend on the CNN's architecture.
 - To find the optimal values for the EfficientNet architecture, the authors started with a small baseline model (EfficientNetB0), fixed $\phi=1$, ad simply ran a gird search: they found $\alpha=1.2$, $\beta=1.1$, and $\gamma=1.1$. They then used these factors to create several larger architectures, named EfficientNetB1 to EfficientNetB7, for increasing value of $\phi$.
+
+## Choosing the Right CNN Architecture  
+
+- With so many CNN architectures, how do you choose which one is best for your project?
+- Again, it depends to on the task at hand, specifically at the constraints and your trade-off between them: Accuracy, model size (e.g., for deployment to a mobile device), inference speed on CPU, on GPU.
+- You can find the list of pretrained models available Keras [here](https://keras.io/api/applications/)
+![Pretrained models available in Keras](image-19.png)
+- For each model, the table shows the Keras class name to use (in the `tf.keras.applications` package), the model's size in MB, the top-1 and top-5 validation accuracy on the ImageNet dataset, the number of parameters (millions), depth, and the inference times on CPU and GPU in ms, using batches of 32 images on reasonably powerful hardware.
