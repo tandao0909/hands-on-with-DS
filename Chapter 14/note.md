@@ -463,3 +463,35 @@ $$
 - For each image, it returns an array containing the top K predictions, where each prediction is represented as an array containing the class identifier, its name, and the corresponding confidence score.
 - The correct class are palace and dahlia, so the model is correct for the first image but wrong for the second. However, that's because dahlia is nto one of the 1,000 ImageNet classes.
 - As you can see, it is very easy to create a pretty good image classifier using a pretrained model.
+
+# Pretrained Models for Transfer Learning
+
+- But what if you want to use an image classifier that are not part of ImageNet? In this case, you may still benefit from the pretrained models by using them to perform transfer learning.
+- Also, you may want to build an image classifier but do not have enough data to train it from scratch, then it is still a good idea to reuse the lower layers of a pretrained model, as we discussed in chapter 11.
+- For example, let's train a model to classify pictures of flowers, reusing a pretrained Xception model.
+- First, we load the flowers dataset using TensorFlow Datasets.
+- Note that you can get information about the dataset by setting `with_info=True`. Here, we get the dataset size and the names of the classes.
+- Unfortunately, there is only a `"train"` dataset, no test set or validation set, so we need to split the training set. Therefore, we will call `tfds.load()` again, this time taking the first 10% of the dataset for testing, the next 15% for validation, and the remaining 75% for training.
+- All three datasets contain individual images.
+- We need to batch them, but for this we first need to ensure they all have the same size, or else batching will not work. We can use a `Resizing` layer for this.
+- We must also call the `tf.keras.applications.xception.preprocess_input()` function to preprocess the images appropriately for the Xception model.
+- Lastly, we'll also add shuffling and prefetching to the training dataset.
+- Since the dataset is not very large, a bit of data augmentation will certainly help.
+- We create a data augmentation model: during training, it will randomly flip the images horizontally, rotate them a little bit, and tweak the contrast.
+- The `tf.keras.preprocessing.image.ImageDataGenerator` class make it easy to load images from disk and augment them in various ways: you can shift each image, rotate it, rescale it, flip it horizontally or vertically, shear it, or apply any transformation function you want to it. This is very convenient for simple projects.
+- However, a tf.data pipeline is not much more complicated, and it's generally faster.
+- Moreover, if you have a GPU and you include the preprocessing or data augmentation layers inside your model, they will benefit from GPU acceleration during training.
+- Now, let's load an Xception model, pretrained on ImageNet. We exclude the top of the network by setting `include_top=False`. This excludes the global average pooling layer and the dense output layer.
+- We then add our own global average pooling layer (feeding it the output of the base model), followed by a dense output layer with one unit per class, using the softmax activation function.
+- Finally, we wrap all this in a Keras `Model`.
+- As explained in chapter 11, it's usually a good idea to freeze the weights of the pretrained layers, at least at the beginning of training.
+- Since our model uses the base model's layers directly, rather than the `base_model` object itself, setting `base_model.trainable=False` would have no effect.
+- Finally, we can compile the model and start training.
+- If available, use the GPU. We still can train without one, but it will be painfully slow.
+- After training the model for a few epochs, its validation accuracy should reach a bit over 80% and then stop improving.
+- This means that the top layers are now pretty well trained, and we're ready to unfreeze some of the base model's top layers, then continue training.
+- For example, we unfreeze layers 56 and above (that's the start of residual units 7 out of 14, as you can see if you list the layer names).
+- Remember to compile the model whenever you freeze or unfreeze layers.
+- Also make sure to use a much lower learning rate to avoid damaging the pretrained weights.
+- This model should reach around 92% accuracy on the test set, in just a few minutes of training (with a GPU).
+- If you tune the hyperparameters, lower the learning rate, and train for a bit longer, you should be able to reach 95% to 95%.
