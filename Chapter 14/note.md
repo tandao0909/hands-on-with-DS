@@ -401,3 +401,28 @@ $$
 - This bottleneck step forces the SE block to learn a general representation of the feature combinations (we will see this principle in action again when we discuss autoencoders in chapter 17).
 - Finally, the output layer takes the embedding and outputs a recalibration vector containing one number per feature map (e.g., 256), each between 0 and 1.
 - The feature maps are then multiplied by this recalibration vector, so irrelevant features (with a low recalibration weight) get scaled down, while relevant features (with a recalibration weight closes to 1) are left alone.
+
+## Other Noteworthy Architectures
+
+- There are many other CNN architecture to talk about. We will have a brief overview of some of the most noteworthy in this part.
+- [*ResNeXt*](https://arxiv.org/abs/1611.05431): ResNeXt improves the residual units in ResNet.
+- Whereas the residual units in the best ResNet models just contains 3 convolutional layers each, the ResNeXt residual units are composed of many parallel stacks (e.g., 32 stacks), with 3 convolutional layers each.
+- However, the first two layers in each stack only use a few filters (eg., just four), so the overall number of parameters remains the same as in the ResNet.
+- Then the outputs of all stacks are added together, and the result is passed to the next residual units (along with the skip connections).
+- [*DenseNet*](https://arxiv.org/abs/1608.06993): A DenseNet is composed of several dense blocks, each made up of a few densely connected convolutional layers. This architecture achieved excellent accuracy while using comparatively few parameters.
+- But what does "densely connected" mean? The output of each layer is fed as input to every layer after it within the same block. For example, layer 4 in a block takes as input the depthwise concatenation of the outputs of layers 1, 2, and 3 in that block.
+- Dense blocks are separated by a few transition layers.
+- [*MobileNet*](https://arxiv.org/abs/1704.04861): MobileNet are streamlined models designed to be lightweight and fast, making them popular in mobile and web applications.
+- They are based on depthwise separable convolutional layers, like Xception.
+- The authors proposed several variants, trading a bit of accuracy for faster and smaller models.
+- [*CSPNet*](https://arxiv.org/abs/1911.11929): A Cross Stage Partial Network (CSPNet) is similar to a DenseNet, but part of each dense block's input is concatenated directly ot that block's output, without going through the block.
+- [*EfficientNet*](https://arxiv.org/abs/1905.11946): EfficientNet is arguably the most important model in this list.
+- The authors proposed a method to scale any CNN efficiently, by jointly increasing the depth (number of layers), width (number of filters per layer), and resolution (size of the input image) in a principled way. This is called *compound scaling*.
+- They used neural architecture search to find a good architecture for a scaled version of ImageNet (with smaller and fewer images), and then used compound scaling to create larger and larger version of this architecture.
+- When EfficientNet came out, they vastly outperformed all existing models, across all compute budgets, and they remain among the best models out there today.
+- Understanding EfficientNet's compound scaling method is helpful to gain a deeper understanding of CNNs, especially if you ever need to scale a CNN architecture.
+- It based on a logarithmic measure of the compute budget, noted *$\phi$*: if your compute budget doubles, then *$\phi$* increases by 1.
+- In other words, the number of floating-points operations available for training is proportional to $2^\phi$.
+- Your CNN architecture's depth, width, and resolution should scale as $\alpha^\phi$, $\beta^\phi$, and $\gamma^\phi$.
+- The factors $\alpha$, $\beta$, and $\gamma$ must be greater than 1, and $\alpha + \beta^2 + \gamma^2$ should be close to 2. The optimal values for these factors depend on the CNN's architecture.
+- To find the optimal values for the EfficientNet architecture, the authors started with a small baseline model (EfficientNetB0), fixed $\phi=1$, ad simply ran a gird search: they found $\alpha=1.2$, $\beta=1.1$, and $\gamma=1.1$. They then used these factors to create several larger architectures, named EfficientNetB1 to EfficientNetB7, for increasing value of $\phi$.
