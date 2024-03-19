@@ -495,3 +495,25 @@ $$
 - Also make sure to use a much lower learning rate to avoid damaging the pretrained weights.
 - This model should reach around 92% accuracy on the test set, in just a few minutes of training (with a GPU).
 - If you tune the hyperparameters, lower the learning rate, and train for a bit longer, you should be able to reach 95% to 95%.
+
+# Classification and Localization
+
+- Localizing an object in a picture can be expressed as a regression task, as discussed in chapter 10: to predict a bounding box around the object, a common approach is to predict the horizontal and vertical coordinates of the object's center, as well as its height and width. This means we have four numbers to predict.
+- It does not require much change to the model; we just need to add a second output layer with four units (typically on top of the global average pooling layer), and it can be trained using the MSE loss.
+- But now we have a problem: the flower dataset does not have bounding boxes around the flowers. So we need to add them ourselves.
+- This is often one of the hardest and most costly parts of a machine learning project: getting the labels.
+- It's a good idea to spend time looking for the right tools.
+- To annotate images with bounding boxes, you may want to use an open source image labeling tooling like VGG Image Annotator, LabelImg, OpenLabeler, or ImgLab, or perhaps a commercial tool like LabelBox or Supervisely.
+- You may also want to consider crowdsourcing platforms such as Amazon Mechanical Turk if you have a very large number of images to annotate.
+- However, it is quite a lot of work to set up a crowdsourcing platform, prepare the form to be sent to the worker, supervise them, and ensure that the quality of the bounding boxes they produce is good, so make sure it is worth the effort.
+- Adriana Kovashka et al. wrote a very practical [paper]() about crowdsourcing in computer vision.
+- If there are just a few hundred, ro even a couple of thousand images to label, and you don't plan to do this frequently, it may be preferable to do it yourself: with the right tools, it will only take a few days, and you'll also gain a better understanding of your dataset and task.
+- Now, let's suppose you've obtained the bounding boxes for every image in the flowers dataset (for now, we assume there is a single bounding box per image).
+- You then need to create a dataset whose items will be batches of preprocessed images along with their class labels and their bounding boxes. Each item should be a tuple of the form `(images, (class_labels, bounding_boxes))`.
+- The bounding boxes should be normalized so that the horizontal and vertical coordinates, as well as the height and width, all range from 0 to 1.
+- Also, it's common to predict the square root of the height and width, instead of the height and width directly: this way, a 10-pixel error for a large bounding box will not be penalized as much as a 10-pixel error for a small bounding box.
+- The MSE often works fairly well as a cost function to train the model, but it is not a great metric to evaluate how well the model can predict bounding boxes.
+- The most common metric for this task is the *intersection over union* (IoU): the area of overlap between the predicted bounding box and the target bounding box, divided by the area of their union.
+![IoU metric for bounding boxes](image-20.png)
+- In Keras, it is implemented by the `tf.Keras.metrics.MeanIoU` class.
+- Classifying and localizing a single object is fine now, but what about multiple objects (as is often the case in the flower dataset)?
