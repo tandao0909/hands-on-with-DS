@@ -541,3 +541,30 @@ $$
     - Repeat step 2 until there is no more bounding boxes to get rid of.
 - This simple approach to object detection works great, but it requires running the CNN many times (15 times in our case), so it is quite slow.
 - Fortunately, there is a much faster way to slide a CNN across an image: using a *fully convolutional network* (FCN).
+
+## Fully Convolutional Network
+
+- The idea of FCNs was first introduced in a [2015 paper]() by Jonathan Long et al., for semantic segmentation (the task of classifying every pixel in an image according to the class of the object it belongs to).
+- The author pointed out that you can replace the dense layers at the top of a CNN with convolutional layers.
+- To understand this, let's look at an example: suppose a dense layer with 200 neurons sits on top of a convolutional layer that outputs 100 feature maps, each of size $7 \times 7$ (this is the feature map size, not the kernel size).
+- Each neuron will compute a weighted sum of all $100 \times 7 \times 7$ activations form the convolutional layer (plus a bias term).
+- Now let's see what happens if we replace the dense layer with a convolutional layer using 200 filters, each of size $7 \times 7$, and with `"valid"` padding.
+- This layer will output 200 feature maps, each $1 \times 1$ (since the kernel is exactly the size of the input feature maps and we are using `"valid"` padding).
+- In other words, it will output 200 numbers, just like the dense layer's output was a tensor of shape *[batch sie, 200]*, while the convolutional layer will output a tensor of shape *[batch size, 1, 1, 200]*.
+- To convert a dense layer to a convolutional layer, the number of filters in the convolutional layer must be equal to the the number of units in the dense layer, the filter size must be equal ot the size of the input feature maps, and you must use `"valid"` padding. The stride may be set to 1 or more, as you will see shortly.
+- Why is this important? While a dense layer expects a specific input size (since it has one weight per input feature), a convolutional layer will happily process images of any size (however, it does expects its inputs to have a specific number of channels, since each kernel contains a different set of weights of each input channel).
+- Since an FCN contains only convolutional layers (and pooling layers, which have the same property), it can be trained and execute on images of any size.
+- For example, suppose we've already trained a CNN for flower classification and localization. It was trained on $224 \times 224$, and it outputs 10 numbers:
+    - Outputs 0 to 4 are sent through the softmax activation function, and this gives the class probabilities (one per class).
+    - Output 5 is sent through the sigmoid activation function, and this gives the objectness score.
+    - Outputs 6 and 7 represents the bounding box's center coordinates; they also go through a sigmoid activation function to ensure they range from 0 to 1.
+    - Lastly, outputs 8 and 9 represent the bounding box's height and width; they do not go through any activation function to allow the bounding boxes to extend beyond the borders of the image.
+- We can now convert the CNN's dense layers to convolutional layers. In fact, we don'even need to retrain it; we can just copy the weights from the dense layers to the convolutional layers.
+- Alternatively, we could have converted the CNN into an FCN before training.
+- Now suppose the last convolutional layer before the output layer (also called the bottleneck) layer outputs $7 \times 7$ feature maps when the network is fed a $224 \times 224$ image (see the left side of the figure below)
+- If we feed the FCN a $448 \times 448$ image (see the right side of the figure below), the bottleneck layer will now output $14 \times 14$ feature maps.
+![The same fully convolutional network processing a small image (left) and a large one (right)](image-22.png)
+- Since the dense output was replaced by a convolutional layer using 10 filters of size $7 \times 7$, with `"valid"` padding and stride 1, the output will be composed of 10 feature maps, each of size $8 \times 8$ (since $14 - 7 + 1 = 8$).
+- In other words, the FCN will process the whole image only once, and it will output an $8 \times 8$ where each cell contains 10 numbers (5 class probabilities, 1 objectness score, and 4 bounding box coordinates).
+- It's exactly like taking the original CNN and sliding a $7 \times 7$ window across this grid; there will be $8 \times 8 = 64$ possible locations for the window, hence 64 predictions.
+- However, the FCN approach is much more efficient, since the network only looks at the image once. In fact, *You Only Look Once* (YOLO) is the name of a very popular object detection architecture, which we'll look at next.
