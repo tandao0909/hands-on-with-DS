@@ -506,7 +506,7 @@ $$
 - To annotate images with bounding boxes, you may want to use an open source image labeling tooling like VGG Image Annotator, LabelImg, OpenLabeler, or ImgLab, or perhaps a commercial tool like LabelBox or Supervisely.
 - You may also want to consider crowdsourcing platforms such as Amazon Mechanical Turk if you have a very large number of images to annotate.
 - However, it is quite a lot of work to set up a crowdsourcing platform, prepare the form to be sent to the worker, supervise them, and ensure that the quality of the bounding boxes they produce is good, so make sure it is worth the effort.
-- Adriana Kovashka et al. wrote a very practical [paper]() about crowdsourcing in computer vision.
+- Adriana Kovashka et al. wrote a very practical [paper](https://arxiv.org/abs/1611.02145) about crowdsourcing in computer vision.
 - If there are just a few hundred, ro even a couple of thousand images to label, and you don't plan to do this frequently, it may be preferable to do it yourself: with the right tools, it will only take a few days, and you'll also gain a better understanding of your dataset and task.
 - Now, let's suppose you've obtained the bounding boxes for every image in the flowers dataset (for now, we assume there is a single bounding box per image).
 - You then need to create a dataset whose items will be batches of preprocessed images along with their class labels and their bounding boxes. Each item should be a tuple of the form `(images, (class_labels, bounding_boxes))`.
@@ -517,3 +517,27 @@ $$
 ![IoU metric for bounding boxes](image-20.png)
 - In Keras, it is implemented by the `tf.Keras.metrics.MeanIoU` class.
 - Classifying and localizing a single object is fine now, but what about multiple objects (as is often the case in the flower dataset)?
+
+# Object Detection
+
+- The task of classifying and localizing multiple objects in an image is called *object detection*.
+- Until a few years ago, a common approach was to take a CNN that was trained to classify and locate a single object roughly centred in the image, then slide this CNN across the image and make predictions at each step.
+- The CNN was generally trained to predict not only class probabilities and a bounding box, but also an *objectness score*: this is the estimated probability that the image does indeed contain an object centered near the middle.
+- This is a binary classification output; it can be produced by a dense output layer with a single unit, using the sigmoid activation function and trained using the binary cross-entropy loss.
+- Instead of an objectness score, sometimes a "no-object" class was added, but itn general it doesn't work as well: the questions "Is an object present" and "what type of object is it?" are best answered separately.
+- The sliding-CNN approach is illustrated below:
+![Detecting multiple objects by sliding a CNN across the image](image-21.png)
+- In this example, the image was chopped into a $5 \times 7$ grid, and we see a CNN - the thick black rectangle - sliding across all $3\times 3$ regions and make predictions at each step.
+- In this figure, the CNN has already made predictions for three of these $3\times 3$ regions:
+    - When looking at the top-left $3\times 3$ region (centered on the red-shaded grid cell located in the second row and second column), it detect the leftmost rose. Notice that the predicted bounding box exceeds the boundary of this $3 \times 3$ region. This is completely fine: even though the CNN can't see the bottom part of the rose, it was able to make a reasonable guess as to where it might be. It also predicted class probabilities, giving a high probability to the "rose" class. Lastly, it predicted a fairly high objectness score, since the center of the bounding box lies within the central gird cell (in this figure, the objectness score is represented by hte thickness of the bounding box).
+    - When looking at the next $3 \times 3$ region, one grid cell to the right (centered on the shaded blue square), it did not detect any flower centered in that region, so it predict a very low objectness score; therefore, the predicted bounding box and class probabilities can be safely ignored. You can see that the predicted bounding box was not good anyway.
+    - Finally, when looking at the next $3 \times 3$ region, again one grid cell to the right(centered on the shaded green cell), it detected the rose at the top, although not perfectly: this rose is not well centered within this region, so the predicted objectness score was not very high.
+- Sliding the CNN across the whole image this way would give you a total of 15 predicted bounding boxes, organized in a $3 \times 5$ grid, with each bounding box accompanied by its estimated class probabilities and objectness score.
+- Since objects can have varying sizes, you may then want to slide the CNN again across larger $4 \times 4$ regions as well, to get even more bounding boxes.
+- This technique is straightforward, but as you can see, it will often detect the same object multiple times, at slightly different positions. Some postprocessing is required to get rid of all the unnecessary bounding boxes.
+- A common approach is called *non-max suppression*. Here is how it works:
+    - First, get rid of all the bounding boxes for which the objectness score is below some threshold: since the CNN believes there's no object at that location, the bounding box is useless.
+    - Find all the remaining bounding box with the highest objectness score, and get rid of all the other remaining bounding boxes that overlap with it (e.g., with an IoU greater than 60%). For example, in the figure above, the bounding box that touches this same rose overlap a lot with the max bounding box, so we will get rid of it (although in this example, it would have been removed in the previous step).
+    - Repeat step 2 until there is no more bounding boxes to get rid of.
+- This simple approach to object detection works great, but it requires running the CNN many times (15 times in our case), so it is quite slow.
+- Fortunately, there is a much faster way to slide a CNN across an image: using a *fully convolutional network* (FCN).
