@@ -568,3 +568,31 @@ $$
 - In other words, the FCN will process the whole image only once, and it will output an $8 \times 8$ where each cell contains 10 numbers (5 class probabilities, 1 objectness score, and 4 bounding box coordinates).
 - It's exactly like taking the original CNN and sliding a $7 \times 7$ window across this grid; there will be $8 \times 8 = 64$ possible locations for the window, hence 64 predictions.
 - However, the FCN approach is much more efficient, since the network only looks at the image once. In fact, *You Only Look Once* (YOLO) is the name of a very popular object detection architecture, which we'll look at next.
+
+## You Only Look Once
+
+- YOLO is a fast and accurate object detection architecture proposed by Joseph Redmon et al. in a [2015 paper](https://arxiv.org/abs/1506.02640).
+- It is so fast that it can run in real time on a video, as seen in Redmon's [demo](https://www.youtube.com/watch?v=MPU2HistivI).
+- YOLO's architecture is quite similar to the one we just discussed, but with a few important differences. You can find a more detailed explanation [here](https://hackernoon.com/understanding-yolo-f5a74bbc7967).
+- For each grid, YOLO only considers objects whose bounding box center lies within that cell. The bounding box coordinates are relative to that cell, where (0, 0) means the top-left corner of the cell and (1, 1) means the bottom right. However, the bounding box's height and width may extend beyond the cell.
+- It outputs two bounding boxes for each grid cell (instead of just one), which allows the model to handle cases where two objects are so close to each other that their bounding box centers lie within the same cell. Each bounding box also comes with its own objectness score.
+- YOLO also outputs a class probability distribution for each grid cell, predicting 20 class probabilities per grid cell since YOLO was trained on the PASCAL VOC dataset, which contains 20 classes.
+- This produces a coarse *class probability map*. Note that the model predicts one class probability distribution per grid cell, not per bounding box.
+- However, it's possible to estimate class probabilities for each bounding box during postprocessing, by measuring how well each bounding box matches each class in the class probability map.
+- For example, imagine a picture of a person standing in front of a car. There will be two bounding boxes: one large horizontal one for the car, and a smaller vertical one for the person.
+- These bounding boxes may have their centers within the same grid cell. So how can we tell which class should be assigned to each bounding box? Across the image, there will a region where the "car" class is dominant, and inside it there will be a smaller region where the "person" class is dominant.
+- Hopefully, the car's bounding box will roughly match the "car" region, while the person's bounding box will roughly match the "person" region: this will allow the correct class to be assigned to each bounding box.
+- YOLO was originally developed using Darknet, an open source deep learning framework initially developed in C by Joseph Redmon, but it was soon ported to TensorFlow, Keras, PyTorch, and more.
+- It was continuously improved over years, with YOLOv2, YOLOv3, and YOLO9000 (again by Joseph Redmon et al.), YOLOv4 (by Alexey Bochkovskiy et al.), YOLOv5 (by Glenn Jocher), and PP-YOLO (by Xiang Long et al.).
+- Each version brought some impressive improvements in speed and accuracy, using a variety of techniques:
+    - For example, YOLOv3 boosted accuracy in part thanks to *anchor priors*, exploiting the fact that som bounding box shapes are more likely than others, depending on the class (e.g., people tend to have vertical bounding boxes, while cars usually don't).
+    - They also increased the number of bounding boxes per gird cell, they trained on different datasets with many more classes (up to 9,000 classes organized in a hierarchy in the case of YOLO9000)
+    - They added skip connections to recover some of the spatial resolution that is lost in the CNN (we will discuss this shortly in semantic segmentation).
+    - And much more.
+- There are many variants of these models too, such as YOLOv4-tiny, which is optimized to be trained on less powerful machines and can run extremely fast (at over 1,000 frames per second!) but with a slightly lower *mean average precision* (mAP).
+- Many object detection models are available on TensorFlow Hub, often with pretrained weights, such as YOLOv5, [SSD](https://arxiv.org/abs/1512.02325), [Faster R-CNN](https://arxiv.org/abs/1506.01497), and [EfficientDet](https://arxiv.org/abs/1911.09070).
+- SSD and EfficientDet are "look once" detection models, similar to YOLO.
+- EfficientDet is base on the EfficientNet convolutional architecture.
+- Faster R-CNN is more complex: the image first goes through a CNN, then the output is passed to a *region proposal network* (RPN) that proposes bounding boxes that are most likely to contain an object; a classifier is then run for each bounding box, based on the cropped output of the CNN.
+- The author's recommendation place to learn these models is the TensorFlow Hub's [object detection tutorial](https://www.tensorflow.org/hub/tutorials/tf2_object_detection).
+- So far, we've only considered detecting objects in single images. But what videos? Objects must not only be detected in each frame, they must also be tracked over time.
