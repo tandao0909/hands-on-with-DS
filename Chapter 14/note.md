@@ -596,3 +596,19 @@ $$
 - Faster R-CNN is more complex: the image first goes through a CNN, then the output is passed to a *region proposal network* (RPN) that proposes bounding boxes that are most likely to contain an object; a classifier is then run for each bounding box, based on the cropped output of the CNN.
 - The author's recommendation place to learn these models is the TensorFlow Hub's [object detection tutorial](https://www.tensorflow.org/hub/tutorials/tf2_object_detection).
 - So far, we've only considered detecting objects in single images. But what videos? Objects must not only be detected in each frame, they must also be tracked over time.
+
+# Object Tracking
+
+- Object tracking is a challenge task: objects move, they may grow or shrink as they get closer or further away from the camera, their appearance may change as they turn around or move to different lighting conditions or backgrounds, they may be temporarily occluded by other objects, and so on.
+- One of the most popular object tracking systems is [DeepSORT](https://arxiv.org/abs/1703.07402).
+- It is based on a combination of classical algorithms and deep learning:
+    - It uses *Kalman filters* to estimate the most likely current position of an object given prior detections, and assuming that objects tend to move at a constant speed.
+    - It uses a deep learning model to measure the resemblance between new detections and existing tracked objects.
+    - Lastly, it uses the *Hungarian algorithm* to map new detections to existing tracked objects (or new tracked objects): this algorithm efficiently finds the combination of mappings that minimizes the distance between the detections nad the predicted position of tracked objects, while also minimizing the appearance discrepancy.
+- For example, imagine a blue ball that just bounced off a red ball traveling in the opposite direction.
+- Based on the previous positions of the balls, the Kalman filter will predict that the balls will go through each other: in fact, it assumes that the objects move at a constant speed, so it will not expect the bounce.
+- If the Hungarian algorithm only considers positions, it would happily map the new detections to the wrong balls, as if they had just gone through each other and swapped colors.
+- But thanks to the resemblance measure, the Hungarian algorithm will notice the problem. Assuming the balls are not too similar, the algorithm will map the new detections to the correct balls.
+- There are a few DeepSORT implementations available on GitHub, including a TensorFlow [implementation](https://github.com/theAIGuysCode/yolov4-deepsort) of YOLOv4 + DeepSORT.
+- So far, we have located objects using bounding boxes.
+- This is often sufficient, but sometimes you need to locate objects with much more precision - for example, to remove the background behind a person during a video conference call.
