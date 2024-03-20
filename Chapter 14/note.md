@@ -612,3 +612,46 @@ $$
 - There are a few DeepSORT implementations available on GitHub, including a TensorFlow [implementation](https://github.com/theAIGuysCode/yolov4-deepsort) of YOLOv4 + DeepSORT.
 - So far, we have located objects using bounding boxes.
 - This is often sufficient, but sometimes you need to locate objects with much more precision - for example, to remove the background behind a person during a video conference call.
+
+# Semantic Segmentation
+
+- In *semantic segmentation*, each pixel is classified according to the class of the object it belongs to (e.g., road, car, pedestrian, building, etc.), as shown below:
+![Semantic segmentation](image-23.png)
+- Note that different objects of the same class are not distinguished.
+- For example, all the bicycles on the right side of the segmented image ends up as one big blob of pixels.
+- The main difficulty in this task is that when the images go through a regular CNN, they gradually loses their spatial resolution (due to the layers with strides greater than 1); so, a regular CNN may end up knowing that there's a person somewhere in the bottom left of the image, but it will not be much more precise than that.
+- Just like for object detection, there are many different approaches to tackle this problem, some are quite complex.
+- However, a fairly simple solution was proposed in the 2015 paper by Jonathan Long et al. we mentioned earlier on fully convolutional networks.
+- The authors starts by taking a pretrained CNN and turning it into an FCN.
+- The CNN applies an overall stride of 32 to the input image (i.e., if you add up all the strides greater than 1), meaning the last output features maps are 32 times smaller than the input image. 
+- This is clearly to coarse, so they add a single *upsampling layer* that multiplies the resolution by 32.
+- There are several solutions available for upsampling (increasing the size of an image), such as bilinear interpolation, but that only works reasonably well up to x4 or x8.
+- Instead, they used a *transposed convolutional layer*: this is equivalent to first stretching the image by inserting empty rows and columns (full of zeros), then performing a regular convolution.
+![Upsampling using a transposed convolutional layer](image-24.png)
+- Alternatively some people prefer to think of it as a regular convolutional layer that uses fractional strides (e.g., the stride is 1/2 in this case).
+- The transposed convolutional layer cna be initialized to perform something close to linear interpolation, but since it is a trainable layer, it will learn to do better during training. 
+- In Keras, you can use the `Conv2DTranspose` layer.
+- In a transposed convolutional layer, the stride define how much the input will be stretched, not the size of the filter steps, so the larger the stride, the larger the output (unlike for convolutional layers or pooling layers).
+- Using transposed convolutional layers for upsampling is OK, but still too imprecise.
+- To do better, Long et al. added skip connections from lower layers: for example, they upsampled the output image by a factor of 2 (instead of 32), and they added the output of a lower layer that had this double resolution.
+- Then they upsampled the result by a factor of 16, leading to total upsampling factor of 32.
+![Skip layers recover some spatial resolution from lower layers](image-25.png)
+- This recovered some of the spatial resolution that was lost in earlier pooling layers.
+- In their bets architecture, they used a second similar skip connection to recover even finer details from an even lower layer.
+- In short, the output of the original CNN goes through the following extra steps: upsample x2, add the output of a lower layer (of the appropriate scale), upsample x2, add the output of an even lower layer, and finally upsample x8.
+- It is even possible to scale up beyond the size of the original image: this can be used to increase the solution of an image, which is a technique called *super-resolution*.
+- *Instance segmentation* is similar to semantic segmentation, but instead of merging all objects of the same class into one big lump, each object is distinguished from each others (e.g., it identifies each individual bicycle).
+- For example, the *Mask R-CNN* architecture, proposed in a [2017 paper]() by Kaiming He et al., extends the Faster R-CNN model by additionally producing a pixel mask for each bounding box.
+- So, not only you get a bounding box around each object, with a set of estimated class probabilities, but you also get a pixel mask that locates pixels in the bounding box that belong to the object.
+- This model is available on TensorFlow Hub, pretrained on the COCO 2017 dataset.
+- This field is moving fast, though so if you want to try the latest and greatest models, please check out the state-of-the-art section [https://paperswithcode.com](https://paperswithcode.com).
+- As you can see, the field of deep computer vision is vast and fast-paced, with all sorts of architectures popping up every year.
+- Almost all of them are based on convolutional neural networks, but since 2020, another neural networks architecture has entered the computer vision space: transformers (which we will discussed in chapter 16).
+- The progress made over the last decade has been astounding, and researchers are now focusing on harder and harder problems problems, some of them are:
+    - *adversarial learning*: attempts to make the network more resistant to images designed to fool it.
+    - *explainability*: understanding  why the network makes specific classification.
+    - realistic *image generation*: we will come back to this in chapter 17.
+    - *single-shot learning*: also named one-shot learning, a system that can recognize an object after it has seen it just once.
+    - *zero-shot learning*: a system that can recognize how to interact with an object it has never seen before.
+    - predicting the next frames in a video
+    - combing text and images tasks.
