@@ -597,6 +597,22 @@ $$
 - The author's recommendation place to learn these models is the TensorFlow Hub's [object detection tutorial](https://www.tensorflow.org/hub/tutorials/tf2_object_detection).
 - So far, we've only considered detecting objects in single images. But what videos? Objects must not only be detected in each frame, they must also be tracked over time.
 
+### Mean Average Precision
+
+- A very common metric used in object detection tasks is the mean average precision.
+- To understand this metric, let's go back to two classification metrics we discussed in chapter 3: precision and recall.
+- Remember the trade-off: the higher the recall, the lower the precision. We did visualize this in a precision/recall curve back in chapter 3.
+- To summarize this curve into a single number, we could compute its area under the curve (AUC).
+- But note that the precision/recall curve may contain a few sections where precision actually goes up when recall increases, especially at low recall values. This is one of the motivations for the mAP metric.
+- Suppose the classifier has 90% precision at 10% recall, but 96% precision at 20% recall. The choice is no-brainier here: just use the classifier at 20% recall, as you will get both higher recall and higher precision.
+- So instead of looking at the precision at the 10% recall, we should really be looking at the *maximum precision* that the classifier can offer with *at least* 10% recall. It would be 96%, not 90%.
+- Therefore, one way to get a fair idea of the model's performance is to compute the maximum precision you can get with at least 0% recall, then 10% recall, 20%, and so on up to 100%, and then calculate the mean of these maximum precisions. This is called the *average precision* (AP) metric.
+- Now when there are more than two classes, we can compute the AP for each class, and then compute the mean AP (mAP).
+- In an object detection system, there is an additional level of complexity: what if the system detected the correct class, but at the wrong location (i.e., the bounding box is completely off)? We surely shouldn't count this as a positive prediction.
+- One approach is to define an IoU threshold: for example, we may consider that a prediction is correct only if the IoU is greater than, say, 0.5, and the predicted class is correct.
+- The corresponding mAP is generally noted mAP@0.5 (or mAP@50%, or sometimes just $\text{AP}_{50}$). In some competitions (such as the PASCAL VOC challenge), this is what is done.
+- In others (such as the COCO competition), the mAP is computed for different IoU thresholds (0.50, 0.55, 0.60, ..., 0.95), and the final metric is the mean of these mAPs (noted mAP@[.50:.95] or mAP@[.50:0.05:0.95]). And yes, that's a mean mean average.
+
 # Object Tracking
 
 - Object tracking is a challenge task: objects move, they may grow or shrink as they get closer or further away from the camera, their appearance may change as they turn around or move to different lighting conditions or backgrounds, they may be temporarily occluded by other objects, and so on.
