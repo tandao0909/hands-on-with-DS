@@ -5,6 +5,7 @@ __pycache__/
 .ipynb_checkpoints/
 Chapter 10/checkpoint
 my_*
+datasets/
 *.bak
 *.pyc
 *.pkl
