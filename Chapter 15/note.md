@@ -83,3 +83,47 @@
 - MOreover, since the same parameter $\textbf{W}$ and $\textbf{b}$ are used at each time step, their gradients will be tweaked multiple times during backpropagation.
 - Once the backward phase is complete and all the gradients have been computed, BPTT can perform a gradient descent step to update the parameters (this is the same as regular backpropagation).
 - Luckily, Keras takes care of all this complexity for us, as we'll see. But before that, let's load a time series and start analyzing it using classical tools to better understand what we're dealing with, as well as some baseline metrics.
+
+## Forecasting a Time Series
+
+- Assume we need to build a model to forecast the number of passengers that will ride on bus and rail the next day. We have accessed to daily ridership data since 2001. You can look up for it [online](https://data.cityofchicago.org/Transportation/CTA-Ridership-Daily-Boarding-Totals/6iiy-9s97).
+- We start, of course, by loading and cleaning up the data. We load the CSV file. set short column names, sort he rows by date, remove the redundant `total` column, and drop duplicate rows.
+- Look at the `df.head()` result: On January 1st, 2001, there are 297,192 people boarded a bus, and 125,455 boarded a train in Chicago.
+- The `day_type` column contains `W` for **W**eekdays, `A` for S**a**turday, and `U` for S**u**nday or holidays.
+- We plot the bus and rial ridership figures over a few months in 2019, to see what it looks like.
+- Note that Pandas includes both the start and end month in the range, so this plots the data from the 1st fo March all the way up to 31st of May.
+- This is a *time series*: data with values at different time steps, usually at regular intervals.
+- More specifically, since there are multiple values per time step, it would be a *multivariate time series*. 
+- If we only look at the `bus` column, it would be a *univariate time series*, with a single value per time step.
+- Predicting future value (ie., forecasting) is the most typical task when dealing with times series, and this is what we will focus on in this chapter.
+- Other tasks include imputation (filling in missing past values), classification, anomaly detection, and more.
+- Looking at the plot, we can see that a similar pattern is clearly repeated every week. This is called a weekly *seasonality*.
+- In fact, it's so strong in this case that forecasting tomorrow's ridership by just copying the values from the a week earlier will yield reasonably good results. This is called *naive forecasting*: simply copying a past value to make our forecast.
+- Naive forecasting is often a great baseline, and it can even be tricky to beat in some cases.
+- In general, naive forecasting means copying the latest known value (e.g., forecasting that tomorrow will be the same as today). However, in our case, copying the value from the previous week works better, due to strong weekly seasonality.
+- To visualize these naive forecasts, let's overlay the tow time series (for bus and rail) as well as the time series lagged by one week (i.e., shifted toward the right) using dotted lines.
+- We'll also plot the difference between the two (i.e., the value at time $t$ minus the value at time $t-7$); this is called *differencing*.
+- If you look at the plot, you can notice how closely the lagged time series track the actual time series.
+- When a time series is correlated with a lagged version of itself, we say that the time series is *autocorrelated*.
+- As you can see, most of the differences are fairly small, except at the end of May. If you check the `day_type` column, you'll see that there was a long weekend back then, as the Monday was the Memorial Day holiday.
+- We could use this column to improve our forecasts, but for now let's juts measure the mean absolute error over the three-month period we're arbitrarily focusing on - March April, and May 2019 - to get a rough idea.
+- Our naive forecasts get an MAE of about 43,916 bus riders, and about 42,143 rail riders.
+- It's hard to tell at a glance how good or bad this is, so let's put the forecast errors into perspective dividing them by the target values.
+- What we just computed is called the *mean absolute percentage error* (MAPE): it looks like our naive forecasts give us a MAPE of roughly 8.3% for bus and 9.0% for rail.
+- It's interesting to note that the MAE for the rail forecasts looks slightly better than the MAE for the bus forecasts, while the opposite is true for MAPE.
+- That's because the bus ridership is larger than the rail ridership, so naturally the forecast errors are also larger, but when we put the errors into perspectives, it turns out that the bus forecasts are actually slightly better than the rial forecasts.
+- The MAE, MAPE, and MSE are among the most common metrics you can use to evaluate your forecasts. As always, choose the right metric depend on the task.
+- For example, if your project suffers quadratically more from large errors than small ones, then the MSE may be preferable, as it strongly penalizes large errors.
+- Looking at the time series, these doesn't appear to be any significant monthly seasonality, but let's check whether there's any yearly seasonality.
+- We'll look at the data from 2001 to 2019. to reduce the risk of data snooping, we'll ignore recent data for now.
+- Let's also plot a 12-month rolling average for each series to visualize long-term trends.
+- Yep! There's definitely some yearly seasonality as well, although it is noisier than the weekly seasonality, and more visible for the rail series than the bus series: we see peaks and troughs at roughly the same dates each year.
+- Let's check what we get if we plot the 12-month difference.
+- Notice how differencing not only removed the yearly seasonality, but it also removed the long-term trends.
+- For example, the linear downward trend present in the time series form 2016 to 2019 became a roughly constant negative value in the differenced time series.
+- In fact, differencing is a common technique used to remove trend and seasonality form a time series: it's easier to study a *stationary* time series, meaning one whose statistical properties remain constant over time, without any seasonality or trends.
+- Once you're able to make accurate forecasts on the differenced time series, it's easy to turn them into forecasts for the actual time series by just adding back the past values that were previously subtracted.
+- You may be thinking that we're only trying to predict tomorrow's ridership, so the long-term patterns matter much less than the short-term ones.
+- That's right, but still, we may be able to perform slightly better by taking long-term patterns into account.
+- For example, daily bus ridership dropped by about 2,500 in October 2017, which represents about 570 fewer passengers each week, so if we were at the end of October 2017, it would make sense to forecast tomorrow's ridership by copying the value from last week, minus 570.
+- Accounting for the trend will make your forecasts a bit more accurate on average.
