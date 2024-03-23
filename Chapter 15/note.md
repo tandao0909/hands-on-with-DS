@@ -169,3 +169,36 @@
 - Of course, you can replace the MAE with another metric if it better matches your business objective.
 - There are other more principled approaches to selecting good hyperparameters, based on analyzing the *autocorrelation function* (ACF) and *partial autocorrelation function* (PACF) or minimizing the AIC or BIC metrics (introduced in chapter 9) to penalize models that use too many parameters and reduce the risk of overfitting the data, but gird search is a good place to start.
 - For more detail on the ACF-PACF approach, check this [post]() by Jason Brownlee.
+
+## Preparing the Data for Machine Learning Models
+
+- Now that we have two baselines, naive forecasting and SARIMA, let's try to use the machine learning models we've covered so far to forecast this time series, starting with a basic linear model.
+- Our goal will be to forecast tomorrow's ridership based on the ridership of the past 8 weeks of data (56 days).
+- The inputs to our model will therefore be sequences (usually a single sequence per day once the model is in production), each containing 56 values from time step $t-55$ to $t$.
+- For each input sequence, the model will output a single value: the forecast for time step $t+1$.
+- We'll use every 56-day window from the past as training data, and the target for each window will be the value immediately following it.
+- Keras actually has a nice utility function called `tf.keras.utils.timeseries_dataset_from_array()` to help us prepare the training set.
+- It takes a time series as input and it builds a `tf.data.Dataset` (introduced in chapter 13) containing all the windows of the desired length, as well as their corresponding targets.
+- You can see an example that takes in a time series containing the numbers 0 to 5 and creates a dataset containing all the windows of length 3, with their corresponding targets, grouped into batches of size 2 in the learning notebook.
+- Each sample in the dataset is a window of length 3, along with its corresponding target (i.e., the value immediately after the window). The windows are [0, 1, 2], [1, 2, 3] and [2, 3, 4], and their respective targets are 3, 4, and 5.
+- Since there are three windows in total, which is not a multiple of the batch size, the last batch only contains one window instead of two.
+- Another way to get the same result is to use the `window()` method of `tf.dat.Dataset` class.
+- It's more complex, but it gives full control, which will come in handy later in this chapter, so let's see how it works. The `window()` method returns a dataset of window datasets.
+- In this example, the dataset contains six windows, each shifted by one step compared to the previous one, and the last three windows are smaller because they've reached the end of the series. In general, you'll want to get rid of these smaller windows by passing `drop_remainder=True` to the `window()` method.
+- The `window()` method returns a *nested dataset*, analogues to a list of lists. This is useful when you want to transform each window by calling its dataset methods (e.g., to shuffle them or batch them).
+- However, we cannot use a nested dataset directly for training directly for training, as out model expect tensors as inputs, not datasets.
+- Therefore, we must call the `flat_map()` method: it converts a nested dataset into a *flat dataset* (one that contains tensors, not datasets).
+- For example, suppose {1, 2, 3} represents a dataset containing the sequence of tensors 1, 2, and 3. If you flatten the nested dataset {{1, 2}, {3, 4, 5, 6}}, you get back the flat dataset {1, 2, 3, 4, 5, 6}.
+- Moreover, the `flat_map()` method takes a function as an argument, which allows you to transform the nested dataset {{1, 2}, {3, 4, 5, 6}} into the flat dataset {[1, 2], [3, 4], [5, 6]}: it's dataset containing 3 tensors, each of size 2.
+- Since each window dataset contains exactly four items, calling `batch(4)` on a window produce a single tensor of size 4. 
+- We also create a helper function function to make it easier ot extract windows from a dataset.
+- Then we split each window into inputs and targets, using the `map()` method. We can also group the resulting windows into batches of size 2.
+- As you can see, we now have the same output as got earlier with the `timeseries_dataset_from_array()` function (with a bit more effort, but it will be worthwhile soon).
+- Now, before we start training, we need to split our data into a training period, a validation period, and a test period. We will focus on the rail ridership for now.
+- We will also scale it down by a factor of one million, to ensure the values are near the 0-1 range; this plays nicely with the default weight initialization and learning rate.
+- When dealing with time series, you generally want to split across time.
+- However, in some cases you may be able to split along other dimensions, which will give you a longer time period to train on.
+- For example, if you have data about financial health of 10,000 companies form 2001 to 2019, you might be able to split this data across the different companies.
+- It's very likely that many of these companies will be strongly correlated, though (e.g., the whole economic sectors may go up or down jointly), and if you have correlated companies across the training set and the test set, your test set will not be as useful, as its measure of generalization error will be optimistically biased.
+- Next, we use `tf.keras.utils.timeseries_dataset_from_array()` to create datasets for training and validation.
+- Since gradient descent excepts the instances in the training set to be independent and identically distributed (IID), as we saw in chapter 4, we must set the argument `shuffle=True` to shuffle the training windows (but not their contents).
