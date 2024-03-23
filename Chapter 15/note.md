@@ -127,3 +127,45 @@
 - That's right, but still, we may be able to perform slightly better by taking long-term patterns into account.
 - For example, daily bus ridership dropped by about 2,500 in October 2017, which represents about 570 fewer passengers each week, so if we were at the end of October 2017, it would make sense to forecast tomorrow's ridership by copying the value from last week, minus 570.
 - Accounting for the trend will make your forecasts a bit more accurate on average.
+
+## The ARMA Model Family
+
+- We'll start with the *autoregressive moving average* (ARMA) model, developed by Herman Wold in the 1930s: it computes its forecasts using a simple weighted sum of lagged values and and corrects these forecasts by adding a moving average, very much like we just discussed.
+- Specifically, the moving average component is computed using a weighted sum of the last few forecast errors.
+- The following equation show show the model makes its forecast:
+    $$\hat{y}_{(t)} = \sum_{i=1}^p \alpha_i y_{(t-1)} + \sum_{i=1}^q \theta_i \epsilon_{(t-i)} \text{ with } \epsilon_{(t)} = y_{(t)} - \hat{y}_{(t)} $$
+- In this equation:
+    - $\hat{y}_{(t)} $ is the model's forecast for time step $t$.
+    - $y_{(t)} $ is the time series' value at time step $t$.
+    - The first sum is the weighted sum of the past $p$ values of the time series, using the learned weights $\alpha_i$. The number $p$ is a hyperparameter, determines how far back into the past the model should look. This sum is the *autoregressive* component of the model: it performs regression based on past values.
+    - The second sum is the weighted sum over the past $q$ forecast errors $\epsilon_{(t)} $, using the learned weights $\theta_i$. The number $q$ is a hyperparameter. This sum is the moving average component of the model.
+- Importantly, this model assumes that the time series is stationary. If its is not, then differencing may help.
+- Using differencing over a single time step will produce an approximation of the derivate of the time series: indeed, it will give the slope of the series at each times step.
+- This means that it will eliminate any linear trend, transforming it into a constant value. For example, if you apply one-step differencing to the series [3, 5, 7, 9, 11] , you get the differenced series [2, 2, 2, 2].
+- If the original series has a quadratic trend instead of linear trend, then a single round of differencing will not be enough.
+- For example, the series [1, 4, 9, 16, 25, 36] becomes [3, 5, 7, 9, 11] after one round of differencing, but if you run differencing for a second round, then you get [2, 2, 2, 2].
+- So, running two rounds of differencing will eliminate quadratic trends.
+- More generally, running $d$ consecutive rounds of differencing computes an approximation of the d-th order derivate of the time series, so it will eliminate polynomial trends up to degree d. This hyperparameter d is called the *order of integration*.
+- Differencing is the central contribution of the *autoregressive integrated moving average* (ARIMA) model, introduced in 1970 by George Box and Gwilym Jenkins in their book *Time Series Analysis* (Wiley).
+- This model runs d rounds of differencing to make the time series more stationary, then it applies a regular ARMA model.
+- When making forecasts, it uses this ARMA model then it adds back the terms that were subtracted by differencing.
+- One last member of the ARMA family is the *seasonal ARIMA* (SARIMA) model: it models the time series the same way as ARIMA, but it additionally models a seasonal component for a given frequency (e.g., weekly), using the exact same ARIMA approach.
+- It has a total of seven hyperparameters: the same p, d, and q hyperparameters as ARIMA, plus additional P, D, and Q hyperparameters to model the seasonal pattern, and lastly the period of the seasonal pattern, noted s.
+- The hyperparameters P, D, and Q are just like p, d, and q, but they are used to model the time series at t - s, t - 2s, t - 3s, etc.
+- Now, let's see how to fit a SARIMA model to the rail time series, and use it to make a forecast for tomorrow's ridership.
+- We'll pretend today is the last day of May 2019, and we want to forecast the rail ridership for "tomorrow", the 1st of June, 2019.
+- For this, we can use the `statsmodels` library, which contains many different statistical models, including the ARMA model and its variants, implemented by the `ARIMA` class.
+- You can find the implementation in the learning notebook:
+    - We start by importing the `ARIMA` class, then we take the rail ridership data from the start of 2019 up to "today", and use `asfreq("D")` to set the time series' frequency to daily: this doesn't change the data at all in our case, as it's already daily, but without this the `ARIMA` class would have to guess the frequency, and it would display a warning.
+    - Next, we create an `ARIMA` instance, passing it all the data until today, and we set the model hyperparameters: `order=(1, 0, 0)` means that $p=1,d=0,q=0$, and `seasonal_order=(0, 1, 1, 7)` means that $P=0, D=1, Q=1$, and $s=7$. Notice that the the `statsmodels` API differs a bit from Scikit-Learn's API, since we pass the data to the model at construction time, instead of passing it to the `fit()` method.
+    - Next, we fit the model, and use it to make a forecast for "tomorrow", the 1st of June, 2019.
+- The forecast is 427,758=9 passengers, when in fact there were 379,044. Well, we're 12.85% off - that's pretty bad.
+- It's actually slightly worse than naive forecasting, which forecasts 426,932, off by 12.63%. But perhaps we just unlucky that day?
+- To check this, we can run the same code in a loop to make forecasts for every day in March, April, and May, and compute the MAE over that period. You can find the code in the learning notebook.
+- And yes, that's much better! We achieve the MAE of about 32,041, which is significantly lower than the MAE we got with naive forecasting (42,143). So although the model is not perfect, it still beats naive forecasting by a large margin, on average.
+- There are several methods to pick a good hyperparameters for the SARIMA model, but the simplest to understand and to get started with is the brute-force approach: just run a grid search.
+- For each model you want evaluate, (i.e., each hyperparameter combination), you can run the loop example, changing only the hyperparameter values.
+- Good $p, q, P,$ and $Q$ values are usually fairly small (typically 0 to 2, sometimes up to 5 or 6), and $d$ and $D$ are typically 0 or 1, sometimes 2. As for $s$, it's just the main seasonal pattern's period: in our case it's 7 as there's a strong weekly seasonality. The model with the lowest MAE wins.
+- Of course, you can replace the MAE with another metric if it better matches your business objective.
+- There are other more principled approaches to selecting good hyperparameters, based on analyzing the *autocorrelation function* (ACF) and *partial autocorrelation function* (PACF) or minimizing the AIC or BIC metrics (introduced in chapter 9) to penalize models that use too many parameters and reduce the risk of overfitting the data, but gird search is a good place to start.
+- For more detail on the ACF-PACF approach, check this [post]() by Jason Brownlee.
