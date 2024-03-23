@@ -202,3 +202,8 @@
 - It's very likely that many of these companies will be strongly correlated, though (e.g., the whole economic sectors may go up or down jointly), and if you have correlated companies across the training set and the test set, your test set will not be as useful, as its measure of generalization error will be optimistically biased.
 - Next, we use `tf.keras.utils.timeseries_dataset_from_array()` to create datasets for training and validation.
 - Since gradient descent excepts the instances in the training set to be independent and identically distributed (IID), as we saw in chapter 4, we must set the argument `shuffle=True` to shuffle the training windows (but not their contents).
+
+## Forecasting Using a Linear Model
+
+- Let's try a basic linear model first. We will use the Huber loss, which usually works better than minimizing the MAE directly, as discussed in chapter 10. We'll also us early stopping.
+- This model reaches a validation MAE of about 37,555. That's better than naive forecasting, but worse than the SARIMA model.
