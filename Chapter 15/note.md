@@ -244,3 +244,20 @@
 - Make sure to set `return_sequence=True` for all recurrent layers (except the last one, if you only care about the last output).
 - If you forget to set this parameter for one recurrent layers, it will output a 2D array containing only the output of the last time step, instead of a 3D array containing outputs for all time steps. The next recurrent layer will complain that you are not feeding it sequences in the expected 3D format.
 - If you train and evaluate this model, you will that it reaches an MAE of about 31,625. That's better tah both baselines, but it doesn't beat our "shallower" RNN. It looks like this RNN is a bit too large for our task.
+
+## Forecasting Multivariate time Series
+
+- A great quality of neural networks is their flexibility: in particular, they can deal with multivariate time series with almost no change to their architecture.
+- For example, let's try to forecast the rail time series using both the bus and rail data as input. In fact, let's also throw in the day type!
+- Since we know in advance whether tomorrow is going to be a weekday, a weekend, or a holiday, we can shift the day type series one day into the future, so that the model is given tomorrow's day type as input.
+- Now `df_multivariate` is a DataFrame with five columns: the bus and rail data, plus three columns containing the one-hot encoding of the next day's type (recall that there are three possible day types `W`, `A`, and `U`).
+- Next, we can proceed much like we did earlier:
+    - First, we split the data into three periods, for training, validation, and testing.
+    - Then, we create the dataset.
+    - Finally, we create the RNN.
+- Notice that the only difference from the `univariate_model` RNN we built earlier is the input shape: at each time step, the model now receives five inputs instead of one.
+- This model reaches a validation MAE of 22,625! We're making great progress.
+- In fact, it's not hard to make the RNN forecast both the bus and rail ridership. You just need to change the targets when creating the datasets, setting them to `multivariate_train["rail"][seq_length:]` for the training set,and `multivariate_valid["rail"][seq_length:]` for the validation set.
+- You also need to add an extra neuron in the output `Dense` layer, since it must now make two forecasts: one for tomorrow's bus ridership, and the other for rail.
+- As we discussed in chapter 10, using a single model for multiple related tasks often result in better performance than using a separate model for each task, since features learned for one task may be useful for the other tasks, and also prevents the model from overfitting (it's a form of regularization).
+- However, it depends on the task, and in this particular case the multitask RNN that forecasts both the bus and the rail ridership doesn't perform as well as dedicated models that forecast one or the other (using all five columns as inputs). Still, it reaches a validation MAE of 23,947 for rail and 26,5, which is pretty good.
