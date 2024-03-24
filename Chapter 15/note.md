@@ -261,3 +261,21 @@
 - You also need to add an extra neuron in the output `Dense` layer, since it must now make two forecasts: one for tomorrow's bus ridership, and the other for rail.
 - As we discussed in chapter 10, using a single model for multiple related tasks often result in better performance than using a separate model for each task, since features learned for one task may be useful for the other tasks, and also prevents the model from overfitting (it's a form of regularization).
 - However, it depends on the task, and in this particular case the multitask RNN that forecasts both the bus and the rail ridership doesn't perform as well as dedicated models that forecast one or the other (using all five columns as inputs). Still, it reaches a validation MAE of 23,947 for rail and 26,5, which is pretty good.
+
+## Forecasting Several Time Steps Ahead
+
+- So far, we have only predicted the value at the next time step, but we could just as easily have predicted the value several steps ahead by changing the targets appropriately (e.g., ot predict the ridership 2 weeks from now, we could just change the targets to be the value 14 days ahead instead of 1 day ahead). But what if we want to predict the next 14 values?
+- The first option is to take the `univariate_model` RNN we trained earlier for the rail time series, make it predict the next value, and add that value to the inputs, acting as if the predicted value has actually occurred; we would then use the model again to predict the following value, and so on.
+- In the code (in the learning notebook), we take the rail ridership of the first 56 days of the validation period, and we convert the data to a NumPy array of shape [1, 56, 1] (recall that recurrent layers except 3D inputs).
+- Then we repeatedly use the model ot forecast the next value, and we append each forecast to the input series, along the time axis (`axis=1`). You can find the resulting plot in the learning notebook.
+- If the model makes an error at one time step, then the forecasts for the following time steps are impacted as well: the errors tend to accumulate.
+- So it's preferable to sue this technique only for a small number of steps.
+- The second option is to train an RNN to predict the next 14 values in one shot.
+- We can still use a sequence-to-vector model, but it will output 14 values instead of 1.
+- However, we first need to change the targets to be vectors containing the next 14 values.
+- To do this, we can use `tf.keras.utils.timeseries_dataset_from_array()` again, but this time asking it to create datasets without targets (`targets=None`) and with longer sequences, of length `seq_length` + 14.
+- Then we can use the dataset's `map()` method to apply a custom function to each batch of sequences, splitting them into inputs and targets.
+- In this example, we use the multivariate time series as input (using all five columns), and we forecast the rail ridership for the next 14 days.
+- And now, we just need the output layer to have 14 units instead of 1.
+- After training this model, you can predict the next 14 values at once by reshaping the inputs, like an example in the learning notebook.
+- This approach works quite well. Its forecast for the next day are obviously better than its forecasts for 14 days into the future, but it doesn't accumulate errors like the previous approach did.
