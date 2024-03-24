@@ -207,3 +207,27 @@
 
 - Let's try a basic linear model first. We will use the Huber loss, which usually works better than minimizing the MAE directly, as discussed in chapter 10. We'll also us early stopping.
 - This model reaches a validation MAE of about 37,555. That's better than naive forecasting, but worse than the SARIMA model.
+
+## Forecasting Using a Simple RNN
+
+- Let's try the most basic RNN, containing a single recurrent layer with just one recurrent neuron.
+- All recurrent layers in Keras expect 3D inputs of shape [*batch size, time steps, dimensionality*], where *dimensionality* is 1 for univariate time series and more for multivariate time series.
+- Recall that the `input_shape` argument ignores the first dimension (i.e., the batch size), and since recurrent layers can take input sequences of any length, we can set eh second dimension to `None`, which means "any size".
+- Lastly, since we're dealing with a univariate time series, we need the last dimension's size to be 1.
+- This is why we specified the input shape `[None, 1]`: it means "univariate sequences of any length".
+- Note that the datasets actually contain inputs of shape [*batch size, time steps*], so we're missing the last dimension, but Keras will automatically add it for us in this case.
+- This model works exactly as we saw earlier: the initial state $h_{(\text{init})}$ is set to 0, and it is passed to a single recurrent neuron, along with the value of the first time step, $x_{(0)}$.
+- The neuron computes a weighted sum of these values plus the bias term, and it applies the activation function to the result, using the hyperbolic tangent function by default. The result is the first output, $y_{(0)} $.
+- In a simple RNN, this output is also the new state $h_0$. This new state is passed to the same recurrent neuron along with the next input value, $x_{(1)} $, and the process is repeated until the last time step.
+- At the end, the layer just output the last value: in our case the sequences are 56 steps long, so the last value is $y_{55}$. All of this is performed simultaneously for every sequence in the batch, of which there 32 in this case.
+- By default, recurrent layer in Keras only return the final output. To make them return one output per time step, you must set `return_sequence=True`, as you will see.
+- So that's out first recurrent model! It's a sequence-to-vector model. Since there's a single output neuron, the output vector has a size of 1.
+- Now if you compile, train, and evaluate this model just ike the previous model, you will find that it's no good at all: its validation MAE is grater than 100,000!
+- That was to be expected, for two reasons:
+    - The model only has a single recurrent neuron, so the only data it cna use to make a prediction is the input value at the current time step and the output value from the previous time step. That's not much to go on! In other words, the RNN's memory is extremely limited: it's just a single number, its previous input. And the whole model only has three parameters, two weights plus a bias term, as there's just one recurrent neuron with only two input values. That's no where close to enough for this time series. In contrast, our previous model could look at all 56 previous values at once, and it had a total of 57 parameters.
+    - The time series contains values from 0 to about 1.4, but since the default activation function is tanh, the recurrent layer can only output values between -1 and 1. There's no way it can predict values between 1.0 and 1.4.
+- Let's deal with both of these issues: we will create a model with a larger recurrent layer, containing 32 recurrent neurons, and we will add a dense output layer on top of it with a single output neuron and no activation function.
+- The recurrent layer will be able to carry much more information from one time step to the next, and the dense output layer will project the final output from 32 dimensions down to 1, without any value range constraints.
+- Now if you compile, fit, and evaluate this model just like the previous one, you will find that its validation MAE reaches 30,420. That's the bets model we've trained so far, and it even beats the SARIMA model.
+- We've only normalized the time series, without removing trend and seasonality, and yet the model still performs well. This is connivent, as it makes it possible to quickly search for promising models without worrying too much about preprocessing.
+- However, to get the best performance, you may want to try making the time series more stationary; for example, using differencing.
