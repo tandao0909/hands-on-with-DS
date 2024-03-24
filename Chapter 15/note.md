@@ -279,3 +279,32 @@
 - And now, we just need the output layer to have 14 units instead of 1.
 - After training this model, you can predict the next 14 values at once by reshaping the inputs, like an example in the learning notebook.
 - This approach works quite well. Its forecast for the next day are obviously better than its forecasts for 14 days into the future, but it doesn't accumulate errors like the previous approach did.
+
+## Forecasting Using a Sequence-to-Sequence Model
+
+- Instead of training the model to forecast the next 14 values only at the very last time step, we can train it to forecast the next 14 values at each and every time step.
+- In other words, we can turn this sequence-to-vector RNN into a sequence-to-sequence RNN.
+- The advantage of this technique is that the loss will contain a term for the output of the RNN at each and every time step, not just the output at the last time step.
+- This means there will be many more error gradients flowing through the model, and they won't have ot flow through time as much since they will come from the output of each time step, not just the last one. This will both stabilize and speed up training.
+- To be clear, at time step 0, the model will output a vector containing the forecasts for time step 1 to 14, then at time step 1, the model will forecast time steps 2 to 15, and so on.
+- In other words, the targets are sequences of consecutive windows, shifted by one time step at each time step.
+- The target is not a vector anymore, but a sequence of the same length as the inputs, containing a 14-dimensional vector at each step.
+- Preparing the dataset is not trivial, since each instance has a window as input and a sequence of window as output.
+- One way to do this is to use the `to_windows()` utility we created earlier, twice in a row, to get the windows of consecutive windows.
+- For example, you can find the code that turns the series of numbers 0 to 6 into a dataset containing sequences of 4 consecutive windows, each of length 3.
+- And we can use the map() method to split these windows of windows into inputs and targets.
+- Now, the dataset contains sequences of length 4 as inputs, and the targets are sequences containing the next two steps, for each time step.
+- For example, the first input sequence is [0, 1, 2, 3], and its corresponding targets are [[1, 2], [2, 3], [3, 4], [4, 5]], which are the next two values ofr each time step.
+- More specifically, you work from the innermost dimension: build a window for each time step first, which means create the input and output at each time step, then create the batch, in this case is the the whole time interval.
+- It may be surprising that the targets contain values that appear in the inputs. But you don't have to worry about data snooping in this case: at each time step, an RNN only knows about past time steps; it cannot look ahead. It is said to be a *casual* model.
+- Let's create another little utility function to prepare the datasets for our sequence-to-sequence model. It will also take care of shuffling (optional) and batching. We'll use this function to create the dataset.
+- Lastly, we can build the sequence-to-sequence model.
+- It is almost identical ot our previous model: the only difference is that we set `return_sequences=True` in the `SimpleRNN` layer. This way, it will output a sequence of vectors (each of size 32), instead of outputting a single vector at the last time step.
+- The `Dense` layer is smart enough ot handle sequences as input: it will be applied at each time step, taking a 32-dimensional vector as input and outputting a 14-dimensional vector.
+- In fact, another way to get the exact same result is to use a `Conv1D` layer with a kernel size of 1: `Conv1D(14, kernel_size=1)`.
+- Keras offers a `TimeDistributed` layer that lets you apply any vector-to-vector layer to every vector in the input sequences, at every time steps. It does this efficiently, by reshaping the inputs so that each time step is treated as a separate instance, then it reshapes the layer's outputs to recover the time dimension.
+- In our case, we don't need it since the `Dense` layer already supports sequences as inputs.
+- The training code is the same as usual. During training, all the model's output are used, but after training only the output of the very last time step matters, and the rest can be ignored.
+- If you evaluate this model's forecasts for $t + 1$, you will find a validation MAE of 25,839. For $t+2$ it's 29,614, and the performance continues to drop gradually as the model tries to forecast further into the future. At $t+14$, the MAE is 34,613.
+- You can combine both approaches ot forecasting multiple time steps ahead: for example, you can train a model to get forecasts for the following 14 days, then take its output and append it to the inputs, then run the model again to get forecasts for the following 14 days, and possibly repeat the process.
+- Simple RNNs can be quite good at forecasting time series or handling other kinds of sequences, but hey do not performs as well on long time series or sequences. The next part explains why and see what can we do about it.
