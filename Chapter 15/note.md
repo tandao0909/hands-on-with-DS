@@ -231,3 +231,16 @@
 - Now if you compile, fit, and evaluate this model just like the previous one, you will find that its validation MAE reaches 30,420. That's the bets model we've trained so far, and it even beats the SARIMA model.
 - We've only normalized the time series, without removing trend and seasonality, and yet the model still performs well. This is connivent, as it makes it possible to quickly search for promising models without worrying too much about preprocessing.
 - However, to get the best performance, you may want to try making the time series more stationary; for example, using differencing.
+
+## Forecasting Using a Deep RNN
+
+- It's quite common to stack multiple layers of cells, as shown below. This gives you a *deep RNN*.
+![A deep RNN (left) unrolled through time (right)](image-5.png)
+- Implementing a deep RNN with Keras is straightforward: just stack recurrent layers. You can look at the learning notebook for an example.
+- We use three `SimpleRNN` layers (but we could use other types of recurrent layers, such as an `LSTM` layer or a `GRU` layer, which we will discuss shortly).
+- The first two are sequence-to-sequence layers, and the last one is a sequence-to-vector layer.
+- Finally, the `Dense` layer produces the model's forecast (you can think of it as a vector-to-vector layer).
+- This model is similar to the figure above, except the outputs $\hat{\textbf{Y}}_{(0)}$ to $\hat{\textbf{Y}}_{(t-1)}$ are ignored, and there's a dense layer on top of $\hat{\textbf{Y}}_{(t)}$, which outputs teh actual forecast.
+- Make sure to set `return_sequence=True` for all recurrent layers (except the last one, if you only care about the last output).
+- If you forget to set this parameter for one recurrent layers, it will output a 2D array containing only the output of the last time step, instead of a 3D array containing outputs for all time steps. The next recurrent layer will complain that you are not feeding it sequences in the expected 3D format.
+- If you train and evaluate this model, you will that it reaches an MAE of about 31,625. That's better tah both baselines, but it doesn't beat our "shallower" RNN. It looks like this RNN is a bit too large for our task.
