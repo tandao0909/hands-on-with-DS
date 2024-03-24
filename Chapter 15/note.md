@@ -308,3 +308,10 @@
 - If you evaluate this model's forecasts for $t + 1$, you will find a validation MAE of 25,839. For $t+2$ it's 29,614, and the performance continues to drop gradually as the model tries to forecast further into the future. At $t+14$, the MAE is 34,613.
 - You can combine both approaches ot forecasting multiple time steps ahead: for example, you can train a model to get forecasts for the following 14 days, then take its output and append it to the inputs, then run the model again to get forecasts for the following 14 days, and possibly repeat the process.
 - Simple RNNs can be quite good at forecasting time series or handling other kinds of sequences, but hey do not performs as well on long time series or sequences. The next part explains why and see what can we do about it.
+
+# Handling Long Sequences
+
+- To train an RNN on long sequences, we must run it over many time steps, making the unrolled RNN a very deep network.
+- Juts like any deep neural network, it may suffer from the unstable gradients problem, discussed in chapter 11: it may take forever to train, or training may be unstable.
+- Moreover, when an RNN processes a long sequence, it will gradually forget the first input in the sequence.
+- We'll deal with both problems, staring with the unstable gradients problem.
