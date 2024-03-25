@@ -347,3 +347,50 @@
 - Similarly, you can create a custom cell to apply dropout between each time step. But there's a simpler way: most recurrent layers and cells provided by Keras have `dropout` and `recurrent_dropout` hyperparameters: the former defines the dropout rate to apply to the inputs, and the latter defines the dropout rate for the hidden layers, between each time step. So, you don't really need to create a custom cell to apply dropout at each time step in an RNN.
 - When forecasting time series, it is often useful to have same error bars along with your predictions.
 - For this, one approach is to use MC dropout, introduced in chapter 11: use `recurrent_dropout` during training, then keep dropout active at inference time by calling `model(X, training=True)`. Repeat this several times to get multiple slightly different forecasts, then compute the mean and standard deviation of these predictions for each time step.
+
+## Tackling the Short-Term Memory Problem
+
+- Due to the transformation that the data goes through when traversing an RNN, some information is lost at each time step.
+- After a while, the RNN's state contains virtually no trace of the first inputs. In other words, it forget the first input.
+- To tackle this problem, various type of cells with long-term memory have been introduced.
+- They have proven so successful that the basic cells are not used much anymore. 
+- Let's look at the most popular of these long-term memory cells: the LSTM cell.
+
+# LSTM 
+
+- The *long short-term memory* (LSTM) cell was proposed in [1997](https://ieeexplore.ieee.org/abstract/document/6795963) by Sepp Hochreiter and Jürgen Schmidhuber and gradually improved over the years by several researchers, such as [Alex Graves](https://www.cs.toronto.edu/~graves/), [Haşim Sak](https://arxiv.org/abs/1402.1128), and [Wojciech Zaremba](https://arxiv.org/abs/1409.2329).
+- If you consider LSTM cell as a black box, it can be used very much like a basic cell, expect it will perform much better; training will converge faster, and it will detect long-term patterns in the data.
+- In Keras, you can simply use the `LSTM` layer instead of the `SimpleRNN` layer.
+- Alteratively, you could use the general-purpose `tf.keras.layers.RNN` layer, giving it an `LSTMCell` as an argument.
+- However, the `LSTM` layer uses an optimized implementation when running on a GPU, so in general, it is preferable to use it (the `RNN` layer is mostly useful when you define custom cells, as we did earlier).
+- So how does an LSTM cell work? Its architecture is shown below:
+![An LSTM cell](image-6.png)
+- If you don't look at what's inside the box, the LSTM cell looks exactly like a regular cell, expect that its state is split into two vectors: $\textbf{h}_{(t)}$ and $\textbf{c}_{(t)}$ ("c" stands for "cell").
+- You can think of $\textbf{h}_{(t)} $ as the short-term state and $\textbf{c}_{(t)} $ as the long-term state.
+- The key idea is that the network can learn what to store in the long-term state, what to throw away, and what to read from it.
+- As the long-term state $\textbf{c}_{(t-1)}$ traverses the network from left to right, you can see: it first goes through a *forget gate*, dropping some memories, then it adds some new memories via the addition operation (which adds the memories that were selected by an *input gate*).
+- The result $\textbf{c}_{(t)}$ is sent straight out, without any further transformation.
+- So, at each time step, some memories are dropped and some memories are added.
+- Moreover, after the addition operation, the long-term state is copied and passed through the tanh function, and then the result is filtered by the *output gate*.
+- This produce the short-term state $\textbf{h}_{(t)}$, which is equal to the cell's output for this time step, $\textbf{y}_{(t)}$.
+- Now, we will look at where the new memories come from and how the gates work.
+- The current input vector $\textbf{x}_{(t)}$ and the previous short-term state $\textbf{h}_{(t-1)}$ are fed to four different fully connected layers. They all serves a different purposes:
+    - The main layer is the one that outputs $\textbf{g}_{(t)}$. It has the usual role of analyzing the current inputs $\textbf{x}_{(t)}$ and the previous (short-term) state $\textbf{h}_{(t-1)}$. In a basic cell, there is nothing other than this layer, and its output goes straight out to $\textbf{y}_{(t)}$ and $\textbf{h}_{(t)}$. But in an LSTM cell, this layer's output does not go straight out; instead is most important parts are stored in the long-term state (while the rest is dropped).
+    - The three other layers are *gate controllers*. Since they use the logistic activation function, the outputs range from 0 to 1. The gate controllers' outputs are fed to element-wise multiplication operations: if they outputs 0s they close the gate, and if they output 1s they open it.
+    - The *forget gate* (controlled by $\textbf{f}_{(t)}$) controls which parts of the long-term state should be erased.
+    - The *input gate* (controlled by $\textbf{i}_{(t)}$) controls which parts of $\textbf{g}_{(t)}$ should be added to the long-term state.
+    - The *output gate* (controlled by $\textbf{o}_{(t)}$) controls which parts of the long-term state should be read and output at this time step, both to $\textbf{h}_{(t)}$ and to $\textbf{y}_{(t)}$.
+- In short, an LSTM cell can learn to recognize an important input (that's the role of the input gate), store it in the long-term state, preserve it for as long as needed (that's the role of the forget gate), and extract it whenever it is needed.
+- This explains why these cells have been amazingly successful at capturing long-term patterns in time series, long texts, audio recordings, and more.
+- These following equations explain hwo to compute the cell's long-term state, its short-term state, and its output at each time step for a single instance. The equations for a whole mini-batch are very similar:
+    $$\textbf{i}_{(t)} = \sigma(\textbf{W}_{xi}^T\textbf{x}_{(t)} + \textbf{W}_{hi}^T\textbf{h}_{(t)} + \textbf{b}_i) $$
+    $$\textbf{f}_{(t)} = \sigma(\textbf{W}_{xf}^T\textbf{x}_{(t)} + \textbf{W}_{hf}^T\textbf{h}_{(t)} + \textbf{b}_f) $$
+    $$\textbf{o}_{(t)} = \sigma(\textbf{W}_{xo}^T\textbf{x}_{(t)} + \textbf{W}_{ho}^T\textbf{h}_{(t)} + \textbf{b}_o) $$
+    $$\textbf{g}_{(t)} = \tanh(\textbf{W}_{xg}^T\textbf{x}_{(t)} + \textbf{W}_{hg}^T\textbf{h}_{(t)} + \textbf{b}_g) $$
+    $$\textbf{c}_{(t)} = \textbf{f}_{(t)} \otimes \textbf{c}_{(t-1)} + \textbf{i}_{(t)}\otimes\textbf{g}_{(t)}$$
+    $$\textbf{y}_{(t)} = \textbf{h}_{(t)} = \textbf{o}_{(t)} \otimes \tanh(\textbf{c}_{(t)})$$
+- In this equation:
+    - $\textbf{W}_{xi}$, $\textbf{W}_{xf}$, $\textbf{W}_{xo}$, and $\textbf{W}_{xg}$ are the weight matrices of each of the four layers for their connection to the input vector $\textbf{x}_{(t)}$.
+    - $\textbf{W}_{hi}$, $\textbf{W}_{hf}$, $\textbf{W}_{ho}$, and $\textbf{W}_{hg}$ are the weight matrices of each of the four layers for their connection to the previous short-term state vector $\textbf{h}_{(t-1)}$.
+    - $\textbf{b}_i$, $\textbf{b}_f$, $\textbf{b}_o$, and $\textbf{b}_g$ are the bias terms for each of the four layers. Note that TensorFlow initializes $\textbf{b}_f$ to a vector full of 1s instead of 0s. This prevents forgetting everything at teh start of training.
+- There are several variants of LSTM cell. One particular popular variant is the GRU cell.
