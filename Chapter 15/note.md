@@ -296,7 +296,7 @@
 - Now, the dataset contains sequences of length 4 as inputs, and the targets are sequences containing the next two steps, for each time step.
 - For example, the first input sequence is [0, 1, 2, 3], and its corresponding targets are [[1, 2], [2, 3], [3, 4], [4, 5]], which are the next two values ofr each time step.
 - More specifically, you work from the innermost dimension: build a window for each time step first, which means create the input and output at each time step, then create the batch, in this case is the the whole time interval.
-- It may be surprising that the targets contain values that appear in the inputs. But you don't have to worry about data snooping in this case: at each time step, an RNN only knows about past time steps; it cannot look ahead. It is said to be a *casual* model.
+- It may be surprising that the targets contain values that appear in the inputs. But you don't have to worry about data snooping in this case: at each time step, an RNN only knows about past time steps; it cannot look ahead. It is said to be a *causal* model.
 - Let's create another little utility function to prepare the datasets for our sequence-to-sequence model. It will also take care of shuffling (optional) and batching. We'll use this function to create the dataset.
 - Lastly, we can build the sequence-to-sequence model.
 - It is almost identical ot our previous model: the only difference is that we set `return_sequences=True` in the `SimpleRNN` layer. This way, it will output a sequence of vectors (each of size 32), instead of outputting a single vector at the last time step.
@@ -414,3 +414,42 @@
 - LSTM and GRU cells are one of the main reasons behind the success of RNNs.
 - Yet while they can tackle much longer sequences than simple RNNs, they still have a fairly limited short-term memory, and they have trouble learning long-term patterns in sequences of 100 time steps or more, such as audio samples, long time series, or long sentences.
 - One way to solve this is to shorten the input sequences; for example, using 1D convolutional layers.
+
+## Using 1D Convolutional Layers to Process Sequences
+
+- In chapter 14, we saw that a 2D convolutional layer works by sliding several fairly small kernels (or filters) across an image, producing multiple 2D feature maps (one per kernel).
+- Similarly, a 1D convolutional layer slide several kernels across a sequence, producing a 1D feature map per kernel.
+- Each kernel will learn to detect a single very short sequential pattern (no longer than the kernel size). If you use 10 kernels, then the layer's output will be composed of 10 1D sequences (all of the same length), or equivalently you can view this output as a single 10D sequences.
+- This means that you can build a neural network composed of a mix of recurrent layers and 1D convolutional layers (or even 1D pooling layers).
+- If you use a 1D convolutional layer with a stride of 1 and `"same"` padding, then the output sequence will have the same length as the input sequence.
+- But if you use `"valid"` padding or a stride greater than 1, then the output sequence will be shorter than the input sequence, so make sure you adjust the targets accordingly.
+- For example, the model in the learning notebook is the same as earlier, except it starts with a 1D convolutional layer that downsamples the input sequence by a factor of 2, using a stride of 2.
+- The kernel size is larger than the stride, so all inputs will be used to compute the layer's output, and therefore the model can learn to preserve the useful information, dropping only the unimportant details.
+- By shortening the sequences, the convolutional layer may help the `GRU` layers detect longer patterns, so we can afford to double the input sequence length to 112 days.
+- Note that we must also crop off the first three time steps in the targets: indeed, the kernel's size is 4, so the first output of the convolutional layer will be based on the input time steps 0 to 3, and the first forecasts will be for time steps 4 to 17 (instead of time steps 1 to 14).
+- Moreover, we must downsample the targets by a factor of 2, because of the stride.
+- If you train and evaluate this model, you will find that it outperforms the previous model (by a small margin).
+- In fact, we actually can use only 1D convolutional layers and drop the recurrent layers entirely.
+
+## WaveNet
+
+- In a [2016 paper](https://arxiv.org/abs/1609.03499), Aaron van den Oord and other DeepMind researchers introduced a novel architecture named WaveNet.
+- They stacked 1D convolutional layers, doubling the dilation rate (how spread each neuron's inputs are) at very layer: the first convolutional layer gets a glimpse of just two time steps at a time, while the next one see four time steps (its receptive field is four time steps long), the next one sees eight time steps, and so on.
+- This way, the lower layers learn short-term patterns, while the higher layers learn long-term patterns.
+- Thanks to doubling dilation rate, the network can process extremely large sequences very efficiently.
+- The authors of the paper actually stacked 10 convolutional layers with dilation rates of 1, 2, 4, ..., 256, 512, and then they stacked another group of 10 identical group of 10 layers.
+- They justified this architecture by pointing out that a single stack of 10 convolutional layers with these dilation rates will act like a super efficient convolutional layer with a kernel of size 1,024, except way faster, more powerful, and using significantly fewer hyperparameters.
+- They also left-padded the input sequences with a number of zeros equal to the dilation rate before every layer, to preserve the same sequence length throughout the network.
+- You cna find an implementation of WaveNet in the learning notebook.
+- This `Sequential` model starts with an explicit input layer - this is simpler than trying to set `input_shape` only to the first layer.
+- The it continues with a 1D convolutional layer using `"causal"` padding, which is like `"same"` padding except that the zeros are appended only at the start of the input sequences instead of on both sides. This ensures that the convolutional layer does not peek into the future when making predictions.
+- Then we add similar pairs of layers using growing dilation rates: 1, 2, 4, and 8, and again 1, 2, 4, and 8.
+- Finally, we add the output layer: a convolutional layer with 14 filters of size 1 and without any activation function. As we saw earlier, such a convolutional layer is equivalent to a `Dense` layer with 14 units.
+- Thanks to causal padding, every convolutional layer outputs sequence of the same length as its inputs sequences, so the targets we use during training can be the full 112-day sequences: no need to crop or downsample them.
+- The models we've discussed in this section offer similar performance for the ridership forecasting task, but they may vary significantly depending on the task and the amount of available data.
+- In the WaveNet paper the authors achieved state-of-the-art performance on various audio tasks (hence the name of the architecture), including text-to-speech tasks, producing incredibly realistic voices across several languages.
+- They also used the model to generate music, one audio sample at a time. This feat is even more impressive when you realize that a single record of audio can contain ten of thousands of time steps - even LSTMs and GRUs can't handle such long sequences.
+- If you evaluate our best Chicago ridership models on the test period, starting in 2020, you will find that they perform much worse than expected! This is because when the COVID-19 pandemic started, public transportation was greatly affected.
+- As mentioned earlier, these will only work well if the patterns they learned from the past continue in the future.
+- In any case, before deploying a model to production, verify that it works well on recent data.
+- Once it's in production, make sure to monitor its performance regularly.
