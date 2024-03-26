@@ -383,10 +383,10 @@
 - In short, an LSTM cell can learn to recognize an important input (that's the role of the input gate), store it in the long-term state, preserve it for as long as needed (that's the role of the forget gate), and extract it whenever it is needed.
 - This explains why these cells have been amazingly successful at capturing long-term patterns in time series, long texts, audio recordings, and more.
 - These following equations explain hwo to compute the cell's long-term state, its short-term state, and its output at each time step for a single instance. The equations for a whole mini-batch are very similar:
-    $$\textbf{i}_{(t)} = \sigma(\textbf{W}_{xi}^T\textbf{x}_{(t)} + \textbf{W}_{hi}^T\textbf{h}_{(t)} + \textbf{b}_i) $$
-    $$\textbf{f}_{(t)} = \sigma(\textbf{W}_{xf}^T\textbf{x}_{(t)} + \textbf{W}_{hf}^T\textbf{h}_{(t)} + \textbf{b}_f) $$
-    $$\textbf{o}_{(t)} = \sigma(\textbf{W}_{xo}^T\textbf{x}_{(t)} + \textbf{W}_{ho}^T\textbf{h}_{(t)} + \textbf{b}_o) $$
-    $$\textbf{g}_{(t)} = \tanh(\textbf{W}_{xg}^T\textbf{x}_{(t)} + \textbf{W}_{hg}^T\textbf{h}_{(t)} + \textbf{b}_g) $$
+    $$\textbf{i}_{(t)} = \sigma(\textbf{W}_{xi}^T\textbf{x}_{(t)} + \textbf{W}_{hi}^T\textbf{h}_{(t-1)} + \textbf{b}_i) $$
+    $$\textbf{f}_{(t)} = \sigma(\textbf{W}_{xf}^T\textbf{x}_{(t)} + \textbf{W}_{hf}^T\textbf{h}_{(t-1)} + \textbf{b}_f) $$
+    $$\textbf{o}_{(t)} = \sigma(\textbf{W}_{xo}^T\textbf{x}_{(t)} + \textbf{W}_{ho}^T\textbf{h}_{(t-1)} + \textbf{b}_o) $$
+    $$\textbf{g}_{(t)} = \tanh(\textbf{W}_{xg}^T\textbf{x}_{(t)} + \textbf{W}_{hg}^T\textbf{h}_{(t-1)} + \textbf{b}_g) $$
     $$\textbf{c}_{(t)} = \textbf{f}_{(t)} \otimes \textbf{c}_{(t-1)} + \textbf{i}_{(t)}\otimes\textbf{g}_{(t)}$$
     $$\textbf{y}_{(t)} = \textbf{h}_{(t)} = \textbf{o}_{(t)} \otimes \tanh(\textbf{c}_{(t)})$$
 - In this equation:
@@ -394,3 +394,23 @@
     - $\textbf{W}_{hi}$, $\textbf{W}_{hf}$, $\textbf{W}_{ho}$, and $\textbf{W}_{hg}$ are the weight matrices of each of the four layers for their connection to the previous short-term state vector $\textbf{h}_{(t-1)}$.
     - $\textbf{b}_i$, $\textbf{b}_f$, $\textbf{b}_o$, and $\textbf{b}_g$ are the bias terms for each of the four layers. Note that TensorFlow initializes $\textbf{b}_f$ to a vector full of 1s instead of 0s. This prevents forgetting everything at teh start of training.
 - There are several variants of LSTM cell. One particular popular variant is the GRU cell.
+# GRUs
+
+- The *gated recurrent unit* (GRU) cell was proposed by Kyunghyun Cho et al. in a [2014](https://arxiv.org/abs/1406.1078) paper that also introduce the same encoder-decoder network we discussed earlier.
+![GRU cell](image-7.png)
+- The GRU cell is a simplified version of the LSTM cell, and it seems to perform just [as well](https://arxiv.org/abs/1503.04069) (which explains its growing popularity). These are the main simplifications:
+    - Both state vectors are merged into a single vector $\textbf{h}_{(t)}$.
+    - A single gate controller $\textbf{z}_{(t)}$ controls both the forget gate and the input gate. If the gate controller outputs a 1, the forget gate is open (= 1) and the input gate si closed (1 - 1 = 0). If it outputs a 0, the opposite happens.
+    - In other words, whenever a memory must be stored, the location where it will be stored is erased first. This is actually a frequent variant to the LSTM cell in and of itself.
+    - $\textbf{r}_{(t)}$ is similar to $\textbf{i}_{(t)}$ in the LSTM cell.
+    - There is no output gate; the full state is output at every time step. However, there is a new gate controller $\textbf{r}_{(t)}$ that controls which part of the previous state will be shown to the main layer ($\textbf{g}_{(t)}$).
+- The following equations summarizes how to compute the cell's state at each time step for a single instance:
+    $$\textbf{z}_{(t)} = \sigma(\textbf{W}_{xz}^T\textbf{x}_{(t)} + \textbf{W}_{hz}^T\textbf{h}_{(t-1)} + \textbf{b}_z) $$
+    $$\textbf{r}_{(t)} = \sigma(\textbf{W}_{xr}^T\textbf{x}_{(t)} + \textbf{W}_{hr}^T\textbf{h}_{(t-1)} + \textbf{b}_r) $$
+    $$\textbf{g}_{(t)} = \tanh(\textbf{W}_{xg}^T\textbf{x}_{(t)} + \textbf{W}_{hg}^T(\textbf{r}_{(t)} \otimes \textbf{h}_{(t-1)}) + \textbf{b}_g) $$
+    $$\textbf{h}_{(t)} = \textbf{z}_{(t)} \otimes \textbf{h}_{(t-1)} + (1 - \textbf{z}_{(t)}) \otimes \textbf{g}_{(t-1)}$$
+- Keras provides a `tf.keras.layers.GRU` layer: using it is just a matter of replacing `SimpleRNN` or `LSTM` with `GRU`.
+- It also provides a `tf.keras.layers.GRUCell`, in case you want to implement a custom cell based on the GRU cell.
+- LSTM and GRU cells are one of the main reasons behind the success of RNNs.
+- Yet while they can tackle much longer sequences than simple RNNs, they still have a fairly limited short-term memory, and they have trouble learning long-term patterns in sequences of 100 time steps or more, such as audio samples, long time series, or long sentences.
+- One way to solve this is to shorten the input sequences; for example, using 1D convolutional layers.
