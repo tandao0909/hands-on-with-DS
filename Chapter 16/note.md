@@ -1,0 +1,40 @@
+- When Alan Turing imagined his famous [Turing test](https://web-archive.southampton.ac.uk/cogprints.org/499/1/turing.html) in 1950, he proposed a way to evaluate a machine's ability to match human intelligence.
+- He could have tested for many things, such as the ability to recognize human in a picture, solve a mathematic problem, escape a maze, create a song, but, interestingly, he chose a linguistic task.
+- More specifically, he devised a chatbot capable of fooling its interlocutor into thinking it was a human.
+- This test does have it weaknesses: a set of hardcode rules can fool unsuspecting or naive humans (e.g., a human could give vague predefined answers in response to some keywords, it could pretend that it is joking or drunk to get a pass on its weirdest answers, ot it could escape difficult questions by answering them with its own questions), and many aspects of human intelligence are utterly ignored (e.g., the ability to interpret nonverbal communication such as facial expressions, or to learn a manual task).
+- The test however highlight the fact that mastering language is arguably *Homo sapiens*'s greatest cognitive ability.
+- Building a machine that can master written and spoken language is the ultimate goal of NLP research, so in practice researchers focus on more specific tasks, such as text classification, translation, summarization, question answering, and many more.
+- A common approach for natural language tasks is to use recurrent neural networks.
+- We will therefore continue to explore RNNs (introduced in chapter 15), starting with a *character RNN*, or *char-RNN*, trained to predict the net character in a sentence. This will alow us to generate some original text.
+- We first use a *stateless RNN* (which learns on random portions of text at each iteration, without any information about the rets of the text), then we build a *stateful RNN* (which preserves the hidden state between training iterations and continues reading where it left off, allowing it to learn longer patterns).
+- Next, we build an RNN to perform sentiment analysis (e.g., reading movie reviews and extracting the rater's    feeling about the movie), this time treating sentences as sequences of words, rather than characters.
+- Then we will show how RNNs can be use to build an encoder-decoder architecture capable of performing neural machine translation (NMT), translating English to Spanish.
+- In the second part of this chapter, we will explore *attention mechanisms*.
+- As the name suggests, these are neural network components that learn ot select the part of inputs that the rest of the model should focus on at each time step.
+- First, we will boost the performance of an RNN-based encoder-decoder architecture using attention.
+- Next, we drop RNNs altogether and use a very successful attention-only architecture, called the *transformer*, to build a translation model.
+- We will then discuss some of the most important advances in NLP in the last few years, including incredibly powerful language models such as GPT or BERT, both based on transformers.
+- Lastly, we'll see hwo to get started with the excellent Transformers library by Hugging Face.
+
+# Generating Shakespearean Text Using a Character RNN
+
+- In a famous [2015 blog post]() titled "The Unreasonable Effectiveness of Recurrent Neural Networks", Andrej Karpathy showed how to train an RNN to predict the next character in a sentence.
+- This *char-RNN* can then be used to generate novel text, one character at a time.
+
+## Creating the Training Dataset
+
+- First, using Keras's `tf.keras.utils.get_file()` function to download all of Shakespeare's work. We download it from 's [char-rnn project]().
+- Next, we use `tf.keras.layers.TextVectorization` layer (introduced in Chapter 13) to encode this text. We set `split="character"` to get character-level encoding rather than the default word-level encoding, and we use `standardize="lower"` to convert the text to lowercase, which simplify the task.
+- Each character is mapped to an integer, starting at 2. The `TextVectorization` layer reserved the value 0 for the padding tokens, and reserved 1 for unknown characters.
+- We don't need neither of these two tokens, so we subtract 2 form the character IDs and compute the number of distinct characters and the total number of characters.
+- Next, like we did in chapter 15, we cna turn this very long sequence into a dataset of windows that we can then use to train a sequence-to-sequence RNN.
+- The target will be similar to the inputs, but shifted by one time step into "future".
+- For example, one sample in the dataset may be a sequence of character IDs representing the text "to be or not to b" (without the final "e"), and the corresponding target is a sequence of character IDs representing the text "o be or not to be" (with the final "e", but without the leading "t").
+- This function starts much like the `to_windows()` custom utility function we created in Chapter 15:
+    - It takes a sequence as input (i.e., the encoded text), and creates a dataset containing all the windows of the desired length.
+    - It increases the length by one, since we need the next character for the target.
+    - Then it shuffles the windows (optionally), batches them, splits them into input/output pairs, and activates prefetching.
+- The figure below summarizes the dataset preparation steps: it shows of length 11, and a batch size of 3. The start index of each window is indicated next to it.
+![Preparing a dataset of shuffled windows](image.png)
+- Now we're ready to create the training set, the validation set, and the test set. We will use roughly 90% of the text for training, 5% for validation, and 5% for testing.
+- We set the window length to 100, but you can try tuning it: it's easier and faster to train RNNs on shorter input sequences, but the RNN will not be able to learn any pattern longer than `length`, so don't make it too small.
