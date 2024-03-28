@@ -65,3 +65,31 @@
 - Also note that the model is currently incapable of learning patterns longer than `length`, which is just 100 characters.
 - You could try making this window larger, but it will also make training harder, and even LSTM and GRU cells cannot handle very long sequences.
 - An alterative approach is to use a stateful RNN.
+
+## Stateful RNN
+
+- Until now, we have only used *stateless RNNs*: at each training iteration, the model starts with a hidden sate full of zeros, then it updates this state at each time step, and after the last time step, it throws away its hidden state, as it is no longer needed.
+- What if we instructed the RNN to preserve this final state after processing a training batch and use it as the initial state for the next training batch?
+- This way the model could learn long-term patterns despite only backpropagating through short sequences. This is called a *stateful RNN*.
+- First, note that a stateful RNN only makes sense if each input sequence in a batch starts exactly where the corresponding sequence in the previous batch left off.
+- So the first thing we need to do to build a stateful RNN is to use sequential and non-overlapping input sequences (rather than shuffled and overlapping sequences we used to train stateless RNNs).
+- When creating the `tf.data.Dataset`, we must therefore use `shift=length` (instead of `shift=1`) when calling the `window()` method.
+- Moreover, we must not call the `shuffle()` method.
+- Unfortunately, batching is much harder when preparing a dataset for a stateful RNN than it is for a stateless RNN.
+- In fact, if we were to call `batch(32)`, then 32 consecutive windows would be put in the same batch, and the following batch would not continue each of these windows where it left off.
+- The first batch would contain windows 1 to 32 and the second batch would contain windows 33 to 64, so if you consider the first window of each batch, for example, (i.e., windows 1 and 33), you can see that they are not consecutive.
+- The simplest solution to this problem is to just use a batch size of 1. The `to_dataset_for_stateful_rnn()` function in the learning notebook does just that. The figure below summarizes the main steps of this function:
+![Preparing a dataset of consecutive sequence fragments for a stateful RNN](image-1.png)
+- Batching is harder, but not impossible.
+- For example, we could chop Shakespeare's text into 32 texts of equal length, create one dataset of consecutive input sequences for each of them, and finally use `tf.data.Dataset.zip(datasets).map(lambda *windows: tf.stack(windows))` to create proper consecutive batches, where the n-th input sequence in a batch starts off exactly where the n-th input sequence ended in the previous batch. See the learning notebook for the code.
+- Now, let's create the stateful RNN. We need to set the the `stateful` argument to `True` when creating each recurrent layer.
+- Because the stateful RNN needs to know the batch size (since it will preserve a state for each input sequence in the batch), we must set the `batch_input_shape` argument in the first layer.
+- Note that we can leave teh second dimension unspecified, since the input sequences could have any length.
+- At the end of each epoch, we need to reset the state before we go back to the beginning of the text. We can use a custom Keras callback for this.
+- Then we can compile and train the model using our callbacks.
+- After the model is trained, it will only be able to make predictions for batches of the same size as the were used during training. To avoid this restriction, create an identical *stateless* model, and copy the stateful model's weights to this model.
+- Interestingly, although a Char-RNN model is just trained to predict the next character, this seemingly simple actually requires it to learn some higher-level tasks as well.
+- For example, to find the next character after "Great movie, I really", it's helpful to understand that the sentence is positive, so what follows is more likely to be the letter "l" (for "loved") rather than "h" (for "hated").
+- In fact, a [2017 paper]() by Alec Radford and other OpenAI researchers describes how the authors trained a big Char-RNN-like model on a large dataset, and found that one the the neurons acted as an excellent sentiment analysis classifier.
+- Although the model was trained without any labels, the *sentiment neuron* - as they called it - reached state-of-the-art performance on sentiment analysis benchmarks. This foreshowed and motivated unsupervised pretraining in NLP.
+- But before we explore unsupervised learning, let us talk about word-level models and how to use them in a supervised fashion for sentiment analysis.
