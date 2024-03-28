@@ -49,3 +49,19 @@
     - We use a `Dense` layer for the output layer: it must have 39 units (`n_tokens`) because there are 39 distinct characters in the text, and we want to output a probability for each possible character (at each time step). The 39 output probabilities should sum up to 1 at each time step, so we apply the softmax activation function to the outputs of the `Dense` layer.
     - Lastly, we compile the model using the `sparse_categorical_crossentropy` loss function and a Nadam optimizer, and we train the model for several epochs, using a `ModelCheckpoint` callback to save the best model (in term of validation accuracy) as training progress.
 - This model does no handle text preprocessing, so we wrap it in a final model containing the `tf.keras.layers.TextVectorization` layer as the first layer, plus a `tf.keras.layers.Lambda` layer to subtract 2 from the character IDs since we're not using the padding and unknown tokens for now.
+
+## Generating Fake Shakespearean Text
+
+- To generate new text using the Char-RNN model, we could feed it some text, make the model predict the most likely next letter, add it to the end of the text, them give the extended text to the model to guess the next letter, and so on. This is called *greedy decoding*.
+- But in practice, this often leads to the same words being repeated over and over again.
+- Instead, we can sample the next character randomly, with a probability equal to the estimated probability, using TensorFlow's `tf.random.categorical()` function. This will generate more diverse and interesting text.
+- The `categorical()` function randomly samples random class indices, given the class log probabilities (logits).
+- To have more control over the diversity of the generated text, we can divide the logits by a number called the *temperature*, which we can tweak.
+- A temperature close to zero favors high-probability characters, while a high temperature gives all characters an equal probability.
+- Lower temperatures are typically preferred when generating fairly rigid and precise text, such as mathematical equations, while higher temperatures are preferred when generating more diverse and creative text.
+- You can look at how things unroll in the learning notebook.
+- To generate more convincing text, a common technique is to sample only from the top k characters, or only from a the smallest set of top characters whose total probability exceeds some threshold (this is called *nucleus sampling*).
+- Alternatively, you could try using *beam search*, which we will discuss later in this chapter, or using more `GRU` layers and more neurons per layer, training for longer, and adding some regularization if needed.
+- Also note that the model is currently incapable of learning patterns longer than `length`, which is just 100 characters.
+- You could try making this window larger, but it will also make training harder, and even LSTM and GRU cells cannot handle very long sequences.
+- An alterative approach is to use a stateful RNN.
