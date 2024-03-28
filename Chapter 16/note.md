@@ -38,3 +38,14 @@
 ![Preparing a dataset of shuffled windows](image.png)
 - Now we're ready to create the training set, the validation set, and the test set. We will use roughly 90% of the text for training, 5% for validation, and 5% for testing.
 - We set the window length to 100, but you can try tuning it: it's easier and faster to train RNNs on shorter input sequences, but the RNN will not be able to learn any pattern longer than `length`, so don't make it too small.
+
+## Building and Training the Char-RNN model
+
+- Since out dataset is reasonably large, and modeling language is quite a difficult task, we need more than a simple RNN with a few recurrent neurons.
+- We build and train a model with one `GRU` layer composed of 128 units. You can try tweaking the number of layers and units later, if needed.
+- We'll walk through the implementation in the learning notebook:
+    - We use an `Embedding` layer as the first layer, to encode the character IDs (embeddings was introduced in chapter 13). The `Embedding` layer's number of input dimensions is the number of distinct character IDs, and the number of output dimensions is a hyperparameter you can tune, we'll set it to 16 for now.
+    - Whereas the inputs of the `Embedding` layer will be 2D tensors of shape [*batch size, window length*], the output of the `Embedding` layer will be a 3D tensor of shape [*batch size, window length, embedding size*].
+    - We use a `Dense` layer for the output layer: it must have 39 units (`n_tokens`) because there are 39 distinct characters in the text, and we want to output a probability for each possible character (at each time step). The 39 output probabilities should sum up to 1 at each time step, so we apply the softmax activation function to the outputs of the `Dense` layer.
+    - Lastly, we compile the model using the `sparse_categorical_crossentropy` loss function and a Nadam optimizer, and we train the model for several epochs, using a `ModelCheckpoint` callback to save the best model (in term of validation accuracy) as training progress.
+- This model does no handle text preprocessing, so we wrap it in a final model containing the `tf.keras.layers.TextVectorization` layer as the first layer, plus a `tf.keras.layers.Lambda` layer to subtract 2 from the character IDs since we're not using the padding and unknown tokens for now.
