@@ -126,4 +126,40 @@
 - The reviews have different lengths, so when the `TextVectorization` layer converts them to sequence of token IDs it pads the shorter sequence using the the padding token (with ID 0) to make them as long as the longest sequence in the batch.
 - As a result, most sequences end with many padding tokens - often dozens or even hundreds of them.
 - Even though we're using a `GRU` layer, which is much better than a `SimpleRNN` layer, its short-term memory is still not great, so when it goes through many padding tokens, it ends up forgetting what the reviews was about.
-- One solution is to feed the model with batches of equal-length sentences (which also speeds up training). Another solution is to make the RNN ignore the padding tokens, which can be done using masking
+- One solution is to feed the model with batches of equal-length sentences (which also speeds up training). Another solution is to make the RNN ignore the padding tokens, which can be done using masking.
+
+## Masking
+
+- Making the model ignore padding tokens is trivial using Keras: simply add `mask_zero=True` when creating the `Embedding` layer.
+- This means that padding tokens (whose IDs is 0) will be ignored by all downstream layers.
+- Thw way this works is that the `Embedding` layer creates a *mask tensor* equal to `tf.math.not_equal(inputs, 0)`: it is a Boolean tensor with the same shape as the inputs and it is equal to `False` anywhere the token IDs are 0, and `True` otherwise.
+- This mask tensor is then automatically propagated by the model to the next layer.
+- If that layer's `call()` method has a `mask` argument, then it automatically receives the mask. This allows the layer to ignore the appropriate time steps.
+- Each layer will handle differently, but in general, they simply ignore masked times steps (i.e., time steps for which the mask is `False`).
+- For example, when a recurrent layer encounters a masked time step, it simply copies the output from the previous time step.
+- Next, if the layer's `supports_masking` attribute is `True`, the mask is automatically propagated to the next layer. 
+- It keeps propagating this way for as long as the layers have `supports_masking=True`.
+- As an example, a recurrent layer's `supports_masking` attribute is `True` when `return_sequences=True`, but it's `False` when `return_sequences=False`, since there's no need for a mask anymore in this case.
+- So if you have a model with several recurrent layers with `return_sequences=True`, followed by a recurrent layer with `return_sequences=False`, then the mask will automatically propagate to the last recurrent layer: that layer will use the mask to ignore masked steps, but it will not propagate the mask to the next layer.
+- Similarly, if you set `mask_zero=True` when creating the `Embedding` layer in the sentiment analysis model we just built, the `GRU` layer will receive and use the mask, but it will not pass the mask to the next layer, since it don't set `return_sequences=True`.
+- Some layers need to update the mask before propagating it to the next layer: they do so by implementing the `compute_mask()` method, which takes two arguments: the input and the previous mask. It then computes the updated mask and return it. The default implementation of `compute_mask()` just return the previous mask unchanged.
+- May Keras layers support masking: `SimpleRNN`, `GRU`, `LSTM`, `Bidirectional`, `Dense`, `TimeDistributed`, `Add`, and a few more (all in the `tf.keras.layers` package).
+- However, convolutional layers (including `Conv1D`) do not support masking - it's not obvious how they would do so anyway.
+- If the mask propagates all the way to the output, then it gets applied to the losses as well, so the masked time steps will not contribute to the loss (their loss will be 0). This assumes that the model output sequences, which is not the case in our sentiment analysis model.
+- The `LSTM` and `GRU` layers have an optimized implementation for GPUs, based on Nvidia's cuDNN library.
+- However, this implementation only supports masking if all the padding tokens are at the end of the sequences.
+- It also requires you to use the default value for several hyperparameters: `activation`, `recurrent_activation`, `recurrent_dropout`, `unroll`, `use_bias`, and `reset_after`. If that's not the case, then these layers will fall back to the (much slower) default GPU implementation.
+- If you want to implement you own custom layer with masking support, you should add a `mask` argument to the `call()` method, and obviously make the method uses the mask.
+- Additionally, if the mask must be propagated to the next layers, then you should set `self.support_masking=True` in the constructor.
+- If the mask must be updated before it's propagated, then you must implement the `compute_mask()` method.
+- If your model does not start with an `Embedding` layer, you can use the `tf.keras.layers.Masking`  layer instead: by default, it sets the mask to `tf.math.reduce_any(tf.math.not_equal(X, 0), axis=-1)`, meaning that time steps where the last dimension (the innermost vector) is full of zero will be masked out in subsequent layers.
+- Using masking layers and automatic mask propagation works best for simple models.
+- It will not work well for more complex models, such as when you need to mix `Conv1D` layers with recurrent layers.
+- In such cases, you will need to explicitly compute the mask and pass it ot the appropriate layers, using either the functional API or the subclassing API.
+- For example, the model in the learning notebook is equivalent ot the previous model, except it is built using the functional API, and handles masking manually. It also adds a bit if dropout since the previous model was overfitting slightly.
+- One last approach is to feed the model with ragged tensors.
+- In practice, all you need to do is set `ragged=True` when creating the `textVectorization` layer, so that the input sequences are represented as ragged tensors.
+- Keras's recurrent layers have built-in support for ragged tensors, so there's nothing else you need to do. There's no need to pass `mask_zero=True` or handle masks explicitly - it's all implemented for you.
+- Whichever masking approach you prefer, after training this model for a few epochs, it will become quite good at judging whether a review is positive or not.
+- If you use the `tf.keras.callbacks.TensorBoard()` callback, you can visualize the embeddings in TensorBoard as they are being learned: it's fascinating to watch words like "awesome" and "amazing" gradually cluster on one side of the embedding space, while words like "awful" and "terrible" cluster on the other side.
+- Some words are not as positive as you might expect (at least with this model), such as the word "good", presumably because many negative reviews contains the phrases "not good".
