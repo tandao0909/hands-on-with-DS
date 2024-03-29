@@ -90,6 +90,40 @@
 - After the model is trained, it will only be able to make predictions for batches of the same size as the were used during training. To avoid this restriction, create an identical *stateless* model, and copy the stateful model's weights to this model.
 - Interestingly, although a Char-RNN model is just trained to predict the next character, this seemingly simple actually requires it to learn some higher-level tasks as well.
 - For example, to find the next character after "Great movie, I really", it's helpful to understand that the sentence is positive, so what follows is more likely to be the letter "l" (for "loved") rather than "h" (for "hated").
-- In fact, a [2017 paper]() by Alec Radford and other OpenAI researchers describes how the authors trained a big Char-RNN-like model on a large dataset, and found that one the the neurons acted as an excellent sentiment analysis classifier.
+- In fact, a [2017 paper](https://arxiv.org/abs/1704.01444) by Alec Radford and other OpenAI researchers describes how the authors trained a big Char-RNN-like model on a large dataset, and found that one the the neurons acted as an excellent sentiment analysis classifier.
 - Although the model was trained without any labels, the *sentiment neuron* - as they called it - reached state-of-the-art performance on sentiment analysis benchmarks. This foreshowed and motivated unsupervised pretraining in NLP.
 - But before we explore unsupervised learning, let us talk about word-level models and how to use them in a supervised fashion for sentiment analysis.
+
+# Sentiment Analysis
+
+- In real-life projects, one of the most common applications of NLP is text classification, especially sentiment analysis.
+- If image classification on the MNIST dataset is the "Hello world!" of computer vision, then sentiment analysis on the IMDb dataset is the "Hello world!" of natural language processing.
+- The IMDb dataset consists of 50,000 movie reviews in English (25,000 for training, 25,000 for testing) extracted from the famous [Internet Movie Database](https://imdb.com), along with a simple binary target for each review indicating whether it is negative (0) or positive (1).
+- We load the IMDb dataset using the TensorFlow Dataset library (introduced in chapter 13).
+- We'll use the first 90% of the training set for training, and the remaining 10% for validation.
+- If you inspect a few reviews, then you'll realize that some reviews are easy to classify. For example, the first review include the words "terrible movie" in the very first sentence.
+- But in many cases, things are not that simple. For example, the third review starts off positively, even though it's ultimately a negative review.
+- To build a model for this task, we need to preprocess this text, but this time chop into words instead of characters.
+- For this, we can use the `tf.keras.layers.TextVectorization` layer again.
+- Note that it uses spaces to identify word boundaries, which will not work well in some languages.
+- For example, Chinese writing does not use spaces between words, Vietnamese uses spaces even within words, and German often attaches multiple words together, without spaces. Even in English, spaces are not always the best way to tokenize text: think of "San Francisco" or "#ILoveDeepLearning" or "state-of-the-art".
+- Fortunately, there are solutions to address these issues. In a [2016 paper](https://arxiv.org/abs/1508.07909), Rico Sennrich et al. explored several methods to tokenize and detokenize text at the subword level.
+- This way, even if your model encounters a rare word it has never been seen before, it can still reasonably guess what it means.
+- For example, even if the model never saw the word "smartest" during training, if it learned the word "smart" and it also learned that the suffix "est" means "the most", it can infer the meaning of "smartest".
+- One of the techniques the authors evaluated is *byte pair encoding* (BPE). BPE works by splitting the whole training set into individual characters (including spaces), then repeatedly merging the adjacent pairs until the vocabulary reaches the desired size.
+- A [2019 paper](https://arxiv.org/abs/1804.10959) by Taku Kudo at Google further improved subword tokenization, often removing the need for language-specific preprocessing prior to tokenization.
+- Moreover, the paper proposed a novel regularization technique called *subword regularization*, which improves accuracy and robustness by introducing some randomness in tokenization during training: for example, "New England" may be tokenized as "New" + "England", or "New" + "Eng" + "land", or simply "New England" (just one token).
+- Google's [SentencePiece](https://github.com/google/sentencepiece) provides an open source implementation, which is described in a [paper](https://arxiv.org/abs/1808.06226) by Taku Kudo and John Richardson.
+- The [TensorFlow Text](https://medium.com/tensorflow/introducing-tf-text-438c8552bd5e) library also implements various tokenization strategies, including [WordPiece](https://arxiv.org/abs/1609.08144) (a variant of BPE), and last and not least, the [Tokenizers library by Hugging Face](https://huggingface.co/docs/tokenizers/index) implements a wide range of extremely fast tokenizers.
+- However, for the IDMb task in English, using spaces for token boundaries should be good enough.
+- We will create a `TextVectorization` layer and adapt it to the training set. The vocabulary will be limited to 1,000 tokens, including the most frequent 998 words plus a padding token and a token for unknown words, since it's unlikely that very rare words will be important for this task, and limiting the vocabulary size will reduce the number of parameters the model needs to learn.
+- Now we can create the model and train it.
+- The first layer is the `TextVectorization` layer we just prepared, followed by an `Embedding` layer that will convert word IDs into embeddings.
+- The embedding matrix needs to have one row per token in the vocabulary (`vocab_size`) and one column per embedding dimension (this example uses 128 dimensions, but this is a hyperparameter you could tune).
+- Next, we use a `GRU` layer and a `Dense` layer with a single neuron and the sigmoid activation function, since this is a binary classification task: the model's output will be the estimated probability that the review expresses a positive sentiment regrading the movie.
+- We then compile the model, and we fit it on the dataset we prepared earlier for a couple of epochs (or you can train for longer to get better results).
+- Sadly, if you run this code, you will generally find that the model fails to learn anything at all: the accuracy remains close to 50%, not better than random chance. Why?
+- The reviews have different lengths, so when the `TextVectorization` layer converts them to sequence of token IDs it pads the shorter sequence using the the padding token (with ID 0) to make them as long as the longest sequence in the batch.
+- As a result, most sequences end with many padding tokens - often dozens or even hundreds of them.
+- Even though we're using a `GRU` layer, which is much better than a `SimpleRNN` layer, its short-term memory is still not great, so when it goes through many padding tokens, it ends up forgetting what the reviews was about.
+- One solution is to feed the model with batches of equal-length sentences (which also speeds up training). Another solution is to make the RNN ignore the padding tokens, which can be done using masking
