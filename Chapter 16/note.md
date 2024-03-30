@@ -192,3 +192,52 @@
 - Not all TensorFlow Hub modules are fine-tunable, so make sure to check the documentation for each pretrained model you're working with.
 - After training, this model would reach a validation accuracy of over 90%.
 - That's actually really good: if you try to perform the task yourself, you will probably do only marginally better since many reviews contain both positive and negative comments. Classifying these ambiguous reviews is like flipping a coin.
+
+## An Encoder-Decoder Network for Neural Machine Translation
+
+- Let's begin with a simple [NMT model](https://arxiv.org/abs/1409.3215) that will translate English sentences to Spanish:
+![A simple machine translation model](image-2.png)
+- In short, the architecture is as follows: English sentences as fed as inputs to the encoder, and the decoder outputs the Spanish translations.
+- Note that the Spanish translations are also used as inputs to the decoder during training, but shifted back by one step.
+- In other words, during training, the decoder is given as input the word it *should* have output at the previous step, regardless of what it actually output.
+- This is called *teacher forcing*, a technique that significantly speeds up training and improves the model's performance.
+- For the very first word, the decoder is given the start-of-sequence (SOS) token, and the decoder is expected to end the sentence with an end-of-sequence (EOS) token.
+- Each word is initially represented by its ID (e.g., `854` for the word "soccer").
+- Next, an `Embedding` layer returns the word embedding. These word embeddings are then fed to the encoder and the decoder.
+- At each step, the decoder outputs a score for each word in the output vocabulary (i.e., Spanish), then the softmax activation function turns these cores into probabilities.
+- For example, at the first time step, the word "Me" may have a probability of 7%, "Yo" may have a probability of 1%, and so on. Thw word with the highest probability is the output.
+- This is very much like a regular multiclass classification task, and in fact, you can train the model using the `"sparse_categorical_crossentropy"` loss, much like we did in the char-RNN model.
+- Note that at inference time (after training), you will not have the target sentence to feed the decoder.
+- Instead, you need to feed it the word that it has juts output at the previous step, as shown below. This will require an embedding lookup that is not shown in the diagram.
+![At inference time, the decoder is fed as input the word it just output at the previous time step](image-3.png)
+- In a [2015 paper](https://arxiv.org/abs/1506.03099), Samy Bengio et al. proposed gradually switching from feeding the decoder the previous *target* token to feeding it the previous *output* token during training.
+- Now we can build and train this model. First, we need to download a dataset of English/Spanish pairs. The dataset come from the contributors of [Tatoeba project](https://tatoeba.org/en/). You can the original zip file in the website [https://www.manythings.org/anki/](https://www.manythings.org/anki/).
+- Each line contains an English sentence and the corresponding Spanish translation, separated by a tab.
+- We'll start by removing the Spanish characters "¡" and "¿", which the `TextVectorization` layer doesn't handle, then we will parse the sentence pairs and shuffle them.
+- Finally, we split them into two separate lists, one per language.
+- Next, let's create two `TextVectorization` layers - one per language - and adapt them to the text.
+- There are a few things to note here:
+    - We limit the vocabulary size to 1,000, which is quite small. That's because the training set is not very large, and because using a small value will speed up training. State-of-the-art translation models typically use a much larger vocabulary (e.g., 30,000), a much larger training set (gigabytes), and a much larger model (hundreds or even thousands of megabytes). For example, [Opus-MT models](https://huggingface.co/Helsinki-NLP/opus-mt-en-mt) by the University of Helsinki, or the [M2M-100 model](https://huggingface.co/docs/transformers/model_doc/m2m_100) by Facebook.
+    - Since all sentences in the dataset have a maximum of 50 words, we set `output_sequence_length` to 50: this way the input sequences will automatically be padded with zeros until they are all 50 tokens long. If there was any sentence longer than 50 tokens in the training set, it would be cropped to 50 tokens.
+    - For the Spanish text, we add "startofseq" and "endofseq" to each sentence when adapting the `TextVectorization` layer: we will use these words as SOS and EOS tokens. You could any other words, along as they are not actual Spanish words.
+- Let's see the first 10 tokens in both vocabularies. They start with the padding token, the SOS and EOS tokens (only in the Spanish vocabulary), then the actual words, sorted by decreasing frequency.
+- Next, we create the training set and the validation set (you could create a test set if you want to).
+- We will use the first 100,000 sentence pairs for training, and the rest for validation. The decoder's inputs are the Spanish sentences plus an SOS token prefix. The targets are the Spanish sentences suffix with an EOS token.
+- Now we can build our translation model. We will use the functional API for that, since the model is not sequential.
+- It requires two text inputs, so let's start with that.
+- Next, we need to encode these sentences using the `TextVectorization` layers was prepared earlier, followed by an `Embedding` layer for each language, with `mask_zero=True` to ensure masking is handled automatically. You can tune the embedding size, as always.
+- Now let's create the encoder and passed it the embedded inputs.
+- To keep things simple, we just used a single `LSTM` layer, but you could stack several of them.
+- We also set `return_state=True` to get a reference to the layer's final state.
+- SInce we're using an `LSTM` layer, there are actually two states: the short-term state and the long-term state.
+- The layer return these states separately, which is why we had to write `*encoder_state` to group both states in a list.
+    > In Python, if you run `a, *b = [1, 2, 3, 4]`, then `a` equals 1 and b equals to `[2, 3, 4]`.
+- Now we can use this (double) state as the initial state of the decoder.
+- Next, pass the decoder's outputs through a `Dense` layer with the softmax activation function to get the word probabilities for each step.
+- And that's everything. We just need to cerate the Keras `Model`, compile and train it.
+- After training, we can use the model to translate new English sentences to Spanish.
+- But it's not as simple as calling `model.predict()`, because the decoder expects as input the word that was predicted at the previous time step.
+- However, to keep things simple, we can just call the model multiple times, predicting one extra word at each round.
+- In the learning notebook, I create a function to do just that. The function simply keeps predicting one word at a time, gradually completing the translation, and it stops once it reaches the EOS token. It feeds the whole sentence again when trying to predict the next word, so it's not optimized, but our sentences are short.
+- If you feed it (very) short sentences, it does indeed works! But if you try longer sentences, well, it turns out really struggles.
+- You can try to increase the training set size and add more `LSTM` layers in both the encoder and the decoder. But this approach has a limit, so let's look at more sophisticated techniques.
