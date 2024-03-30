@@ -18,7 +18,7 @@
 
 # Generating Shakespearean Text Using a Character RNN
 
-- In a famous [2015 blog post]() titled "The Unreasonable Effectiveness of Recurrent Neural Networks", Andrej Karpathy showed how to train an RNN to predict the next character in a sentence.
+- In a famous [2015 blog post](https://karpathy.github.io/2015/05/21/rnn-effectiveness/) titled "The Unreasonable Effectiveness of Recurrent Neural Networks", Andrej Karpathy showed how to train an RNN to predict the next character in a sentence.
 - This *char-RNN* can then be used to generate novel text, one character at a time.
 
 ## Creating the Training Dataset
@@ -163,3 +163,32 @@
 - Whichever masking approach you prefer, after training this model for a few epochs, it will become quite good at judging whether a review is positive or not.
 - If you use the `tf.keras.callbacks.TensorBoard()` callback, you can visualize the embeddings in TensorBoard as they are being learned: it's fascinating to watch words like "awesome" and "amazing" gradually cluster on one side of the embedding space, while words like "awful" and "terrible" cluster on the other side.
 - Some words are not as positive as you might expect (at least with this model), such as the word "good", presumably because many negative reviews contains the phrases "not good".
+
+## Reusing Pretrained Embeddings and Language Models
+
+- It's impressive that the model is able to learn useful word embeddings based on just 250,000 movie reviews. Just imagine how good the embeddings would be if we had billions of reviews to train on.
+- Unfortunately, we don't, but perhaps we can reuse word embeddings trained on some other very large text corpus (e.g., Amazon reviews, available on TensorFlow Datasets), even if it is not composed of movie reviews?
+- After all, the word "amazing" generally has the same meaning whether you use it to talk about movies or anything else.
+- Moreover, perhaps embeddings would be useful for sentiment analysis even if they were trained on another task: since words like "awesome" and "amazing" have a similar meaning, they will likely cluster in the embedding space, even with the tasks such as predicting the next word in a sentence.
+- If all positive words and negative words form clusters, then this will be helpful for sentiment analysis.
+- So instead of training word embeddings from scratch, we could just download and use pretrained word embeddings, such as Google's [Word2Vec embeddings](https://arxiv.org/abs/1310.4546), Stanford's [GloVe embeddings](https://nlp.stanford.edu/projects/glove/), or Facebook's [FastText embeddings](https://fasttext.cc/).
+- Using pretrained word embeddings was popular for several years, but this approach has its limits.
+- In particular, a word has a single representation, no matter the context. For example, the word "right" is encoded the same way in "left and right" and "right and wrong", even though it means two very different things.
+- To address this limitation, a [2018 paper](https://arxiv.org/abs/1802.05365) by Matthew Peters introduced *Embeddings from Language Models* (ELMo): these are contextualized word embeddings learned from the internal states of a deep bidirectional language model.
+- Instead of just using pretrained embeddings in your model, you reuse part of a pretrained language model.
+- At roughly the same time, the [Universal Language Model Fine-Tuning(ULMFiT) paper](https://arxiv.org/abs/1801.06146) by Jeremy Howard and Sebastian Ruder demonstrated the effectiveness of unsupervised pretraining for NLP tasks: the authors trained an LSTM language model on a huge text corpus using self-supervised learning (i.e., generating the labels automatically from the data), then they fine-tuned it on various tasks.
+- Their model outperformed the state-of-the-art on six text classification tasks by a large margin (reducing the error rate by 18-25% in most cases).
+- Moreover, the authors showed a pretrained model fine-tuned on just 100 labeled examples could achieve the same performance as one trained from scratch on 10,000 examples.
+- Before the ULMFiT paper, using pretrained models was only the norm in computer vision; in the context of NLP, pretraining was limited to word embeddings.
+- This paper marked the beginning of a new era in NLP: today, reusing pretrained language models is the norm.
+- For example, let us build a classifier based on the Universal Sentence Encoder, a model architecture introduced in a [2018 paper](https://arxiv.org/abs/1803.11175) by a team of Google researchers.
+- This model is based on the transformer architecture, which we will look at later in this chapter, and it is available on TensorFlow Hub.
+- Note that the model is quite large - close to 1GB in size - so it take a while to download.
+- By default, TensorFlow Hub models are saved to a temporary directory, and they get downloaded again and again every time you run your program. To avoid this, you must set the `TFHUB_CACHE_DIR` environment variable to a directory of your choice: the modules will then be saved there, and only downloaded once.
+- Note that the last part of the TensorFlow Hub module URL specifies that we want version 4 of the model. This versioning ensures that if a new module version is released on TF Hub, it will nto break your model.
+- Conveniently, if you just type this URL into your web browser, you will get the documentation for this module.
+- Also note that we set `trainable=True` when creating the `hub.KerasLayer`.
+- This way, the pretrained Universal Sentence Encoder is fine-tuned during training: some of its weights are tweaked via backpropagation.
+- Not all TensorFlow Hub modules are fine-tunable, so make sure to check the documentation for each pretrained model you're working with.
+- After training, this model would reach a validation accuracy of over 90%.
+- That's actually really good: if you try to perform the task yourself, you will probably do only marginally better since many reviews contain both positive and negative comments. Classifying these ambiguous reviews is like flipping a coin.
