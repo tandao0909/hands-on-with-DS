@@ -229,7 +229,7 @@
 - Now let's create the encoder and passed it the embedded inputs.
 - To keep things simple, we just used a single `LSTM` layer, but you could stack several of them.
 - We also set `return_state=True` to get a reference to the layer's final state.
-- SInce we're using an `LSTM` layer, there are actually two states: the short-term state and the long-term state.
+- Since we're using an `LSTM` layer, there are actually two states: the short-term state and the long-term state.
 - The layer return these states separately, which is why we had to write `*encoder_state` to group both states in a list.
     > In Python, if you run `a, *b = [1, 2, 3, 4]`, then `a` equals 1 and b equals to `[2, 3, 4]`.
 - Now we can use this (double) state as the initial state of the decoder.
@@ -241,3 +241,21 @@
 - In the learning notebook, I create a function to do just that. The function simply keeps predicting one word at a time, gradually completing the translation, and it stops once it reaches the EOS token. It feeds the whole sentence again when trying to predict the next word, so it's not optimized, but our sentences are short.
 - If you feed it (very) short sentences, it does indeed works! But if you try longer sentences, well, it turns out really struggles.
 - You can try to increase the training set size and add more `LSTM` layers in both the encoder and the decoder. But this approach has a limit, so let's look at more sophisticated techniques.
+
+## Bidirectional RNNs
+
+- At each time step, a regular recurrent layer only look at past and present inputs before generating its output.
+- In other words, it is *causal*, meaning it cannot look into the future.
+- This type of RNN makes sense when forecasting time series, or in the decoder of a sequence-to-sequence (seq2seq) model.
+- But for tasks like text classification, or in the encoder of seq2seq model, it is often preferable ot look ahead at the next word before encoding a given word.
+- For example, consider the phrases "the right arm", "the right person", or "the right to vote": to properly encode the word "right", you need to look ahead.
+- One solution is to run two recurrent layers on the same inputs, one reading the words from left to right and the other reading them from right to left, then combine their outputs at each time step, typically by concatenating them. This is what a *bidirectional recurrent layer* does.
+![A bidirectional recurrent layer](image-4.png)
+- To implement a bidirectional recurrent layer in Keras, just wrap a recurrent layer in a `tf.keras.layers.Bidirectional` layer. For example, you can find an example of a `Bidirectional` layer being used as the encoder in a translation model in the learning notebook.
+- The `Bidirectional` model will create a clone of the `LSTM` layer, but in the reverse direction, and it will run both and concatenate their outputs at each time step.
+- So although the `LSTM` has 128 units, for example, the `Bidirectional` layer will output 20 values per time step.
+- There's just one problem. This layer will now return four states instead of two: the final short-term and long-term states of the forward `LSTM` layer, and the final short-term and long-term states of the backward `LSTM` layer.
+- We cannot use this quadruple states directly as the initial state of the decoder's `LSTM` layer, since it expects just two states (short-term and long-term).
+- We cannot make the decoder bidirectional, since it must remain causal: otherwise it would cheat during training and it would not work.
+- Instead, we can concatenate the two short-term states, and also concatenate the two long-term states. This can be seen as double the length of the time series.
+- Let's switch our focus on another technique aim at improving the performance of a translation model at inference time: beam search.
