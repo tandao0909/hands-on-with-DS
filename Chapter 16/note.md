@@ -259,3 +259,37 @@
 - We cannot make the decoder bidirectional, since it must remain causal: otherwise it would cheat during training and it would not work.
 - Instead, we can concatenate the two short-term states, and also concatenate the two long-term states. This can be seen as double the length of the time series.
 - Let's switch our focus on another technique aim at improving the performance of a translation model at inference time: beam search.
+
+## Beam Search
+
+- Suppose we have trained an encoder-decoder model, use it to translate the sentence "I like soccer" to Spanish.
+- We'are hoping that it will output the proper translation "me gusta el fútbol", but unfortunately it outputs "me gustan los jugadores", which means "I like the players".
+- Looking at the training set, you notice many sentences such as "I like cars", which translates to "me gustan los autos", so it's absurd to the model to output "me gustan los" after seeing "I like".
+- Unfortunately, in this case it was a mistake since "soccer" is singular.
+- The model couldn't go back and fix it, so it tried to complete the sentence as best as it could, thi case using the word "jugadores".
+- How can we will the model a chance to go back and fix mistakes it made earlier?
+- One of most common solutions is *beam search*: it keeps track of a short list of the k most promising sentences (say, the top three), and at each decoder step it tries to extend by one word, keeping only the k most likely sentences. The parameter *k* is called the *beam width*.
+- For example, suppose you train to train the model to translate the sentence "I like soccer" using beam search with a beam width of 3 (see the figure below).
+- At the first decoder step, the model will output an estimated probability for each possible first word in the translated sentence.
+- Suppose the top three are "me" (75% estimated probability), "a" (3%), and "como" (1%). That's our short list so far.
+- Next, we use the model to find the next word for each sentence. For the first sentence ("me"), perhaps the model outputs a probability of 36% for the word "gustan", 32% for the word "gusta", 16% for the word "encanta", and so on.
+- Note that these are actually *conditional* probabilities, given that the sentences starts with "me".
+- For the second sentence ("a"), the model might output a conditional probability of 50% for the word "mi", and so on.
+- Assuming the vocabulary has 1,000 words, we will end up with 1,000 probabilities per sentence.
+- Next, we compute the probabilities of each of the 3,000 two-word sentences we considered ($3 \times 1,000$).
+- We do this by multiplying the estimated conditional probability of each word by the estimated probability of the sentence it completes, ultimately apply the Bayesian rule.
+- For example, the estimated probability of the sentence "me" was 75%, while the estimated conditional probability of the word "gustan" (given the first word is "me") was 36%, so the estimated probability of the sentence "me gustan" is $75\% \times 36\% = 27\%$.
+- After computing the probabilities of all 3,00 two-word sentences, we keep only the top 3. In this example, they all start with the word "me": "me gustan" (27%), "me gusta" (24%), and "me encanta" (12%).
+- Right now, the sentence "me gustan" is winning, but "me gusta" has not been eliminated.
+![Beam search, with a beam width of 3](image-5.png)
+- Then we repeat the same process: we use the model to predict the next word in each of these three sentences, and we compute the probabilities of all 3,000 three-word sentences we considered.
+- Perhaps the top three are now "me gustan los" (10%), "me gusta el" (8%), and "me gusta mucho" (2%).
+- At the next step, we may get "me gusta el fútbol" (6%), "me gusta mucho el" (1%), and "me gusta el deporte" (0.2%).
+- Notice that "me gustan" was eliminated, and the correct translation is now ahead.
+- We boosted our encoder-decoyer model's performance without any extra training, simply by using it more wisely.
+- The TensorFlow Addons library includes a full seq2seq API that lets you build encoder-decoder models with attention, including beam search and more. However, its documentation is currently rather limited.
+- You can implement beam search yourself! Look at the learning notebook ofr an example.
+- With all of this, you can get reasonably good translations for fairly short sentences.
+- Unfortunately, this model will (still) be really bad at translating long sentences.
+- Once again, the problem comes from the limited short-term memory of RNNs.
+- *Attention mechanisms* are the game-changing innovation that addressed this problem.
