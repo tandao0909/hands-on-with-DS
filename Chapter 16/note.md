@@ -242,6 +242,19 @@
 - If you feed it (very) short sentences, it does indeed works! But if you try longer sentences, well, it turns out really struggles.
 - You can try to increase the training set size and add more `LSTM` layers in both the encoder and the decoder. But this approach has a limit, so let's look at more sophisticated techniques.
 
+## Optimizing the Output Layer
+
+- When the output vocabulary is large, outputting a probability for each and every possible word can be quite slow.
+- If the target vocabulary contained, say 50,000 Spanish words instead of 1,000, then the decoder would output 50,000-dimensional vectors, and compute the softmax function over such a large vector would be very computationally intensive.
+- To avoid this, one solution is to look only the logits output by the model for the correct word and for a random sample of incorrect words, then compute an approximation of the loss based only on these logits.
+- This *sampled softmax* technique was [introduced in 2015](https://arxiv.org/abs/1412.2007) by Sébastien Jean et al.
+- In TensorFlow, you can use the `tf.nn.sampled_softmax_loss()` function for this  during training and use the normal softmax function at inference time (sampled softmax cannot be used at inference time because it requires knowing the target).
+- Another thing you can do to speed up training - which is compatible with sampled softmax - is to tie the weights of the output layer to the transpose of the decoder's embedding matrix (you will see how to tie weights in chapter 17).
+- This significantly reduces the number of model parameters, which speeds up training and may sometimes improve the model's accuracy as well, especially if you don't have a lot of training data.
+- The embedding matrix is equivalent to one-hoe encoding followed by a linear layer with no bias term and no activation function that maps the one-hot vector to the embedding space.
+- The output layer does the reverse.
+- So, if the model can find an embedding matrix whose transpose is close to its inverse (such a matrix is called an *orthogonal matrix*), then there's no need to learn a separate set of weights for the output layer.
+
 ## Bidirectional RNNs
 
 - At each time step, a regular recurrent layer only look at past and present inputs before generating its output.
