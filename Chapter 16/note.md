@@ -373,3 +373,36 @@
 - So looking at the previous code example, the decoder outputs are the queries, and the encoder outputs are both the keys and the values. For each decoder output (i.e., each query), the attention layer returns a weighted sum of the encoder outputs (i.e., the keys/values) that are most similar to the decoder output.
 - The bottom line is that an attention mechanism is a trainable memory retrieval system.
 - It's so powerful that you can build state-of-the-art models using only attention mechanisms. Enter the transformer architecture.
+
+## Attention Is All You Need: The Original Transformer Architecture
+
+- In a groundbreaking [2017 paper](https://arxiv.org/abs/1706.03762), a  team of Google researchers suggested that "Attention Is All You Need".
+- They created an architecture called the *transformer*, which significantly improved the state-of-the-art in NMT without using any recurrent or convolutional layers, just attention mechanisms (plus embedding layers, dense layers, normalization layers, and a few other bits and pieces).
+- Because the model is not recurrent, it doesn't suffer as much from the unstable gradient problems as RNNs, it can be trained in fewer steps, it's easier to parallelize across multiple GPUs, and it can better capture long-range patterns than RNNs.
+- The original 2017 transformer architecture is represented below:
+![The original 2017 transformer architecture](image-7.png)
+- In short, the left part of the figure is the encoder, and the right part is the decoder.
+- Each embedding layer outputs a 3D tensor of shape [*batch size*, *sequence length*, *embedding size*].
+- After that, the tensors are gradually transformed as they flow through the transformer but their shape remains the same.
+- If you use the transformer for NMT, then during training you must feed the English sentences to the encoder and the corresponding Spanish translations to the decoder, with an extra SOS token inserted at the start of each sequence.
+- At inference time, you must call then transformer multiple times, producing the translations one word at a time and feeding the partial translations to the decoder at each round, just like we did earlier in the `translate()` function.
+- The encoder's role is to gradually transform the inputs - word representations of the English sentence - until each word's representation perfectly captures the meaning of the word, in the context of the sentence.
+- For example, if you feed the encoder with the sentence "I like soccer", then the word "like" will start off with a rather vague representation, since this word could mean different things in different contexts: think of "I like soccer" versus "It's like that". 
+- But after going through the encoder, the word's representation should capture the correct meaning of "like" in the given sentence (i.e., to be fond of), as well as any other information that may be required for translation (e.g., it's a verb).
+- The decoder's role is to gradually transform each word representation in the translated sentence into a word representation of the next word in the translation.
+- For example, if the sentence to translate is "I like soccer", and the decoder's input sentence is "<SOS> me gusta el fútbol", then after going through the decoder, the word representation of the word "el" will end up transformed into a representation of the word "fútbol".
+- Similarly, the representation of the word "fútbol" will be transformed into a representation of the EOS token.
+- After going through the decoder, each word representation goes through a final `Dense` layer with a softmax activation function, which will hopefully output a high probability for the correct next word and a low probability for all other words.
+- The predicted sentence should be "me gusta el fútbol <EOS>".
+- That was the big picture; now let's walk through the figure below in more detail.
+- First, notice that both the encoder and the decoder contain modules that are stacked N times. In the paper, N = 6. The final outputs of the whole encoder stack are fed to the decoder at each of these N levels.
+- Zooming in, you can see that you are already similar with most components: there are two embedding layers; several skip connections, each of them followed by a layer normalization; several feedforward modules that are composed two dense layers each (the first one using the ReLU activation function, the second with no activation function); and finally the output layer is a dense layer using the softmax activation function.
+- You can also sprinkle a bit of dropout after the attention layers and the feedforward modules, if needed.
+- Since all of these layers are time-distributed, each word is treated independently from all the others.
+- But how can we translate a sentence by looking at the words completely separately? Well, we can't, so that's where the new components come in:
+    - The encoder's *multi-head attention* layer updates each word representation by attending to (paying attention to) all other words in the same sentence. That's where the vague representation of the word "like" become a richer and more accurate representation, capturing its precise meaning in the given sentence. We'll discuss exactly how this works later.
+    - The decoder's *masked multi-head attention* layer does the same thing, but when it processes a word, it doesn't attend to words located after it: it's a causal layer. For example, when it processes the word "gusta", it only attends to the words "<SOS> me gusta", and it ignores the words "el fútbol" (or else that would be cheating).
+    - The decoder's upper *multi-head attention layer* is where the decoder pays attention ot the words in the English sentence. This is called *cross-attention*, not *self-attention* in this case. For example, the decoder will probably pay close attention to the word "soccer" when it processes the word "soccer" and transforms its representation into a representation of the word "fútbol".
+    - The *positional encodings* are dense vectors (much like word embeddings) that represent the position of each word in the sentence. The n-th positional encoding is added to the word embedding of the n-th word in each sentence. This is needed because all layers in the transformer architecture ignore word positions: without positional encodings, you could shuffle the output sequences in the same way, and it would just shuffle the output sequence the same way. Obviously, the order of words matters, which is why we need to give positional encodings to the word to the transformer somehow: adding positional encodings to the word representations is a good way to achieve this.
+- The first two arrows going into each multi-head attention layer in the figure below represents the keys and values, and the third arrow represents the queries.
+- In the self-attention layers, all three are equal to the word representations output by the previous layer, while in the decoder's upper attention layer, the keys and values are equal to the encoder's final word representations, and the queries are equal to the word representations output by the previous layer.
