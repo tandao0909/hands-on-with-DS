@@ -406,3 +406,29 @@
     - The *positional encodings* are dense vectors (much like word embeddings) that represent the position of each word in the sentence. The n-th positional encoding is added to the word embedding of the n-th word in each sentence. This is needed because all layers in the transformer architecture ignore word positions: without positional encodings, you could shuffle the output sequences in the same way, and it would just shuffle the output sequence the same way. Obviously, the order of words matters, which is why we need to give positional encodings to the word to the transformer somehow: adding positional encodings to the word representations is a good way to achieve this.
 - The first two arrows going into each multi-head attention layer in the figure below represents the keys and values, and the third arrow represents the queries.
 - In the self-attention layers, all three are equal to the word representations output by the previous layer, while in the decoder's upper attention layer, the keys and values are equal to the encoder's final word representations, and the queries are equal to the word representations output by the previous layer.
+
+### Positional encodings
+
+- A positional encoding is a dense vector that encodes the position of a word within a sentence: the i-th positional encoding is added to the word embedding of the i-th word in the sentence.
+- The easiest way to implement this is to use an `Embedding` layer and make it encode all the positions from 0 to the maximum sequences length in the batch, then add the result to the word embeddings.
+- The rules of broadcasting will ensure that the positional encodings get applied to every input sequence.
+- Note that the implementation in the learning notebook assumes that the embeddings are represented as regular tensors, not ragged tensors.
+- The encoder and the decoder share the same `Embedding` layer for the positional encodings, since they have the same embedding size (this is often the case).
+- Instead of using trainable positional encodings, the authors of the transformer paper chose to use fixed positional encodings, based on the sine and cosine functions at different frequencies.
+- The positional encoding matrix $\textbf{P}$ is defined in the equation below and represented at the top of the figure below (transposed), where $P_{(p,i)}$ is the i-th component of the encoding for the word located at the p-th position in the sentence.
+    $$P_{(p,i)} = \begin{cases}
+    \sin (p/10000^{i/d})  \text{ if i is even} \\
+    \cos (p/10000^{(i-1)/d})  \text{ if i is odd} \\ 
+    \end{cases} $$
+- In the equation, $d$ is the dimensionality of the embedding space. 
+- This solution can give the same performance as trainable positional encodings, and it can extend to arbitrarily long sentences without adding any parameters. However, when there is a huge amount of pretraining data, trainable positional encodings are usually favored.
+- After these positional encodings are added to the word embeddings, the rest of the model has access to the absolute position of each word in the sentence because there is a unique positional encoding for each position.
+- For example, the positional encoding for the word located at the 22nd position in a sentence is presented by the vertical dashed line at the top left of the figure in the learning notebook, and you can see it's unique to that position.
+- Moreover, the choice of oscillating functions (sine and cosine) makes it possible for the model to learn relative positions as well.
+- For example, words located 38 words apart (e.g., at positions p = 22 and p = 60) always have the same positional encoding values in the encoding dimensions i = 100 and i = 101, as you can see in the figure.
+- In other words, there're components (e.g., the 100-th and 101-st) in the embedding vector, which are exact some steps apart (e.g., 38), are equal to each other, no matter where they are. The only relevant information is the relative positions.
+- This explains why we need both the sine and cosine for each frequency: if we only used the sine (the blue wave at i = 100), the model would not be able to distinguish positions p = 22 and p = 35 (marked by a cross).
+- There is no `PositionalEncoding` layer in TensorFlow, but it is not too hard to create one.
+- For efficiency reasons, we pre-compute the positional encoding matrix in the constructor.
+- The `call()` method just truncates this encoding matrix to the max length of the input sequences, and it adds them to the inputs.
+- We also set `supports_masking=True` to propagate the input's automatic mask to the next layer.
