@@ -307,7 +307,7 @@
 - Once again, the problem comes from the limited short-term memory of RNNs.
 - *Attention mechanisms* are the game-changing innovation that addressed this problem.
 
-## Attention Mechanisms
+# Attention Mechanisms
 
 - Consider the path from the word "soccer" to its translation "fútbol" back in the figure below: it is quite long!
 - This means a representation of this word (along with all the other words) needs to be carried over many steps before it is actually used. How can we make this path shorter?  
@@ -489,7 +489,7 @@
 - Now we just need to add the final output layer, create the model, compile and train it. That's a full transformer from scratch, and trained it for automatic translation. This is getting quite advanced!
 - The Keras team has created a new [Keras NLP project](https://github.com/keras-team/keras-nlp), including an API to build a transformer more easily. Also check out the new [Keras CV project for computer vision](https://github.com/keras-team/keras-cv)
 
-## An Avalanche of Transformer Models
+# An Avalanche of Transformer Models
 
 - The year 2018 has been called the "ImageNet moment for NLP". Since then, progress ahs been astounding, with larger and larger transformer-based architectures trained on immense datasets.
 - First, the [GPT paper](https://s3-us-west-2.amazonaws.com/openai-assets/research-covers/language-unsupervised/language_understanding_paper.pdf) by Alec Radford and other OpenAI researchers once again demonstrated the effectiveness of unsupervised pretraining, like the ELMo and ULMFiT paper before it, but this time using a transformer-like architecture.
@@ -541,3 +541,64 @@
 - For example, instead of "A: 11", the prompt contains "A: Roger started with 5 balls. 2 cans of 3 tennis balls each is 6 tennis balls. 5 + 6 = 11." This encourages the model to give a detailed answer to the actual question, such as "John takes care of 10 dogs. Each dog takes .5 hours a day to walk and take care of their business. So that is 10 x .5 = 5 hours a day. 5 hours a day x 7 days a week = 35 hours a week. The answer is 35 hours a week." This is an actual example from the paper!
 - Not only does the model give the right answer much more frequently than using regular prompting - we're encouraging the model to think things through - but it also provides all the reasoning steps, which can be useful to better understand the rationale behind a model's answer.
 - Transformers have been taken over NLP, but they didn't stop there: they soon expanded to computer vision as well.
+
+# Vision Transformers
+
+- One of the first applications of attention mechanisms beyond NMT was in generating image captions using [visual attention](https://arxiv.org/abs/1502.03044): a convolutional neural network first processes the image and outputs some feature maps, then a decoder RNN equipped with an attention mechanism generates the caption, one word at a time.
+- At each decoder time step (i.e., each word), the decoder uses the attention model to focus on just the correct part of the image.
+- For example, in the figure below, the model generated the caption "A woman is throwing a frisbee in a park", and you can see what part of the input image the decoder focused its attention on when it was about to output the word "frisbee": clearly, most of its attention was focused on the frisbee.
+![Visual attention: an input image (left) and the model’s focus before producing the word “frisbee” (right)](image-10.png)
+- When transformer came out in 2017 and people started to experiment with them beyond NLP, they were first used alongside CNNs, without replacing them. Instead, transformer were generally used to replace RNNs, for example, in image captioning models.
+- Transformers became slightly more visual in a [2020 paper](https://arxiv.org/abs/2005.12872) by Facebook researchers, which proposed a hybrid CNN-transformer architecture for object detection.
+- Once again, the CNN first processes the input images and outputs a set of feature maps, then these feature maps are converted to sequences and fed to a transformer, which outputs bounding box predictions. But agin, most of the visual word is still done by the CNN.
+- Then, in October 2020, a team of Google researchers released [a paper](https://arxiv.org/abs/2010.11929) that introduced a fully transformer-based vision model, called a *vision transformer* (ViT).
+- The idea is surprisingly simple: just chop the image into little 16 x 16 squares, and treat the sequences of squares as if it were a sequence of word representations.
+- To be more precise, the squares are first flattened into $16 \times 16 \times 3 = 768$-dimensional vectors - the 3 is for the RGB color channel - then these vectors go through a linear layer that transforms them but retains their dimensionality.
+- The resulting sequence of vectors can then be treated just like a sequence of word embeddings: this means adding positional embeddings, and passing the result to the transformer. That's it!
+- This model beat the state of the art on ImageNet image classification, but to be fair the authors had to use over 300 million additional images for training.
+- This makes sense since transformers don't have as many *inductive bias* as convolutional neural nets, so they need extra data just to learn things that CNNs implicitly assume.
+- An inductive bias is an implicit made by the model, due to its architecture.
+- For example, linear models implicitly assume that the data is, well, linear.
+- CNNs implicitly assume that patterns learned in one location will likely be useful in other locations as well.
+- RNNs implicitly assume that the inputs are ordered, and that recent tokens are more important than older ones.
+- The more inductive biases a model has, assuming they are correct, the less training data the model will require.
+- But if the implicit assumptions are wrong, then the model may perform poorly even if it is trained on a large dataset.
+- Just two months later, a team of Facebook researchers released [a paper]() that introduced *data-efficient image transformers* (DeiTs).
+- Their model achieved competitive results on ImageNet without requiring any additional data for training.
+- The model's architecture is virtually the same as the original ViT, but the authors used a distillation technique to transfer knowledge from state-of-the-art CNN models to their model.
+- Then, in March 2021, DeepMind released an important [paper](https://arxiv.org/abs/2103.03206) that introduced the *Perceiver* architecture. It is a *multimodal* transformer, meaning you can feed it text, images, audio, or virtually any other modality.
+- Until then, transformers had been restricted to to fairly short sequences because of the performance and RAM bottleneck in the attention layers.
+- This excluded modalities such as audio and videos, and it forced researchers to treat images as sequences of patches, rather than sequences of pixels.
+- The bottleneck is due to self-attention, where every token must attend to every other token: if the input sequence has $M$ tokens, then the attention layer ust compute an $M \times M$ matrix, which can be huge if $M$ is very large.
+- The Perceiver solves this problem by gradually improving a fairly short *latent representation* of the inputs, composed of $N$ tokens - typically just a few hundreds. The word *latent* means hidden, or internal.
+- The model uses cross-attention layers only, feeding them the latent representations as the queries, and the (possibly large) inputs as the values.
+- As opposed to RNNs, where we keep only the last value of the encoder's hidden state, here we keep only some last hidden state of the decoder.
+- This only requires computing an $M \times N$ matrix, so the computational complexity is linear with regard to $M$, instead of quadratic.
+- After going through several cross-attention layers, if everything goes well, the latent representation ends up capturing everything that matters in the inputs.
+The authors also suggested sharing the weights between consecutive cross-attention layers: if you do that, then the Perceiver effectively becomes an RNN.
+- Indeed, the shared cross-attention layers can be seen as the same memory cell at different time steps, and the latent representation corresponds to the cell's context vector. The same inputs are repeatedly fed to the memory cell at every time step. Looks like RNNs are not dead at all!
+- Just a month later, Mathilde Caron et al. introduced [DINO](), an impressive vision transformer trained entirely without labels, using self-supervision, and capable of high-accuracy sematic segmentation.
+- The model is duplicated during training, with one network acting as a teacher and the other acting as a student.
+- Gradient descent only affects the student, while the teacher's weights are just an exponential moving average of the student weights.
+- The student is trained to match the teacher's predictions: since they're almost the same model, this is called *self-distillation*.
+- At each training step, the input images are augmented in different ways for the teacher and the student, so they don't see the exact same image, but their predictions must match. This forces them to come up with high-level representations.
+- To prevent *mode collapse*, where both the student and the teacher would always output the same thing, ignoring the input completely, DINO keeps track of a moving average of the teacher's outputs, and it tweaks the teacher's predictions to ensure that they remain centered at zero, on average.
+- DINO also forces the teacher to have high confidence on its predictions: this is called *sharpening*.
+- Together, these techniques preserve diversity in the teacher's outputs.
+- In a [2021 paper](), Google researchers showed how to scale ViTs up or down, depending on the amount of data.
+- They managed to create a huge 2 billion parameter model that reached over 90.4% top-1 accuracy on ImageNet.
+- Conversely, they also trained a scaled-down model that reached over 84.8% top-1 accuracy on ImageNet, using only 10,000 images: that's just 10 images per class!
+- Progress in visual transformers has continued steadily to this day.
+- For example, in March 2022, a [paper]() by Mitchell Wortsman et al. demonstrated that it's possible to first train multiple transformers, then average their weights to create a new and improved model.
+- This is similar to an ensemble (discussed in chapter 7), except there's just one model in the end, which means there's no inference time penalty.
+- The latest trend in transformers consists in building large multimodal models, often capable of zero-shot or few-shot learning.
+- For example, [OpenAI's 2021 CLIP paper]() proposed a large transformer model pretrained to match captions with images: this task allows it to learn excellent image representations, and the model can then be used directly for tasks such as image classification using simple text prompts such as "a photo of a cat".
+- Soon after, OpenAI announced [DALL-E](), capable of generating amazing images based on text prompts.
+- The [DALL-E 2](), which generates even higher quality images using a diffusion model (see chapter 17).
+- In April 2022, DeepMind released the [Flamingo paper](), which introduced a family of models pretrained on a wide variety of tasks across multiple modalities, including text, images, and videos.
+- A single model can be used across very different tasks, such as question answering, image captioning, and more.
+- Soon after, in May 2022, DeepMind introduced [GATO](), a multimodal model that can be used as a policy for a reinforcement learning agent (will be introduced in chapter 18). The same transformer can chat with you, caption images, play Atari games, control (simulated) robotic arms, and more, all with only 1.2 billion parameters.
+- These astounding advances have led some researchers to claim that human-level AI is near, that "scale is all you need", and that some of these models may be "slightly conscious".
+- Others point out that despite teh amazing progress, the models still lack the reliability and adaptability of human intelligence, our ability to reason symbolically, to generate based on a single example, and more.
+- As you can see, transformers are everywhere! And the good news is that you generally won't have to implement transformers yourself since many excellent pretrained models are readily available for download via TensorFlow Hub or HuggingFace's model hub.
+- You've already seen how to use a model from TF Hub, so we'll end this chapter by taking a quick look at Hugging Face's ecosystem.
