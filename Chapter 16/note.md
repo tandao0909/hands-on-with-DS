@@ -432,3 +432,59 @@
 - For efficiency reasons, we pre-compute the positional encoding matrix in the constructor.
 - The `call()` method just truncates this encoding matrix to the max length of the input sequences, and it adds them to the inputs.
 - We also set `supports_masking=True` to propagate the input's automatic mask to the next layer.
+
+### Multi-head attention
+- To understand how a multi-head attention layer works, we must first understand the *scaled dot-product attention* layer, which it is based on.
+- Its equation is shown below, in a vectorized form. It's the same as Luong attention, except for a scaling factor.
+    $$\text{Attention} (\textbf{Q}, \textbf{K}, \textbf{V}) = \text{softmax} \left(\frac{\textbf{Q}\textbf{V}^\intercal}{\sqrt{d_{\text{keys}}}} \right)\textbf{K} $$
+- In this equation:
+    - $\textbf{Q}$ is a matrix containing one row per *query*. Its shape is [$n_{\text{queries}}, d_{\text{keys}} $], where $n_{\text{queries}}$ is the number of queries and $d_{\text{keys}}$ is the number of dimensions of each query and each key, which means each key and each query must have the same dimensionality.
+    - $\textbf{K}$ is a matrix containing one row per *key*. Its shape is [$n_{\text{keys}}, d_{\text{keys}}$], where $n_{\text{keys}}$ is the number of keys and values.
+    - $\textbf{V}$ is a matrix containing one row per *value*. Its shape is [$n_{\text{keys}}, d_{\text{values}}$], where $d_{\text{values}}$ is the number of dimensions of each value.
+    - The shape of $\textbf{Q}\textbf{V}^\intercal$ is [$n_{\text{queries}}, n_{\text{keys}}$]: it contains one similarity score for each query/key pair. To prevent this matrix from being huge, the input sequences must not be too long (we will discuss how to overcome this limitation later in this chapter).
+    - The output of the softmax function has the same shape, but all rows sum up to 1.
+    - The final output has a shape [$n_{\text{queries}}, d_{\text{values}}$]: there is one row per query, where each row represents the query result (a weighted sum of the values).
+    - The scaling factor $1 / (\sqrt{d_{\text{keys}}})$ scales down the similarity scores to avoid saturating the softmax function, which would lead to tiny gradients.
+    - It is possible to mask out some key/value pairs by adding a very large negative value to the corresponding similarity scores, just before computing the softmax. This is useful in the masked multi-head attention layer.
+- If you set `use_scale=True` when creating a `tf.keras.layers.Attention` layer, then it will create an additional parameter that lets the layer learn how to properly downscale the similarity scores.
+- The scaled dot-product attention used in the transformer model is almost the same, except it always scales the similarity by the same factor, $1 / (\sqrt{d_{\text{keys}}})$.
+- Note that the `Attention` layer's inputs are just like $\textbf{Q}$, $\textbf{K}$, and $\textbf{V}$, except with an extra batch dimension (the first dimension).
+- Internally, the layer computes all the attention scores for all sentences in the batch with just one call to `tf.matmul(queries, keys)`: this makes it extremely efficient.
+- In fact, in TensorFlow, if `A` and `B` are tensors with more than two dimensions - say, of shape [2, 3, 4, 5] and [2, 3, 5, 6], respectively - then, `tf.matmul(A, B)` will treat these tensors as $2 \times 3$ arrays where each cell contains a matrix, and it will multiply the corresponding matrices: the matrix at the i-th row and j-th column in `A` will be multiplied by the matrix at the i-th row and j-th column in `B`. Since the product of a $4 \times 5$ matrix with a $5 \times 6$ matrix is a $4 \times 6$ matrix `tf.matmul(A, B)` will return an array of shape [2, 3, 4, 6].
+- Now we're ready to look at the multi-head attention layer. Its architecture is shown below:
+![Multi-head attention layer architecture](image-8.png)
+- As you can see, it is just a bunch of scaled dot-product attention layers, each preceded by a linear transformation of the values, keys, and queriers (i.e., a time-distributed dense layer with no activation function).
+- All the outputs are simply concatenated, and they go through a final linear transformation (again, time-distributed).
+- But what's the intuition behind this architecture? Well, consider once again the word "like" in the sentence "I like soccer".
+- The encoder was smart enough to encoder the fact that it is a verb. But the word representation also include its position in the text, thanks to the positional encodings, and it probably includes many other features that are useful for its translation, such as the fact that it is in the present tense.
+- In short, the word representation encodes many different characteristics of the word.
+- If we just used a single scaled dot-product attention layer we would only be able to query all of these characteristics in one shot.
+- This is why the multi-head attention layer applies *multiple* different linear transformation of the values, keys, and queries: this allows the model to apply many different projections of the word representation into different subspaces, each focusing on a subset of the word's characteristics.
+- Perhaps one of the linear layers will project the word representation into a subspace where all that remains is the information that the word is a verb, another linear layer will extract just the fact that it is present tense, and so on.
+- Then the scaled dot-product attention layers implement the lookup phase, and finally we concatenate all the results and project them back to the original space.
+- Keras includes a `tf.keras.layers.MultiHeadAttention` layer, so we now have everything we need to build the rest of the transformer.
+- Let's start with the full encoder, which is exactly as the architecture shown in the figure above, except we use a stack of two blocks (`N = 2`) instead of six, since we don't have a huge training set, and we add a bit of dropout as well.
+- The code can be found in the learning notebook. It's straightforward, except for masking.
+- The `MultiHeadAttention` layer does not support automatic masking ([yet](https://github.com/keras-team/keras/issues/16248)), so we must handle it manually.
+- The `MultiHeadAttention` layer accepts an `attention_mask` argument, which is a Boolean tensor of shape [*batch size*, * max query length*, *max value length*]: for every token in every query sequence, this mask indicates which tokens in the corresponding value sequence should be attended to.
+- We want to tell the `MultiHeadAttention` layer to ignore all the padding tokens in the values. 
+- So we first compute the padding tokens using `tf.math.not_equal(encoder_input_ids, 0)`. This returns a Boolean tensor of shape [*batch size*, *max sequence length*].
+- We then insert a second axis  using `[:, tf.newaxis]`, to get a mask of shape [*batch size*, 1, *max sequence length*].
+- This allows us to use this mask as the `attention_mask` when calling the `MultiHeadAttention` layer: thanks to broadcasting, the same mask will be used for all tokens in each query. This way, the padding tokens in the values will be ignored correctly.
+- However, the layer will compute outputs for every single token, including the padding tokens.
+- We need to mask the outputs that correspond to these padding tokens.
+- Recall that we use `mask_zero` in the `Embedding` layers, and we set `support_masking` to `True` in the `PositionalEncoding` layer, so the automatic mask was propagated all the way to the `MultiHeadAttention` layer's inputs (`encoder_in`).
+- We can use this to our advantage in the skip connection: indeed, the `Add` layer supports automatic masking, so when we add `Z` and `skip` (which is initially equal to `encoder_in`), the outputs get automatically masked correctly.
+- Now on the decoder! Once again, masking is going to be he only tricky part.
+- The first multi-head attention layer is a self-attention layer, like in the encoder, but it is a *masked* multi-head attention layer, meaning it is causal: it should ignore all tokens in the future. So we need two masks: a padding mask and a casual mask.
+- The padding mask is exactly the same as the one we created for the encoder, except it's based on the decoder's inputs rather than the encoder's.
+- The casual mask is created by using the `tf.linalg.band_part()` function, which takes a tensor and return a copy with all the values outside a diagonal band set to zero.
+- With these arguments, we get a square matrix of size `batch_max_len_dec` (the max length of the input sequences in the batch), with 1s in the lower-left triangle and 0s in the upper right.
+- If you use this mask as the attention mask, you will get exactly what we want: the first query token will only attend to the first value token the second will only attend to the first two, the third will only attend to the first three, and so on. 
+- In other words, query tokens cannot attend to any value token in the future.
+- For the first attention layer, we use `causal_mask & decoder_pad_mask` to mask both the padding tokens and future tokens.
+- The causal mask only has two dimensions: it's missing the batch dimension, but that's okay since broadcasting ensures that it gets copied across all the instances in the batch.
+- For the second attention layer, there's nothing special.
+- The only thing to note is that we are using `encoder_pad_mask`, not `decoder_pad_mask`, because this attention layer uses the encoder's final outputs as its values.
+- Now we just need to add the final output layer, create the model, compile and train it. That's a full transformer from scratch, and trained it for automatic translation. This is getting quite advanced!
+- The Keras team has created a new [Keras NLP project](https://github.com/keras-team/keras-nlp), including an API to build a transformer more easily. Also check out the new [Keras CV project for computer vision](https://github.com/keras-team/keras-cv)
