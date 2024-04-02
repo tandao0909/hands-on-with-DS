@@ -563,7 +563,7 @@
 - RNNs implicitly assume that the inputs are ordered, and that recent tokens are more important than older ones.
 - The more inductive biases a model has, assuming they are correct, the less training data the model will require.
 - But if the implicit assumptions are wrong, then the model may perform poorly even if it is trained on a large dataset.
-- Just two months later, a team of Facebook researchers released [a paper]() that introduced *data-efficient image transformers* (DeiTs).
+- Just two months later, a team of Facebook researchers released [a paper](https://arxiv.org/abs/2012.12877) that introduced *data-efficient image transformers* (DeiTs).
 - Their model achieved competitive results on ImageNet without requiring any additional data for training.
 - The model's architecture is virtually the same as the original ViT, but the authors used a distillation technique to transfer knowledge from state-of-the-art CNN models to their model.
 - Then, in March 2021, DeepMind released an important [paper](https://arxiv.org/abs/2103.03206) that introduced the *Perceiver* architecture. It is a *multimodal* transformer, meaning you can feed it text, images, audio, or virtually any other modality.
@@ -577,7 +577,7 @@
 - After going through several cross-attention layers, if everything goes well, the latent representation ends up capturing everything that matters in the inputs.
 The authors also suggested sharing the weights between consecutive cross-attention layers: if you do that, then the Perceiver effectively becomes an RNN.
 - Indeed, the shared cross-attention layers can be seen as the same memory cell at different time steps, and the latent representation corresponds to the cell's context vector. The same inputs are repeatedly fed to the memory cell at every time step. Looks like RNNs are not dead at all!
-- Just a month later, Mathilde Caron et al. introduced [DINO](), an impressive vision transformer trained entirely without labels, using self-supervision, and capable of high-accuracy sematic segmentation.
+- Just a month later, Mathilde Caron et al. introduced [DINO](https://arxiv.org/abs/2104.14294), an impressive vision transformer trained entirely without labels, using self-supervision, and capable of high-accuracy sematic segmentation.
 - The model is duplicated during training, with one network acting as a teacher and the other acting as a student.
 - Gradient descent only affects the student, while the teacher's weights are just an exponential moving average of the student weights.
 - The student is trained to match the teacher's predictions: since they're almost the same model, this is called *self-distillation*.
@@ -585,20 +585,29 @@ The authors also suggested sharing the weights between consecutive cross-attenti
 - To prevent *mode collapse*, where both the student and the teacher would always output the same thing, ignoring the input completely, DINO keeps track of a moving average of the teacher's outputs, and it tweaks the teacher's predictions to ensure that they remain centered at zero, on average.
 - DINO also forces the teacher to have high confidence on its predictions: this is called *sharpening*.
 - Together, these techniques preserve diversity in the teacher's outputs.
-- In a [2021 paper](), Google researchers showed how to scale ViTs up or down, depending on the amount of data.
+- In a [2021 paper](https://arxiv.org/abs/2106.04560v1), Google researchers showed how to scale ViTs up or down, depending on the amount of data.
 - They managed to create a huge 2 billion parameter model that reached over 90.4% top-1 accuracy on ImageNet.
 - Conversely, they also trained a scaled-down model that reached over 84.8% top-1 accuracy on ImageNet, using only 10,000 images: that's just 10 images per class!
 - Progress in visual transformers has continued steadily to this day.
-- For example, in March 2022, a [paper]() by Mitchell Wortsman et al. demonstrated that it's possible to first train multiple transformers, then average their weights to create a new and improved model.
+- For example, in March 2022, a [paper](https://arxiv.org/abs/2203.05482v1) by Mitchell Wortsman et al. demonstrated that it's possible to first train multiple transformers, then average their weights to create a new and improved model.
 - This is similar to an ensemble (discussed in chapter 7), except there's just one model in the end, which means there's no inference time penalty.
 - The latest trend in transformers consists in building large multimodal models, often capable of zero-shot or few-shot learning.
-- For example, [OpenAI's 2021 CLIP paper]() proposed a large transformer model pretrained to match captions with images: this task allows it to learn excellent image representations, and the model can then be used directly for tasks such as image classification using simple text prompts such as "a photo of a cat".
-- Soon after, OpenAI announced [DALL-E](), capable of generating amazing images based on text prompts.
-- The [DALL-E 2](), which generates even higher quality images using a diffusion model (see chapter 17).
-- In April 2022, DeepMind released the [Flamingo paper](), which introduced a family of models pretrained on a wide variety of tasks across multiple modalities, including text, images, and videos.
+- For example, [OpenAI's 2021 CLIP paper](https://arxiv.org/abs/2103.00020) proposed a large transformer model pretrained to match captions with images: this task allows it to learn excellent image representations, and the model can then be used directly for tasks such as image classification using simple text prompts such as "a photo of a cat".
+- Soon after, OpenAI announced [DALL-E](https://arxiv.org/abs/2102.12092), capable of generating amazing images based on text prompts.
+- The [DALL-E 2](https://arxiv.org/abs/2204.06125), which generates even higher quality images using a diffusion model (see chapter 17).
+- In April 2022, DeepMind released the [Flamingo paper](https://arxiv.org/abs/2204.14198), which introduced a family of models pretrained on a wide variety of tasks across multiple modalities, including text, images, and videos.
 - A single model can be used across very different tasks, such as question answering, image captioning, and more.
-- Soon after, in May 2022, DeepMind introduced [GATO](), a multimodal model that can be used as a policy for a reinforcement learning agent (will be introduced in chapter 18). The same transformer can chat with you, caption images, play Atari games, control (simulated) robotic arms, and more, all with only 1.2 billion parameters.
+- Soon after, in May 2022, DeepMind introduced [GATO](https://arxiv.org/abs/2205.06175), a multimodal model that can be used as a policy for a reinforcement learning agent (will be introduced in chapter 18). The same transformer can chat with you, caption images, play Atari games, control (simulated) robotic arms, and more, all with only 1.2 billion parameters.
 - These astounding advances have led some researchers to claim that human-level AI is near, that "scale is all you need", and that some of these models may be "slightly conscious".
 - Others point out that despite teh amazing progress, the models still lack the reliability and adaptability of human intelligence, our ability to reason symbolically, to generate based on a single example, and more.
 - As you can see, transformers are everywhere! And the good news is that you generally won't have to implement transformers yourself since many excellent pretrained models are readily available for download via TensorFlow Hub or HuggingFace's model hub.
 - You've already seen how to use a model from TF Hub, so we'll end this chapter by taking a quick look at Hugging Face's ecosystem.
+
+## Explainability
+
+- One extra benefit of attention mechanism is that they make it easier to understand what led the model to produce its output. This is called *explainability*.
+- It can be especially useful when the model makes a mistake: for example, if an image of a dog walking in the snow is labeled as "a wolf walking in the snow", then you can go back and check what the model focused on when it outputs the word "wolf".
+- You may find that it was paying attention not only to the dog, but also the snow, hinting at a possible explanation: perhaps the way the model learned to distinguish dogs from wolves is by checking whether or not there's a lot of snow around.
+- You can then fix this by training the model with more images of wolves without snow, and dogs with snow.
+- This example comes from the [2016 paper](https://arxiv.org/abs/1602.04938) by Marco Tulio Ribeiro et al. that uses a different approach to explainability: learning an interpretable model locally around a classifier's predictions.
+- In some applications, explainability is not just a tool to debug a model; it can be a legal requirement - think of a system deciding whether or not it should grant you a loan.
