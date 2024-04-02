@@ -611,3 +611,34 @@ The authors also suggested sharing the weights between consecutive cross-attenti
 - You can then fix this by training the model with more images of wolves without snow, and dogs with snow.
 - This example comes from the [2016 paper](https://arxiv.org/abs/1602.04938) by Marco Tulio Ribeiro et al. that uses a different approach to explainability: learning an interpretable model locally around a classifier's predictions.
 - In some applications, explainability is not just a tool to debug a model; it can be a legal requirement - think of a system deciding whether or not it should grant you a loan.
+
+# Hugging Face's Transformer Library
+
+- It's impossible to talk about transformers today without mentioning Hugging Face, an AI company that has built a whole ecosystem of easy-to-use open source tools for NLP, vision, and beyond.
+- The central component of their ecosystem is the Transformers library, which allows you to easily download a  pretrained model, including its corresponding tokenizer, and then fine-tune it on your own dataset, if needed.
+- Plus, the library supports TensorFlow, PyTorch, and JAX (with the Flax library).
+- The simplest way to use the Transformers library is to use the `transformers.pipeline()` function: you just specify which task you want, such as sentiment analysis, and it downloads a default pretrained model ready to be used - it really couldn't be any simpler.
+- In the example, the model correctly found that the sentence (maybe about a movie) is positive, with about 99.98% confidence. Of course, you can pass a batch of sentences to the model.
+- The `pipeline()` function uses the default model for the given task.
+- For example, for text classification task such as sentiment analysis, it defaults to `distilbert-base-uncased-finetuned-sst-2-english` - a DistilBERT model with an uncased tokenizer, trained on English Wikipedia and a corpus of English Books, and fine-tuned on the Stanford Sentiment Treebank v2 (SST 2) task.
+- It's also possible to manually specify a different model.
+- For example, you can use a DistilBERT model fine-tuned on the Multi-Genre Natural Language Inference (MultiNLI) task, which classifies two sentences into three classes: contraction, neutral, or entailment.
+- You can find the list of available models at [https://huggingface.co/models](https://huggingface.co/models), as well as the list of tasks at [https://huggingface.co/tasks](https://huggingface.co/tasks).
+- The pipeline API is very simple and convenient, but sometimes you will need more control.
+- For such cases, the Transformer library provides many classes, including all sort of tokenizers, models, configurations, callbacks, and much more.
+- For example, we will load the same DistilBERT model, along with its corresponding tokenizer, using the `TFAutoModelForSequenceClassification` and `AutoTokenizer` classes. You can see the code of this part in the learning notebook.
+- Next, we'll tokenize a couple pairs of sentences. We will also add padding and specify that we want TensorFlow tensors instead of Python lists.
+- Instead of passing `"Sentence 1 [SEP] Sentence 2"` to the tokenizer, you can equivalent pass it as a tuple: `("Sentence 1", "Sentence 2")`.
+- The output is a dictionary-like instance of the `BatchEncoding` class, which contains the sequences of token IDs, as well as a mask containing 0s for the padding tokens.
+- If you set `return_token_type_ids=True` when calling the tokenizer, you will also get an extra tensor that indicates which sentence each token belongs to. This is needed by some models, but not DistilBERT.
+- Next, we can directly pass this `BatchEncoding` object to the model; it returns a `TFSequenceClassifierOutput` object containing its predicted class logits.
+- Lastly, we can apply the softmax function to convert these logits to class probabilities, and use the `argmax()`function` to predict the class with the highest probability for each input sentence pair.
+- In this example, the model correctly classifies the first sentence pair as neutral (the fact that I like soccer is not relevant to whether everyone else does) and the second pair as an entailment (Joe must be quite old).
+- If you wish to fine-tune this model on your own dataset, you can train the model as usual with Keras since it's just a regular Keras model with a few extra methods.
+- However, because the model outputs logits instead of class probabilities, you must use the `tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)` loss instead of the usual `"sparse_categorical_crossentropy"` loss.
+- Moreover, the model does not support `BatchEncoding` inputs during training, so you must use its `data` attribute to get a regular dictionary instead.
+- HuggingFace has also built a Datasets library that you can use to easily download a standard dataset (such as IMDb) or a custom one, and use it to fine-tune your model.
+- It's similar to TensorFlow Datasets, but it also provides tools to preform common preprocessing tasks on the fly, such as masking.
+- The list of datasets is available at [https://huggingface.co/datasets](https://huggingface.co/datasets).
+- To learn more, checkout [https://huggingface.co/docs](https://huggingface.co/docs) for the documentation, which includes many tutorial notebooks, videos, the full API, and more.
+- You can also find the book [Natural Language Processing with Transformers: Building Language Applications with Hugging Face](https://www.oreilly.com/library/view/natural-language-processing/9781098136789) by Lewis Tunstall, Leandro von Werra, and ThomasWolf - all from the Hugging Face team.
