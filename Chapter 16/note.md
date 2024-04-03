@@ -623,7 +623,7 @@ The authors also suggested sharing the weights between consecutive cross-attenti
 - For example, for text classification task such as sentiment analysis, it defaults to `distilbert-base-uncased-finetuned-sst-2-english` - a DistilBERT model with an uncased tokenizer, trained on English Wikipedia and a corpus of English Books, and fine-tuned on the Stanford Sentiment Treebank v2 (SST 2) task.
 - It's also possible to manually specify a different model.
 - For example, you can use a DistilBERT model fine-tuned on the Multi-Genre Natural Language Inference (MultiNLI) task, which classifies two sentences into three classes: contraction, neutral, or entailment.
-- You can find the list of available models at [https://huggingface.co/models](https://huggingface.co/models), as well as the list of tasks at [https://huggingface.co/tasks](https://huggingface.co/tasks).
+- You can find the list of available models at https://huggingface.co/models, as well as the list of tasks at https://huggingface.co/tasks.
 - The pipeline API is very simple and convenient, but sometimes you will need more control.
 - For such cases, the Transformer library provides many classes, including all sort of tokenizers, models, configurations, callbacks, and much more.
 - For example, we will load the same DistilBERT model, along with its corresponding tokenizer, using the `TFAutoModelForSequenceClassification` and `AutoTokenizer` classes. You can see the code of this part in the learning notebook.
@@ -639,6 +639,22 @@ The authors also suggested sharing the weights between consecutive cross-attenti
 - Moreover, the model does not support `BatchEncoding` inputs during training, so you must use its `data` attribute to get a regular dictionary instead.
 - HuggingFace has also built a Datasets library that you can use to easily download a standard dataset (such as IMDb) or a custom one, and use it to fine-tune your model.
 - It's similar to TensorFlow Datasets, but it also provides tools to preform common preprocessing tasks on the fly, such as masking.
-- The list of datasets is available at [https://huggingface.co/datasets](https://huggingface.co/datasets).
-- To learn more, checkout [https://huggingface.co/docs](https://huggingface.co/docs) for the documentation, which includes many tutorial notebooks, videos, the full API, and more.
+- The list of datasets is available at https://huggingface.co/datasets.
+- To learn more, checkout https://huggingface.co/docs for the documentation, which includes many tutorial notebooks, videos, the full API, and more.
 - You can also find the book [Natural Language Processing with Transformers: Building Language Applications with Hugging Face](https://www.oreilly.com/library/view/natural-language-processing/9781098136789) by Lewis Tunstall, Leandro von Werra, and ThomasWolf - all from the Hugging Face team.
+
+## Bias and Fairness
+
+- As the output suggests in the classifier with countries, this specific classifier loves Indians, but is severely biased against Iraqis and Vietnamese.
+- Such an undesirable bias generally comes in large part from the training data itself: in this case, there were plenty of negative sentences related to the wars in Iraq in the training data.
+- This bias was then amplified during the fine-tuning process since the model was forced to choose between just two classes: positive or negative.
+- If you add a neutral class when fine-tuning, then the country bias mostly disappears.
+- But the training data is not the only source of bias: the model's architecture, the type of loss or regularization used for training, the optimizer; all of these can affect what the model ends up learning.
+- Even a mostly unbiased model can be *used* in a bias way, much like survey questions can be biased.
+- Understanding bias in AI and mitigating its negative effect is still an active area of research, but one thing is certain: You should pause and think before you rush to deploy a model to production. Ask yourself how the mode could do harm, even indirectly.
+- For example, if the model's predictions are used to decide whether or not to give someone a loan, the process should be fair.
+- So make sure you evaluate the model's performance not just on average over the whole test set, but across various subsets as well: for example, you may find that although the model works very well on average, its performance is abysmal for some categories of people.
+- You may also want to run counterfactual tests: for example, you want to check that the model's predictions do not change when you simply switch someone's gender.
+- If the model works well on average, it's tempting to push it to production and move on to something else, especially if it's just one component of a much larger system.
+- But in general, if you don't fix such issues, nobody will fix them, and your model will end up doing more harm than good.
+- The solutions depends on the problem: it may require balancing the dataset, fine-tuning on a different dataset, switching to another pretrained model, tweaking the model's architecture, etc.
