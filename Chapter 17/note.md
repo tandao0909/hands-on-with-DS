@@ -74,3 +74,13 @@ When training the network, which reuses part of the autoencoder, if you really d
 There's nothing special about the implementation. You train the stacked autoencoder on all the data (including the unlabeled and labeled ones), reuse the encoder's layers, add a few more layers on top based on your tasks, and trained this model on the labeled training data.
 
 Having plenty of unlabeled data but little labeled data is common: a simple script can crawl millions of images from the internet, but having people manually labeled is time-consuming and expensive. You usually end up having millions of unlabeled data, but just thousands, or even just hundreds, of labeled data.
+
+## Tying Weights
+
+When autoencoder is neatly symmetrical, you may think: Hey, why don't we just reuse the weights? The matrices have same shape, right? Well, that's actually a great idea! Doing so would halve the number of weights, result in smaller model, faster training time, and reducing the risk of overfitting.
+
+If the autoencoder has N layers (we don't count the input layer), then N is even. Layer 1 is the first hidden layer, layer N/2 is the coding layer, and layer N is the output layer. If we called $\textbf{W}_i$ is the weight of the i-th layer, then what we want to do is $W_{i} = W_{N-i}$, where $L = 1, \dots, N/2 - 1$.
+
+To tie weights between layers using Keras, you must define a custom layer. This custom layer acts as a regular `Dense` layer, but has the weights tied to another `Dense` layer, transposed (using `transpose_b` is equivalent to transposing the second argument, but more efficient). It still has its own bias vector, though.
+
+We build the model as usual, just need to tie the layers in the decoder to the appropriate layer in the encoder. This model had a loss score roughly as good as the previous model, but using only half amount of parameters.
