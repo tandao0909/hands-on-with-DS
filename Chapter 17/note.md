@@ -84,3 +84,14 @@ If the autoencoder has N layers (we don't count the input layer), then N is even
 To tie weights between layers using Keras, you must define a custom layer. This custom layer acts as a regular `Dense` layer, but has the weights tied to another `Dense` layer, transposed (using `transpose_b` is equivalent to transposing the second argument, but more efficient). It still has its own bias vector, though.
 
 We build the model as usual, just need to tie the layers in the decoder to the appropriate layer in the encoder. This model had a loss score roughly as good as the previous model, but using only half amount of parameters.
+
+## Training One Autoencoder at a Time
+
+Rather than training the whole stack of autoencoder as we did, we can instead train a (simple) separate autoencoder individually, and insert them together to have a deep stack. It's easier to see it visually:
+![Training one autoencoder at a time](image-2.png)
+
+This technique is not used as much these days, but there's still papers that talk about "greedy layerwise training", so it's good to know what it means.
+
+During the first phase of training, we train the outermost layers as an autoencoder, which consists of the input layer, output layer and the first hidden layer. After that, we use the encoder to create the encoded training set, and use it to train a second autoencoder. That's the second phase. Finally, we build a big sandwich using all these autoencoders, by stacking the encoders in that order, and then the decoders in the reverse order. This gives us the final stacked autoencoder, see the learning notebook for an implementation. We could easily train more autoencoders this way, result in a deeper autoencoder.
+
+As mentioned earlier, one of the triggers of the tsunami of deep learning was the discovery in 2006 by Geoffrey Hinton et al. that deep neural network can be pretrained in a unsupervised manner, using this greedy layerwise approach. They used restricted Boltzmann machines (RBMs, see ) for this task, but later in 2007, Yoshua Bengio et al. showed that autoencoders work just as well. For several years, this was the only way to train a deep nets, until many of the techniques introduced in chapter 11 made it possible to train a deep net in one shot.
