@@ -48,3 +48,9 @@ The architecture is typically symmetrical with regard to the central hidden laye
 ## Implementing a Stacked Autoencoder Using Keras
 
 You can implement a deep stacked autoencoder similarly to a regular MLP. You can find the implementation in the learning notebook. There's nothing special in this model compared to the previous one: you need to make sure the number of output neurons is the same as the number of inputs, and feeding the same dataset as both the inputs and the targets. Just remember the symmetry, and you're good to go.
+
+## Visualizing the Reconstructions
+
+One way to check if the outputs are similar to the inputs is just draw them out and judge them by our eyes. You can look at the learning notebook for an example.
+
+The reconstruction is a bit lossy, but recognizable. If you wish to make them better, you can try making the autoencoder deeper, making the codings larger, or training it for longer. However, if you make the model too powerful, the model can end up not just remember the training set, without learning any useful representations. For now, we'll stick with this model.
