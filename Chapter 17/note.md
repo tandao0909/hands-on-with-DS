@@ -54,3 +54,11 @@ You can implement a deep stacked autoencoder similarly to a regular MLP. You can
 One way to check if the outputs are similar to the inputs is just draw them out and judge them by our eyes. You can look at the learning notebook for an example.
 
 The reconstruction is a bit lossy, but recognizable. If you wish to make them better, you can try making the autoencoder deeper, making the codings larger, or training it for longer. However, if you make the model too powerful, the model can end up not just remember the training set, without learning any useful representations. For now, we'll stick with this model.
+
+## Visualizing the Fashion MNIST Dataset
+
+For visualization, stacked autoencoders don't yield good result compared to other dimensionality reduction algorithms discussed in chapter 8, but one big advantage of it is the ability to handle big datasets with many instances and many features. Therefore, a common pipeline for data visualization is using autoencoders to reduce the dataset to a reasonable dimension, and use better (but slower) algorithms to reduce it to 2D or 3D.
+
+The learning notebook shows us one example: I used the trained autoencoder to reduce the MNIST dataset to 30 dimension, then use t-SNE to reduce to 2D. 
+
+So, autoencoders can be used for dimensionality reduction. Let's see how it deal with unsupervised pretraining.
