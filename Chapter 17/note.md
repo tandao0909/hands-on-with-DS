@@ -35,3 +35,12 @@ The code in the learning notebook creates a very simple autoencoder to perform P
 Note when we train the model, we use `X_train` both as the input and the target. As you can see in the learning notebook, if you ask the encoder to predict the `X_train` (i.e., ask it to show its codings), the encoder will show a projection of `X_train` into a 2D space that preserves as much information as possible, which is variance in this case. Hence in the end, we will approximate PCA.
 
 You can think of this model, and autoencoders in general, as a self-supervised learning model. This is because the labels are created automatically, simply equal to the target in the autoencoder's case.
+
+# Stacked Autoencoders
+
+Just like any other neural network architecture, we can make autoencoders more powerful simply by stacking several of them together, create a deep neural network. However, we can't simply stack one autoencoder on another, but stack the encoders and decoders separately instead.
+
+That said, you need to be careful, as making the autoencoder too deep make it too powerful, which means the encoder can simply map each data point to an arbitrary number, and the decoder just learn the reserve mapping, without the model having to learn any meaningful codings. This will make the model works perfectly with the training set, but not able to generalize well.
+
+The architecture is typically symmetrical with regard to the central hidden layer, which is the coding layer. You can think of fit as a sandwich. For example, the architecture below is trained on the MNIST dataset, starts with the encoder of 784 units, then 100 units, then the central coding layer of 30 units, then we reserve the order in the decoder with 100 units and 784 units in the output layer:
+![Stacked autoencoder](image-1.png)
