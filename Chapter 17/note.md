@@ -62,3 +62,15 @@ For visualization, stacked autoencoders don't yield good result compared to othe
 The learning notebook shows us one example: I used the trained autoencoder to reduce the MNIST dataset to 30 dimension, then use t-SNE to reduce to 2D. 
 
 So, autoencoders can be used for dimensionality reduction. Let's see how it deal with unsupervised pretraining.
+
+## Unsupervised Pretraining Using Stacked Autoencoders
+
+As we discussed in chapter 11, one way to tackling complex task with little training data is finding a pretrained network with similar task to yours and reuse the lower layers. Your network will take advantage of the feature detector and have a good performance, albeit having little training data.
+
+Similarly, if you don't have many labeled data at hand, but lots of unlabeled one, you can train an autoencoder on the unlabeled data and reuse its encoder. The idea is we can reuse the encoder's latent representation as a feature detector, so if we build a new neural network using these lower layers, we can achieve a high performance score, with little training data.
+
+When training the network, which reuses part of the autoencoder, if you really don't have much labeled training data, you should freeze the reused layers (at least the lower ones).
+
+There's nothing special about the implementation. You train the stacked autoencoder on all the data (including the unlabeled and labeled ones), reuse the encoder's layers, add a few more layers on top based on your tasks, and trained this model on the labeled training data.
+
+Having plenty of unlabeled data but little labeled data is common: a simple script can crawl millions of images from the internet, but having people manually labeled is time-consuming and expensive. You usually end up having millions of unlabeled data, but just thousands, or even just hundreds, of labeled data.
