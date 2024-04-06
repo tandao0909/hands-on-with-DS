@@ -44,3 +44,7 @@ That said, you need to be careful, as making the autoencoder too deep make it to
 
 The architecture is typically symmetrical with regard to the central hidden layer, which is the coding layer. You can think of fit as a sandwich. For example, the architecture below is trained on the MNIST dataset, starts with the encoder of 784 units, then 100 units, then the central coding layer of 30 units, then we reserve the order in the decoder with 100 units and 784 units in the output layer:
 ![Stacked autoencoder](image-1.png)
+
+## Implementing a Stacked Autoencoder Using Keras
+
+You can implement a deep stacked autoencoder similarly to a regular MLP. You can find the implementation in the learning notebook. There's nothing special in this model compared to the previous one: you need to make sure the number of output neurons is the same as the number of inputs, and feeding the same dataset as both the inputs and the targets. Just remember the symmetry, and you're good to go.
