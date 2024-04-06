@@ -22,3 +22,16 @@ Just like the chess players in the memory experiment, an autoencoder look at the
 As you can see, an autoencoder typically an architecture of an MLP (discussed in chapter 10), expect the number of output neuron must be equal to the number of inputs. The outputs are called the *reconstruction*, as the autoencoder try to reconstruct the inputs. The cost function contains a *reconstruction loss*, indicates how many information was lost in the model.
 
 Because the internal representation has a lower dimensionality than the input data (2D compared to 3D), the autoencoder is said to be *undercomplete*. An undercomplete autoencoder cannot trivially copy its inputs to its encodings, yet it must find a way to output a copy of its inputs. Therefore, the model is forced to find patterns (of features) in the input data, keep in mind the most important one, and drop the rest.
+
+# Performing PCA with an Undercomplete Linear Autoencoder
+
+If you constraints the autoencoder to only use linear activations (no activation function) and use the mean square error (MSE), then the encoder will try to find the most informative linear combination of feature, or in other word, perform principal analysis (PCA, see chapter 8).
+
+The code in the learning notebook creates a very simple autoencoder to perform PCA on a 3D dataset, projecting it to 2D space. You can notice some key things:
+- The encoder and decoder are all simple `Sequential` models, as we did in previous chapters. We just need to stack two of them together to obtain the autoencoder.
+- The number of units in the last layer of the decoder must be equal to the number of inputs (3 in this case).
+- To perform PCA, we do not use any activation function and use the mean square error loss function. This is because PCA, at its heart, is a linear transformation.
+
+Note when we train the model, we use `X_train` both as the input and the target. As you can see in the learning notebook, if you ask the encoder to predict the `X_train` (i.e., ask it to show its codings), the encoder will show a projection of `X_train` into a 2D space that preserves as much information as possible, which is variance in this case. Hence in the end, we will approximate PCA.
+
+You can think of this model, and autoencoders in general, as a self-supervised learning model. This is because the labels are created automatically, simply equal to the target in the autoencoder's case.
