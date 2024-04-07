@@ -107,3 +107,14 @@ It's also possible to create autoencoders with other architecture types, such as
 Up until now, we have looked at various kinds of autoencoders (basic, stacked, convolutional, sequence-to-sequence) and how to train them (either in one shot or layer-by-layer). We also saw some applications, such as data visualization and unsupervised pretraining.
 
 In order ot force the autoencoder to learn interesting features, we have limited the size of the coding layer, making it undercomplete. There are actually many other different kinds of constraints that can be used, including one that allow the coding layer just be as large as the inputs, or even larger, result in an *overcomplete autoencoder*. We'll look at a few more kinds of overcomplete autoencoders: denoising autoencoders, sparse autoencoders, and variational autoencoders.
+
+# Denoising Autoencoders
+
+Another way to force the autoencoder to learn useful feature is add some random noises to the inputs, training it to recover the original, noise-free data. This idea has been around since the 1980s (e.g., it is mentioned in Yann LeCun's 1987 master thesis). In a [2008 paper](), Pascal Vincent et al. showed that autoencoders could also be used for feature extraction. In a [2010 paper](), Vincent et al. introduced *stacked denoising autoencoders*.
+
+The noise can be pure Gaussian noises added to the inputs, or it can be randomly switched-off inputs, just like in dropout (introduced in chapter 11).
+![Denoising autoencoders, with Gaussian noise (left) or dropout (right)](image-3.png)
+
+The implementation is straightforward: it's a regular stacked autoencoder with an additional `Dropout` layer applied to teh encoder's inputs (or you could use a `GaussianNoise` layer instead). Note that the `Dropout` layer (and the `GaussianNoise` layer) only activate during training.
+
+You can look at the learning notebook to see precisely what the model saw during training: half of the pixels are turned off. You can also see their corresponding predictions. Notice how the autoencoder makes up details that are not actually appear in the original image, such as the top of the shirt (in the fourth image, bottom row). As you can see, not only we can use autoencoders for data visualization and unsupervised pretraining, we can also use them to remove noises from the inputs, in a simple and efficient manner.
