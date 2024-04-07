@@ -118,3 +118,27 @@ The noise can be pure Gaussian noises added to the inputs, or it can be randomly
 The implementation is straightforward: it's a regular stacked autoencoder with an additional `Dropout` layer applied to teh encoder's inputs (or you could use a `GaussianNoise` layer instead). Note that the `Dropout` layer (and the `GaussianNoise` layer) only activate during training.
 
 You can look at the learning notebook to see precisely what the model saw during training: half of the pixels are turned off. You can also see their corresponding predictions. Notice how the autoencoder makes up details that are not actually appear in the original image, such as the top of the shirt (in the fourth image, bottom row). As you can see, not only we can use autoencoders for data visualization and unsupervised pretraining, we can also use them to remove noises from the inputs, in a simple and efficient manner.
+
+# Sparse Autoencoders
+
+Another kind of constraints that often leads to good feature extraction is *sparsity*: by adding an appropriate term to the cost function, we can force the autoencoder to only use a limited number of active neurons in the coding layer, for each instance. For example, it may be pushed to only have about 5% of neurons are significantly activate. This makes the model to represent each input as a combination of a small number of activations. As a result, each neuron in the coding layer typically ends up presenting a useful feature (if you only say a few words a month, you will probably try to make them worth listening to).
+
+A simple approach is using the sigmoid activation function in the coding layer (to constraint the codings to value between 0 and 1), using a large coding layer (300 neurons in example), and adding an $\ell_1$ regularization term to the coding layer's activation.
+
+This can be achieved using an `ActivityRegularization` layer, which just returns its inputs, but as a side effect also adds to the training loss the sum of the absolute values of it inputs times the weights (which is `1e-4` in our example). This only affects during training. Equivalently, you could remove the `ActivityRegularization` layer and set `activity_regularization=tf.keras.regularizers.l1(1e-4)` in the previous layer. This regularizer will encourage the coding layer to be close to 0, but since it will also be penalized if does not reconstruct the inputs properly, it needs to keep some nonzero neurons. Using the $\ell_1$ instead of $\ell_2$ help the coding layer to push all the most unimportant neurons close to 0, instead of pushing all of the neurons equally.
+
+Another approach, which often yields better result, is to measure the actual sparsity of the coding layer at each training iteration, and penalize the model if it differs from the desired sparsity. We do so by taking average activation of each neuron in the coding layer, over a given training batch. Te batch size must not be too small, or else the mean will not be descriptive.
+
+Once we have mean activation of each neuron, we want to penalize the neurons that are too active, or not active enough, by adding a sparsity loss to the cost function. For example, a neuron has an average activation of 0.3, but the target sparsity is 0.1, then it must be penalized to be less active. One approach could be taking the mean squared error, which is $(0.3 - 0.1)^2 = 0.04$, to the cost function. That's good, but there's a better way: using the Kullback-Leibler (KL) divergence (briefly discussed in chapter 4), which has a stronger gradients compared to the MSE.
+
+Given two *discrete* probability distribution *P* and *Q*, the KL divergence between these distributions, noted $D_{KL}(P||Q) $ can be computed as:
+    $$D_{KL}(P||Q) = \sum_i P(i) \log\left(\frac{P(i)}{Q(i)} \right) $$
+    where i is the number of possible outcome of distribution *P*.
+
+In our case, there are only out possible outcome, active or not, so if we assume the target possibility of a neuron to be active is *p*, while the actual possibility is *q*, estimated by the mean activation over the training batch, then KL divergence can be simplified as:
+    $$D_{KL}(p||q) = p \log\left(\frac{p}{q} \right) + (1-p) \log\left(\frac{1-p}{1-q} \right)$$
+    Looks very similar to binary cross entropy, don't you think so?
+
+Once we calculate the equation above for each neuron, we can sum the results up, and add it to the cost function. In order to control the relative importance of the sparsity loss and the reconstruction loss, you can optionally multiple the sparsity loss by a sparsity weight hyperparameter. If this number is too high, the neurons' sparsity will be close to your desire, but the reconstruction would be terrible. If this number is too low, the model will ignore the sparsity objective, which means it wouldn't learn any interesting features.
+
+Enough with the theory! We need to build a custom regularizer to apply KL divergence regularization, and use it for the `activity_regularizer` argument in the coding layer. See the implementation in the learning notebook.
