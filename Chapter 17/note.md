@@ -179,3 +179,11 @@ For the decoder, we can use the sequential API instead, as it's just a stack of 
 Now, we can build the whole model using the encoder and decoder as we did earlier. We will ignore the first two outputs, as we just need the codings. Lastly, add the latent loss to the reconstruction loss, and we can compile and train the model.
 
 We use the improved equation for the latent loss for each instance in the batch, summing over the last axis. Then we compute the mean loss over the whole batch, and divide the result by 784 to have the appropriate scale compared to the reconstruction loss. Indeed, the variational autoencoders' reconstruction loss is supposed to computed a sum of reconstruction loss in all pixels, but Keras computes the mean, which is the sum divided by 784 instead. So the reconstruction loss is 784 times smaller than we need it to be. We could write a custom loss to compute the sum instead of the loss, but it's way easier to just divide the latent loss by 784 (then the final loss will be 784 times smaller than it should be, but then we could just an optimizer with a larger learning rate).
+
+# Generating Fashion MNIST Images
+
+Now we can use this variational decoder to create new images that look like instances form the Fashion MNIST dataset. All we need to do is sample random codings from a Gaussian distribution and decode them.
+
+The majority of the images look fairly convincing, if not a bit too fuzzy. The rest are not good, but don't be too harsh on the decoder, it has only a few minutes to learn.
+
+Another perk of variational autoencoders is the ability to perform *sematic interpolation*: instead of interpolating between two images at the pixel level, which would look like two images were just overlaid, we can interpolate at the codings level. For example, let's take a few codings along an arbitrary line in latent space and decode them. We'll get a sequence of images that go from sweaters to boots.
