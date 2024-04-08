@@ -142,3 +142,40 @@ In our case, there are only out possible outcome, active or not, so if we assume
 Once we calculate the equation above for each neuron, we can sum the results up, and add it to the cost function. In order to control the relative importance of the sparsity loss and the reconstruction loss, you can optionally multiple the sparsity loss by a sparsity weight hyperparameter. If this number is too high, the neurons' sparsity will be close to your desire, but the reconstruction would be terrible. If this number is too low, the model will ignore the sparsity objective, which means it wouldn't learn any interesting features.
 
 Enough with the theory! We need to build a custom regularizer to apply KL divergence regularization, and use it for the `activity_regularizer` argument in the coding layer. See the implementation in the learning notebook.
+
+# Variational Autoencoders
+
+An important category of autoencoders was introduced in 2013 by [Diederik Kingma and Max Welling](https://arxiv.org/abs/1312.6114) and quickly became the one of the most popular variants: *variational autoencoders* (VAEs).
+
+VAEs has some key differences compare to other variants we discussed so far:
+- They are *probabilistic autoencoders*, meaning that their outputs are partly determined by chance, even after training (as opposed to denoising autoencoders, which use randomness only during training).
+- Most importantly, they are *generative models*, which means they can created new instances that look like instances in the training set.
+
+Both these properties make them rather similar to RBMs, but they are easier to train, and the sampling process is much faster (with RBMs, you need to wait until the network stabilize to a "thermal equilibrium" before you can sample a new instance). As the name suggests, variational autoencoders rely on variational Bayesian inference, which is an efficient of carrying out approximate Bayesian inference. Recall that Bayesian inference means updating a probability distribution based on new data, using equation derived from Bayes' theorem. The original distribution is called the *prior*, while the updated distribution is called the *posterior*. In our case, we want to find a good approximation of the data distribution. Once we have that, we can sample from it.
+
+Let's see how VAEs work. Its structure is similar to an autoencoder: consists of an encoder and a decoder. The difference lies on the coding layer: instead of simply output a coding for a given input, the encoder produces a *mean coding* $\mu$ and a standard deviation $\sigma$. The actual coding is then sampled randomly is then sampled randomly from a Gaussian distribution with mean $\mu$ and standard deviation $\sigma$. After that, the decoder decode the sampling normally, given an output (hopefully) resembles the training instances.
+![A variational autoencoder (left) and an instance going through it (right)](image-4.png)
+
+You can think of the coding is a set of instances, each of them are sampled from a Gaussian distribution. The job of the last hidden layer in the encoder is to output 2 vectors: a vector consists of the means, and a vector consists of the standard deviations of these distributions.
+
+As we can see from the diagram, even though the inputs may have a very convoluted (i.e., complex) distribution, a variational autoencoder tends to produce codings that look as they were sampled from a simple Gaussian distribution (variational autoencoders are more general, they are not limited to Gaussian distribution): during training, the cost function (discussed later) will gradually push the codings within the coding space (also called the *latent space*) to end up looking like a cloud of Gaussian points. One great consequence is after training, you can sample a random coding from the Gaussian distribution, pass it through the decoder, and there you have a new instance.
+
+Now, let's look at the cost function. It's composed of two parts. The first part is the usual reconstruction loss we have used until now to push the autoencoder to reproduce it inputs. We can calculate it using MSE, as we did earlier. The second is the *latent loss* that pushes the autoencoder to have codings that look like they are sampled from the Gaussian distribution: it is the KL divergence between the target distribution (e.g., the Gaussian distribution) and the actual distribution.
+
+The math is a bit more complex than the sparse autoencoder, in particular because of the Gaussian noise, which limit the amount of information that can be transmitted to the coding layer. This pushes the autoencoder to learn useful features. Luckily, the equation simplifies a lot, so the latent loss can be computed using:
+    $$\textbf{L} = -\frac{1}{2}\sum_{i=1}^n\left(1 + \log(\sigma_i^2) - \sigma_i^2 - \mu_i^2 \right)$$
+where $\textbf{L}$ is the latent loss, $n$ is the codings' dimensionality, and $\mu_i$ and $\sigma_i$ are the mean and the standard deviation of the i-th component of the codings. The vectors $\mu$ and $\sigma$ are created by the encoder, as shown in the left part of the figure above.
+
+A common tweak to the variational autoencoders' architecture is to let the encoder output $\gamma = \log(\sigma^2) $ rathe than $\sigma$. The latent loss then be computed as:
+    $$\textbf{L} = \frac{1}{2} \sum_{i=1}^n \left(1 + \gamma_i -\exp(\gamma_i) -\mu_i^2 \right) $$
+This approach is more numerically stable and speeds up training.
+
+Let's start the implementation! First we need a custom layer to sample the codings using the $\mu$ and $\gamma$. This `Sampling` layer takes two inputs: `mean` ($\mu$) and `log_var` ($\gamma$). It uses the function `tf.random.normal()` to sample a random vector (of the same shape as $\gamma$) from the Gaussian distribution, with has mean 0 and standard deviation 1. Then it multiples it by $\exp(\gamma/2)$ (which is equals to $\sigma$), pluses it with $\mu$, and return the result. This samples a codings vector from the Gaussian distribution with mean $\mu$ and standard deviation $\sigma$.
+
+Now we can create the encoder, using the functional API, as the model is not entirely sequential. Note that the `Dense` layers that output `coding_means` ($\mu$) and `coding_log_var` ($\gamma$) have the same inputs (i.e., the outputs of the second hidden layers). We then pass both of them to the `Sampling` layer. Finally, the `variational_encoder` has three outputs. Only the `codings` are required for the decoder, but we add `coding_means`, and `coding_log_var` as well, in case we want to inspect their values.
+
+For the decoder, we can use the sequential API instead, as it's just a stack of `Dense` layer. Here I use functional API for consistency.
+
+Now, we can build the whole model using the encoder and decoder as we did earlier. We will ignore the first two outputs, as we just need the codings. Lastly, add the latent loss to the reconstruction loss, and we can compile and train the model.
+
+We use the improved equation for the latent loss for each instance in the batch, summing over the last axis. Then we compute the mean loss over the whole batch, and divide the result by 784 to have the appropriate scale compared to the reconstruction loss. Indeed, the variational autoencoders' reconstruction loss is supposed to computed a sum of reconstruction loss in all pixels, but Keras computes the mean, which is the sum divided by 784 instead. So the reconstruction loss is 784 times smaller than we need it to be. We could write a custom loss to compute the sum instead of the loss, but it's way easier to just divide the latent loss by 784 (then the final loss will be 784 times smaller than it should be, but then we could just an optimizer with a larger learning rate).
