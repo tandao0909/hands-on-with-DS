@@ -33,7 +33,7 @@ Another way is to use *genetic algorithm*. For example, you could randomly creat
 
 Yet another approach is to use optimization techniques, by evaluating the gradients of the rewards with regard to the policy parameters, then tweaking these parameter by following these gradients toward higher rewards. This is called *gradient ascent*: It's just like gradient descent, but in the opposite direction: maximizing instead of minimizing. We will talk about this approach in more detail later in this chapter. Going back to the vacuum cleaner example, we could slightly increase p and evaluate whether doing so increases the amount of dust picked up by the robot in 30 minutes; if it does, then increase p some more; if it doesn't, decrease it instead. We'll implement a popular PG (*policy gradient*) using TensorFlow, but first we need to create an environment for the agent ot live in - so it's time to introduce OpenAI Gymnasium.
 
-# Introduction to OpenAI Gym
+# Introduction to OpenAI Gymnasium
 
 One of the challenge of reinforcement learning is that in order to train an agent, you need a working environment. If you want a program that can learn to play an Atari game, you will need an Atari stimulator. If you want to program a walking robot, then the environment is the real world, and you can directly train your robot in your environment. However, this has some big limitations: If your robot fall of  a cliff, you can click Undo. You can't speed it up neither, as adding more computation pawer won't make the robot move any faster, and training 1,000 robots in parallel is way too expensive. In short, training is hard and expensive in real world, so you need a  *stimulated environment* at least for bootstrap training. For example, you might use [PyBullet]() or [MuJoCo]() for 3D physics stimulation.
 
@@ -63,3 +63,6 @@ The `step()` method executes the desired action and return five values:
 - `info`: This environment-specific dictionary may provide extra information, just like the one returned by the `reset()` method.
 Once you have finished using an environment, you should call its `close()` method to free resources.
 
+## A simple hardcoded policy
+
+Let's hardcode a simple policy that accelerates left when the pole leaning toward the left and accelerates right when the pole leaning toward the right. We'll run this policy for 500 episodes and see its statistics. If you look at the result, even after 500 attempts, this policy never managed to keep the pole upright for more than 63 consecutive steps. Not good. If you look at the stimulation in this chapter's notebook, you'll see that the cart oscillates left and right more and more, until the pole tilts too much.
