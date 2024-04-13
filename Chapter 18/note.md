@@ -66,3 +66,15 @@ Once you have finished using an environment, you should call its `close()` metho
 ## A simple hardcoded policy
 
 Let's hardcode a simple policy that accelerates left when the pole leaning toward the left and accelerates right when the pole leaning toward the right. We'll run this policy for 500 episodes and see its statistics. If you look at the result, even after 500 attempts, this policy never managed to keep the pole upright for more than 63 consecutive steps. Not good. If you look at the stimulation in this chapter's notebook, you'll see that the cart oscillates left and right more and more, until the pole tilts too much.
+
+# Neural Network Policies
+
+We can create a neural network policy. This neural network must take an observation as input, and output the action to be executed. In this case, this means the neural must have 4 neurons in the inputs layer, and only one in the output layer. More precisely, it will output an estimated probability for each action, and we will choose an action randomly based on these estimated probabilities. In the case of the CartPole environment, these are jst two possible actions, so we only need one output neuron. It will output the probability p of action 0 (left), and probability 1 - p of action 1 (right). For example, if the neuron output 0.7, then we choose action 0 with 70% probability, or action 1 with 30% probability.
+
+![Neural network policy](image-2.png)
+
+You may wonder why we are picking a random action based on the probabilities given by the neural network, rather than just picking the action with the highest score? This allows the model to find a good balance between *exploring* new actions and *exploiting* actions that known to be good. Here's an analogy: It's the first time you come to a new restaurant, and all the dished look equally good so you just pick a dish randomly. If it turns out to be great, you increase the chance to order it the next time, but never up to 100%, or else you may never try out other dishes, some of which may be even better than the one you tried. This *exploration/exploitation dilemma* is at the heart of reinforcement learning.
+
+Also note that in this particular environment, the past actions and observations can be safely ignored, as each observation contains the full state of the environment. If there were some hidden states, then you might want to consider past actions and observations as well. For example, if we don't know the cart's velocity, but only the cart's position, then we need to know the previous position on order to estimate the current velocity. Another example is when the observations is noisy, hence we will need to know some past observations to estimate the most likely current state. TheCartPole is as simple as possible: The observations are noise-free, and they contain the environment's full states.
+
+We can build a neural network using the `Sequential` API. You can see the implementation in the learning notebook. Because we just initialize it randomly, the neural network performed very badly.
