@@ -157,3 +157,15 @@ This equation leads directly to an algorithm that can precisely estimate the opt
 where $V_k(s)$ is the estimated value of state $s$ at the k-th iteration of the algorithm.
 
 This algorithm is an example of *dynamic programming*, which breaks down a complex problem into tractable subproblems that can be tackled iteratively.
+
+Knowing the optimal state value can be useful, in particular to evaluate a policy, but it does not give us the optimal policy for the agent. Luckily, Bellman found a very similar algorithm to estimate the optimal *state-action values*, generally called *Q-values* (quality values). The optimal Q-value of the state-action pair (s, a), noted $Q^*(s, a)$, is the sum of discounted future rewards the agent can expect on average after it reaches the state s and chooses action a, but before it sees the outcome of this action, assuming it acts optimally after that action.
+
+You start by initializing all the Q-value estimates to zero, then you update them using the *Q-value iteration* algorithm:
+    $$Q_{k+1}(s,a) \leftarrow \sum_{s'} T(s, a, s')[R(s, a, s') + \gamma.\underset{a'}{max}Q_{k}(s', a')], \forall (s, a) $$
+Once you have the optimal Q-values, finding the optimal policy, noted $\pi^*(s)$, is trivial: when the agent is in state s, it should choose the action with the highest Q-value for that state: $\pi^*(s) = \underset{a}{argmax} Q^*(s, a)$.
+
+First, we need to define the MDP. First, to know the probability of going from $s_2$ to $s_0$ after doing action $a_1$, we'll look up `transition_probability[2][1][0]`. Similarly, to get the corresponding reward, we'll look up `reward[2][1][0]`, which is +40 in our case. And to get list of possible actions in $s_2$, we'll look up `possible_actions[2]`, which is only $a_1$ in this case. Next, we must initialize all the Q-values to zero, expect for impossible actions, which will be set to $-\infty$.
+
+Now we can run the Q-value iteration algorithm. It applies the update equation for Q-values repeatedly, to all !-values, for every state and every possible action. If you choose the discount factor of 0.9, then you can see the expected value in the learning notebook: for example, if we're in state $s_0$ and choose action $a_1$, the expected sum of discounted rewards is approximately 17.0. For each state, you can find the action with the highest Q-value, which gives us the optimal policy for this MDP.
+
+Interestingly, if we increase the discount factor to 0.95, and we should walk through the fire! This means sense, since now we favor future rewards more, which means we can accept pain in the moment to gain in the future. 
