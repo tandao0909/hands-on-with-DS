@@ -190,3 +190,20 @@ A more concise way of writing the first form of this equation is to use the nota
 TD learning has many similarities with stochastic gradient descent, including the fact that it handles one sample at a time. Moreover, just like SGD, it can only truly converge if you gradually reduce the learning rate; otherwise, it will keep bouncing around the optimum Q-values. 
 
 This means we update the optimal value for each state using a moving average of the reward plus discount factor times the value of the best state value among possible next states. In the author's words, for each state $s$, this algorithm keeps tracks of a running average of the immediate rewards the agent get upon leaving that state, plus the rewards it expects to get later, assuming it acts optimally.
+
+# Q-learning
+
+Similarly, the Q-learning is an adaption of the Q-value iteration algorithm to the situation where the transition probabilities and the rewards are initially unknown. Q-learning works by watching the agent play (e.g., randomly) and gradually improving its estimates of the Q-values. Once it has accurate Q-value estimates (or close enough), then the optimal policy is just choosing the action that has the highest Q-value (i.e., the greedy policy):
+    $$Q(s, a) \underset{\alpha}{\leftarrow} r + \gamma.\underset{a'}{\max} Q(s', a')$$
+
+For each state-action pair (s, a), this algorithm keeps track of the running average of the rewards r the agent gets upon leaving the state $s$ with action $a$, plus the discounted future reward it expects to get. To estimate this sum, we take the maximum of the Q-value estimates for the next state s', since we assume the target policy will act optimally from then on.
+
+Now we implement the Q-learning algorithm. First, we need to make the agent explore the environment. For this, we need a step function so that the agent can execute one action and get the resulting state and reward.
+
+Next, we need to create the agent's exploration policy. This policy needs to visit every possible state many times, but since the search space is small, a simple random policy will be sufficient.
+
+Next, we initialize the Q-values juts like before, and we're ready to run the Q-learning algorithm with learning rate decay (using power scheduling).
+
+This algorithm will eventually converge to the optimal Q-values, but it may take many iterations, and possibly many of hyperparameter tuning. As you can see in the learning notebook, the Q-value iteration algorithm converges very quickly, in under 20 iterations, while the Q-learning algorithm takes about 8,000 iterations (up to 2 orders of magnitude!) to converge. Obviously, not knowing about the transition probability and the rewards makes finding the optimal policy significantly harder!
+
+The Q-learning algorithm is called an *off-policy* algorithm because the policy being trained is not necessary the one used during training. For example, in our implementation, the policy being executed (the exploration policy) was completely random, while the policy being trained was never used. After training the optimal policy corresponds to systemically choosing the action with the highest Q-value. Conversely, the policy gradients algorithm is an *on-policy* algorithm: it explores the world using the policy being trained. It's somewhat surprising that the Q-learning can learning the optimal policy by just watching an agent acts randomly. Imagine learning to play golf while your teacher is a drunk monkey. How do we do better?
