@@ -169,3 +169,24 @@ First, we need to define the MDP. First, to know the probability of going from $
 Now we can run the Q-value iteration algorithm. It applies the update equation for Q-values repeatedly, to all !-values, for every state and every possible action. If you choose the discount factor of 0.9, then you can see the expected value in the learning notebook: for example, if we're in state $s_0$ and choose action $a_1$, the expected sum of discounted rewards is approximately 17.0. For each state, you can find the action with the highest Q-value, which gives us the optimal policy for this MDP.
 
 Interestingly, if we increase the discount factor to 0.95, and we should walk through the fire! This means sense, since now we favor future rewards more, which means we can accept pain in the moment to gain in the future. 
+
+# Temporal Difference Learning
+
+Reinforcement learning problems with discrete actions can often be modeled as Markov decision processes, but the agent initially has no idea what the transition probabilities are (it does not $T(s, a, s')$), and it does not know what the rewards are going to be either (it does not know $R(s, a, s')$). It must experience each state and each transition at least once to know rewards, and it must experience them multiple times to have a reasonable estimates of the transition probabilities.
+
+The *temporal difference (TD) learning* algorithm is very similar to the Q-value iteration algorithm, but tweaked to take into account the fact that the agent has only partial knowledge of the MDP. In general, we assume the model initially only knows the possible stases and actions, and nothing more. The agent uses an *exploration policy* - for example, a purely random policy - to explore the MDP, and as it progresses, the TD learning algorithm updates the estimates of the state value based on the transitions and rewards that are actually observed:
+    $$V_{k+1}(s) \leftarrow (1-\alpha)V_k(s) + \alpha(r + \gamma.V_k(s'))$$
+or equivalently:
+    $$V_{k+1}(s) \leftarrow V_k(s) + \alpha.\delta(s, r, s')$$
+    with $\delta(s, r, s') = r + \gamma.V_k(s') - V_k(s)$.
+In this equation:
+- $\alpha$ is the learning rate
+- $r$ is the reward we get when leaving the state $s$, $\gamma$ is the discount factor
+- $r + \gamma.V_K(s')$ is called the *TD target*
+- $\delta(s, r, s')$ is called the *TD error*
+
+A more concise way of writing the first form of this equation is to use the notation $a \underset{\alpha}{\leftarrow} b$, which means $a_{k+1} = (1-\alpha).a_k + \alpha.b_k$. So the first expression can be simplified as: $V(s) \underset{\alpha}{\leftarrow} r + \gamma.V(s')$.
+
+TD learning has many similarities with stochastic gradient descent, including the fact that it handles one sample at a time. Moreover, just like SGD, it can only truly converge if you gradually reduce the learning rate; otherwise, it will keep bouncing around the optimum Q-values. 
+
+This means we update the optimal value for each state using a moving average of the reward plus discount factor times the value of the best state value among possible next states. In the author's words, for each state $s$, this algorithm keeps tracks of a running average of the immediate rewards the agent get upon leaving that state, plus the rewards it expects to get later, assuming it acts optimally.
