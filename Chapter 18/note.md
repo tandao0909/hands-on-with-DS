@@ -135,3 +135,25 @@ In the early 20th century, the mathematician Andrey Markov studied stochastic pr
 ![Example of a Markov chain](image-4.png)
 
 Suppose the process start in state $s_0$, and there is a 70% chance it will remain in this state at the next step. Eventually it is bound to leave that state and never come back, since no state points back to state $s_0$. If it goes to state $s_1$, it most likely goes to state $s_2$ (with 90% chance), and immediately back to $s_1$ (with 100% chance). It may oscillate between these two states a number of times, but eventually it will go to state $s_3$ and remain there forever, since there's no way out: this is called a *terminal state*. Markov chains can have very different dynamics, and they are heavily used in thermodynamics, chemistry, statistics, and more.
+
+Markov decision processes were first described in the 1950s by [Richard Bellman](https://www.jstor.org/stable/24900506). They resemble Markov chains, but with a twist: at each step, an agent can choose one of several possible actions, and the transition probabilities depend on the chosen action. Moreover, some states transitions return some rewards (positive or negative), and the agent's goal is to find a policy that will maximize the reward over time.
+
+For example, the MSP represented below has three states (represented by circles) and up to three possible discrete actions at each step (represented by diamonds).
+
+![Example of a Markov decision process](image-5.png)
+
+If it starts in state $s_0$, the agent can choose between actions $a_0$, $a_1$, or $a_2$. If it chooses $a_1$, it just remains in $s_0$, and gains no reward. But if it chooses action $a_0$, it has 70% chance to gain a reward of +10 and remain in state $s_0$. It can choose to do it repeatedly, but eventually it will go to state $s_1$. In state $s_1$, it has two possible actions: $a_0$ or $a_2$. It can choose $a_0$ ot remain in state $s_1$, or choose $a_2$ to go to $s_2$ and get a negative reward of -50. In state $s_2$, it has no choice but chooses $a_1$, which has a probability of 80% to lead it back to $s_0$ and gain a reward of +40. Looking at this MDP, how do you know which action is the best at each state? In state $s_0$, it's easy to see that action $a_0$ is the best option, and we have no choice in state $s_2$ but to take action $a_1$, but in state $s_1$, it's not obvious whether the agent should stay put ($a_0$) or go through the fire ($a_2$).
+
+Bellman found a way to estimate the *optimal state value* of any state $s$, noted $V^*(s)$, which is the sum of all discounted rewards the agent can expect on average after it reaches the state, assuming it acts optimally. He showed that if the agent acts optimally, then the *Bellman optimality equation* applies. This recursive equation says that if te agent acts optimally, then the optimal value of the current state is equal to the reward it gets on average after taking one optimal action, plus the expected optimal value of all possible next states that this action can lead to:
+    $$V^*(s) = \underset{a}{max}\sum_{s'} T(s, a, s')[R(s, a, s') + \gamma.V^*(s')], \forall s $$
+In this equation:
+- We choose the optimal action at every state hence the variable to maximize is $a$.
+- $T(s, a, s') $ is the transition probability when at state $s$, we choose action $a$, and we end up in state $s'$. For example, $T(s_2, a_1, s_0) =0.8$.
+- $R(s, a, s') $ is the reward that the agent get when it goes from state $s$, by action $a$, and end up in state $s'$. For example. $R(s_2, a_1, s_0) = +40 $.
+- $\gamma$ is the discount factor.
+
+This equation leads directly to an algorithm that can precisely estimate the optimal state value of every possible state: first initialize all the state values estimations to zero, and then iteratively update them using the *value iteration* algorithm. A notable result is that, given enough time, these estimations are guaranteed to converge to the optimal state values, corresponding to the optimal policy:
+    $$V_{k+1}(s) \leftarrow \underset{a}{max}\sum_{s'} T(s, a, s')[R(s, a, s') + \gamma.V_{k}(s')], \forall s $$
+where $V_k(s)$ is the estimated value of state $s$ at the k-th iteration of the algorithm.
+
+This algorithm is an example of *dynamic programming*, which breaks down a complex problem into tractable subproblems that can be tackled iteratively.
