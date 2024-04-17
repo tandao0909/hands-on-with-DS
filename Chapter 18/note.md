@@ -255,3 +255,17 @@ You can look at the total reward the agent gets after each episode in the learni
 Reinforcement learning is notoriously difficult, largely because of the training instabilities and huge sensitive to [initial hyperparameters and random seeds](https://www.alexirpan.com/2018/02/14/rl-hard.html). As the researcher Andrej Karpathy put it, "[Supervised learning] wants to work. [...] RL must be forced to work". You will need time, patience, perseverance, and a bit of luck. This is a major reason why RL is not widely adopted as regular deep learning (e.g., convolutional nets). But there are still a few applications in real world, beyond AlphaGo and Atari games: for example, Google uses RL to optimize its datacenter costs, asn it is used in some robotic applications, for hyperparameter tuning, and in recommender systems.
 
 You might wonder why don't we plot the loss. It turns that loss is a poor indicator of the model's performance. The loss might do down, yet the agent might perform worse (eg, this can happen when the agent is stuck in one small region of the environment, and the DQN starts overfitting this region). Conversely, the loss could go up, yet the agent might perform better (e.g., the DQN was underestimating the Q-values and it starts correctly increasing its predictions, the agent will likely perform better, get mote rewards, but the loss might increase because the DQN also sets the target, which will be larger, too). So, it's preferable to plot the rewards.
+
+# Deep Q-Learning Variants
+
+The basic Q-learning algorithm we've been using so far would be too unstable for Atari games. How did DeepMind do it? Well, they tweaked the algorithms. Let's look at a few variants of Q-learning algorithms that can stabilize and speed up training.
+
+## Fixed Q-value targets
+
+In the basic Q-learning, the model is used both for predictions and setting the targets. This can lead to a situation analogous to a dog chasing its own tail. This feedback loop can make the network unstable: it can diverge, oscillate, freeze, and so on. To solve this problem, in their 2013 paper, the DeepMind researchers used two DQNs instead of one: the first is the *online* model, which learns at each step and is used to move the agent round in the policy, and the second is the *target* model, which used only to define the targets. The target model is just a clone of the online model.
+
+In the `training_step()` function, we just need to change one line to use the target model instead of the online model to calculate the predicted Q-values of the next states.
+
+Finally, in the training loop, we need to copy the online model's weights to the target model, at regular interval. Optionally, we can update it it in a soft way, by using a running average.
+
+Since the target model is updated less frequently than the online model, the Q-value is more stable, the feedback loop we discussed earlier is dampened, and its effect was less severe. This approach was one of the DeepMind researchers main contributions in their 2013 paper, allowing the agents to learn to play Atari games form raw pixels. To stabilize training, they used a tiny learning rate of 0.00025, they updated the agent model only every 10,000 steps (instead of 50), and they used very large replay buffer of 1 million experiences. They decrease `epsilon` very slowly from 1 to 0.1 in 1 million steps, and they let the algorithm runs for 50 million steps. Moreover, their DQN was a deep convolutional net.
