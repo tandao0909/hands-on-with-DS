@@ -260,7 +260,7 @@ You might wonder why don't we plot the loss. It turns that loss is a poor indica
 
 The basic Q-learning algorithm we've been using so far would be too unstable for Atari games. How did DeepMind do it? Well, they tweaked the algorithms. Let's look at a few variants of Q-learning algorithms that can stabilize and speed up training.
 
-## Fixed Q-value targets
+## Fixed Q-value Targets
 
 In the basic Q-learning, the model is used both for predictions and setting the targets. This can lead to a situation analogous to a dog chasing its own tail. This feedback loop can make the network unstable: it can diverge, oscillate, freeze, and so on. To solve this problem, in their 2013 paper, the DeepMind researchers used two DQNs instead of one: the first is the *online* model, which learns at each step and is used to move the agent round in the policy, and the second is the *target* model, which used only to define the targets. The target model is just a clone of the online model.
 
@@ -269,3 +269,7 @@ In the `training_step()` function, we just need to change one line to use the ta
 Finally, in the training loop, we need to copy the online model's weights to the target model, at regular interval. Optionally, we can update it it in a soft way, by using a running average.
 
 Since the target model is updated less frequently than the online model, the Q-value is more stable, the feedback loop we discussed earlier is dampened, and its effect was less severe. This approach was one of the DeepMind researchers main contributions in their 2013 paper, allowing the agents to learn to play Atari games form raw pixels. To stabilize training, they used a tiny learning rate of 0.00025, they updated the agent model only every 10,000 steps (instead of 50), and they used very large replay buffer of 1 million experiences. They decrease `epsilon` very slowly from 1 to 0.1 in 1 million steps, and they let the algorithm runs for 50 million steps. Moreover, their DQN was a deep convolutional net.
+
+## Double DQN
+
+In a [2015 paper](), DeepMind researchers tweaked their DQN algorithms, increasing its performance and somewhat stabilize training. They called this variant *double DQN*. The update was based on the observation that the target network is prone to overestimating Q-values. Indeed, suppose all the actions are equally good: the Q-values computed by the target model should be equal, but since they are just approximations, some amy be slightly higher than the others, by pure chance. The target model will always select the highest Q-value, which will be slightly greater than the mean Q-value, most likely overestimating the true Q-value (a bit like counting the highest of the tallest random wave when measuring the depth of a pool). To fix this, the researchers proposed using the online model instead of the target to select the best action for the next state, and using the target model only to estimate the Q-value for that action.
